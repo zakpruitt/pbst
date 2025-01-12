@@ -3,9 +3,9 @@ package com.zakpruitt.pbst.services;
 import com.zakpruitt.pbst.dtos.SealedProductDTO;
 import com.zakpruitt.pbst.dtos.SealedProductUpdateDTO;
 import com.zakpruitt.pbst.entities.SealedProduct;
+import com.zakpruitt.pbst.exception.ResourceNotFoundException;
 import com.zakpruitt.pbst.mappers.SealedProductMapper;
 import com.zakpruitt.pbst.repositories.SealedProductRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,8 +37,9 @@ public class SealedProductService {
     public SealedProduct editSealedProduct(Long id, SealedProductUpdateDTO sealedProductDto) {
         Optional<SealedProduct> existingSealedProductOptional = sealedProductRepository.findById(id);
         if (existingSealedProductOptional.isEmpty()) {
-            // TODO: throw not found.. controller advice handles.
-            throw new EntityNotFoundException("Could not find SealedProduct.");
+            throw new ResourceNotFoundException("SealedProduct with the ID %d could not be found during an edit call."
+                    .formatted(id)
+            );
         }
 
         SealedProduct existingSealedProduct = existingSealedProductOptional.get();

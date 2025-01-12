@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class PbstApplication {
 
 	public static void main(String[] args) {
+		System.out.println("hello");
 		SpringApplication.run(PbstApplication.class, args);
 	}
 

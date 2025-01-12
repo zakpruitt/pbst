@@ -7,9 +7,12 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class SealedProductDTO {
+
+    private Long id;
 
     @NotBlank(message = "Product name must not be blank")
     private String productName;
@@ -26,5 +29,5 @@ public class SealedProductDTO {
     @Min(value = 0, message = "Quantity ripped cannot be negative")
     private int quantityRipped;
 
-    //TODO: private List<SingleCardDTO> singles;
+    private List<SingleCardDTO> singles;
 }

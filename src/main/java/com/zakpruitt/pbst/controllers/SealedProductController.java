@@ -1,7 +1,6 @@
 package com.zakpruitt.pbst.controllers;
 
 import com.zakpruitt.pbst.dtos.SealedProductDTO;
-import com.zakpruitt.pbst.dtos.SealedProductUpdateDTO;
 import com.zakpruitt.pbst.entities.SealedProduct;
 import com.zakpruitt.pbst.mappers.SealedProductMapper;
 import com.zakpruitt.pbst.services.SealedProductService;
@@ -20,7 +19,6 @@ import java.util.Optional;
 @AllArgsConstructor
 public class SealedProductController {
 
-    private final SealedProductMapper sealedProductMapper;
     private final SealedProductService sealedProductService;
 
     @GetMapping
@@ -45,8 +43,8 @@ public class SealedProductController {
     @PutMapping("/{id}")
     public ResponseEntity<SealedProduct> updateSealedProduct(
             @PathVariable Long id,
-            @Valid @RequestBody SealedProductUpdateDTO sealedProductUpdateDto) {
-        SealedProduct editedSealedProduct = sealedProductService.editSealedProduct(id, sealedProductUpdateDto);
+            @Valid @RequestBody SealedProductDTO sealedProductDto) {
+        SealedProduct editedSealedProduct = sealedProductService.editSealedProduct(id, sealedProductDto);
         return ResponseEntity.ok(editedSealedProduct);
     }
 

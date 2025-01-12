@@ -1,17 +1,15 @@
 package com.zakpruitt.pbst.mappers;
 
 import com.zakpruitt.pbst.dtos.SealedProductDTO;
-import com.zakpruitt.pbst.dtos.SealedProductUpdateDTO;
 import com.zakpruitt.pbst.entities.SealedProduct;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface SealedProductMapper {
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
     SealedProduct toEntity(SealedProductDTO dto);
 
+    // Mapping for updates (ignores null values to prevent overwriting)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntityFromDTO(SealedProductUpdateDTO dto, @MappingTarget SealedProduct entity);
+    void updateEntityFromDTO(SealedProductDTO dto, @MappingTarget SealedProduct entity);
 }

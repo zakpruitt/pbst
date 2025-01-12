@@ -1,7 +1,6 @@
 package com.zakpruitt.pbst.services;
 
 import com.zakpruitt.pbst.dtos.SealedProductDTO;
-import com.zakpruitt.pbst.dtos.SealedProductUpdateDTO;
 import com.zakpruitt.pbst.entities.SealedProduct;
 import com.zakpruitt.pbst.exception.ResourceNotFoundException;
 import com.zakpruitt.pbst.mappers.SealedProductMapper;
@@ -34,7 +33,7 @@ public class SealedProductService {
         return sealedProductRepository.save(newSealedProduct);
     }
 
-    public SealedProduct editSealedProduct(Long id, SealedProductUpdateDTO sealedProductDto) {
+    public SealedProduct editSealedProduct(Long id, SealedProductDTO sealedProductDto) {
         Optional<SealedProduct> existingSealedProductOptional = sealedProductRepository.findById(id);
         if (existingSealedProductOptional.isEmpty()) {
             throw new ResourceNotFoundException("SealedProduct with the ID %d could not be found during an edit call."

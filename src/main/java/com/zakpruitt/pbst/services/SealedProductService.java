@@ -30,8 +30,12 @@ public class SealedProductService {
 
     public SealedProduct saveSealedProduct(SealedProductDTO sealedProductDto) {
         SealedProduct newSealedProduct = sealedProductMapper.toEntity(sealedProductDto);
+        if (newSealedProduct.getSingles() != null) {
+            newSealedProduct.getSingles().forEach(singleCard -> singleCard.setSealedProduct(newSealedProduct));
+        }
         return sealedProductRepository.save(newSealedProduct);
     }
+
 
     public SealedProduct editSealedProduct(Long id, SealedProductDTO sealedProductDto) {
         Optional<SealedProduct> existingSealedProductOptional = sealedProductRepository.findById(id);

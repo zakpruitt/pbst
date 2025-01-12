@@ -1,10 +1,8 @@
 package com.zakpruitt.pbst.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +25,8 @@ public class SealedProduct {
     private int quantityRipped;
 
     @OneToMany(mappedBy = "sealedProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @ToString.Exclude
     private List<SingleCard> singles;
 
     @Transient

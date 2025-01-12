@@ -34,6 +34,5 @@ public class SingleCardDTO {
     @PositiveOrZero(message = "Estimated sale price must be zero or positive")
     private double estimatedSalePrice;
 
-    @NotNull(message = "Sealed product ID must not be null")
     private Long sealedProductId;
 }

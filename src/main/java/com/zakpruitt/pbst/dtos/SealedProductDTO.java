@@ -1,5 +1,6 @@
 package com.zakpruitt.pbst.dtos;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,5 +30,6 @@ public class SealedProductDTO {
     @Min(value = 0, message = "Quantity ripped cannot be negative")
     private int quantityRipped;
 
+    @Valid
     private List<SingleCardDTO> singles;
 }

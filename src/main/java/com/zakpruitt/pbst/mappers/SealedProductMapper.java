@@ -4,7 +4,7 @@ import com.zakpruitt.pbst.dtos.SealedProductDTO;
 import com.zakpruitt.pbst.entities.SealedProduct;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = SingleCardMapper.class)
 public interface SealedProductMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
     SealedProduct toEntity(SealedProductDTO dto);

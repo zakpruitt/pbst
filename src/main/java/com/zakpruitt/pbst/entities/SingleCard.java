@@ -1,11 +1,10 @@
 package com.zakpruitt.pbst.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.zakpruitt.pbst.enums.GradingStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -27,10 +26,12 @@ public class SingleCard {
     private LocalDate gradingSubmissionDate;
     private LocalDate gradingReturnDate;
     private String grade;
-    private double estimatedSalePrice; // Pulled from external APIs
+    private double estimatedSalePrice;
 
     @ManyToOne
     @JoinColumn(name = "sealed_product_id", nullable = false)
+    @JsonBackReference
+    @ToString.Exclude
     private SealedProduct sealedProduct;
 
     public GradingStatus getGradingStatus() {
@@ -43,3 +44,4 @@ public class SingleCard {
         return GradingStatus.GRADING_COMPLETE;
     }
 }
+

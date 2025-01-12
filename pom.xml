@@ -75,14 +75,6 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- Spring Boot DevTools -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
-
 		<!-- H2 Database -->
 		<dependency>
 			<groupId>com.h2database</groupId>

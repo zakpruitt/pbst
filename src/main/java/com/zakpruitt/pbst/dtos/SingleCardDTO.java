@@ -17,7 +17,7 @@ public class SingleCardDTO {
     private String cardName;
 
     @NotBlank(message = "Set name must not be blank")
-    private String setName;
+    private String expansionName;
 
     private boolean submittedForGrading;
 

@@ -20,7 +20,7 @@ public class SingleCard {
     private Long id;
 
     private String cardName;
-    private String setName;
+    private String expansionName;
     private boolean submittedForGrading;
     private double gradingCost;
     private LocalDate gradingSubmissionDate;

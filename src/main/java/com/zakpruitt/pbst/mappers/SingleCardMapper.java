@@ -9,7 +9,6 @@ public interface SingleCardMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
     @Mapping(target = "submittedForGrading", constant = "false")
     @Mapping(target = "gradingCost", constant = "0.0")
-    @Mapping(target = "estimatedSalePrice", constant = "0.0")
     SingleCard toEntity(SingleCardDTO dto);
 
     @Mapping(source = "sealedProduct.id", target = "sealedProductId")

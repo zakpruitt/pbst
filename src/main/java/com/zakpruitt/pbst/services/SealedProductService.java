@@ -46,7 +46,7 @@ public class SealedProductService {
         }
 
         SealedProduct existingSealedProduct = existingSealedProductOptional.get();
-        sealedProductMapper.updateEntityFromDTO(sealedProductDto, existingSealedProduct);
+        sealedProductMapper.updateEntityFromDTO(sealedProductDto, existingSealedProduct); // maps DTO to existing, ignoring singles
         return sealedProductRepository.save(existingSealedProduct);
     }
 

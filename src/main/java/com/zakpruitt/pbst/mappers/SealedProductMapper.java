@@ -10,6 +10,6 @@ public interface SealedProductMapper {
     SealedProduct toEntity(SealedProductDTO dto);
 
     // Mapping for updates (ignores null values to prevent overwriting)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "singles", ignore = true)
     void updateEntityFromDTO(SealedProductDTO dto, @MappingTarget SealedProduct entity);
 }

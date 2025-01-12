@@ -14,6 +14,7 @@ public class Sale {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String sellerName;
     private LocalDate saleDate;
     private double salePrice;
     private double profit;

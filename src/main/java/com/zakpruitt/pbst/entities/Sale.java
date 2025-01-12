@@ -1,32 +1,39 @@
 package com.zakpruitt.pbst.entities;
 
-import com.zakpruitt.pbst.enums.ProductType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Sale {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String sellerName;
+    @Column(unique = true)
+    private String ebayOrderId; // Unique ID from eBay
+
     private LocalDate saleDate;
-    private double salePrice;
-    private double profit;
+    private String title;
+    private String buyerUsername;
 
-    @Enumerated(EnumType.STRING)
-    private ProductType productType;
+    private BigDecimal grossAmount; // Total buyer paid
+    private BigDecimal ebayFees;    // FVF, Ad fees, etc.
+    private BigDecimal shippingCost; // Your label cost
+    private BigDecimal netAmount;   // Final take-home
 
-    private Long productId; // polymorphic association between both products
+    private String imageUrl;
+    private String orderStatus; // PAID, SHIPPED, etc.
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 }

@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* HTMX Swap Transitions */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}

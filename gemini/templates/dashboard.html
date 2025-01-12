@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <button type="button"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cwz-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cwz-blue"
+                    hx-post="/api/sync/group1"
+                    hx-swap="none"
+                    onclick="alert('Sync started! Check logs for progress.')">
+                Sync Data
+            </button>
+        </div>
+
+        <!-- Financial Summary -->
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Financials</h2>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <!-- Total Spent -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Spent</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${'$' + #numbers.formatDecimal(totalSpent, 1, 2)}">$0.00</dd>
+                </div>
+            </div>
+
+            <!-- Net Lot Cost (Flip Cost) -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Net Lot Cost (Flip)</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${'$' + #numbers.formatDecimal(netLotCost, 1, 2)}">$0.00</dd>
+                    <p class="text-xs text-gray-400 mt-1">Cost after deducting keeps</p>
+                </div>
+            </div>
+
+            <!-- Total Sales -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Net Sales</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-cwz-green" th:text="${'$' + #numbers.formatDecimal(totalNet, 1, 2)}">$0.00</dd>
+                </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Net Profit (Flip)</dt>
+                    <dd class="mt-1 text-2xl font-semibold"
+                        th:classappend="${netProfit >= 0} ? 'text-cwz-green' : 'text-red-600'"
+                        th:text="${'$' + #numbers.formatDecimal(netProfit, 1, 2)}">$0.00</dd>
+                    <p class="text-xs text-gray-400 mt-1">Sales - Net Lot Cost</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Value -->
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Inventory Value</h2>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+            <!-- Value in Grading -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Value in Grading</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-cwz-blue" th:text="${'$' + #numbers.formatDecimal(valueInGrading, 1, 2)}">$0.00</dd>
+                    <p class="text-xs text-gray-400 mt-1">Raw market value</p>
+                </div>
+            </div>
+
+            <!-- Inventory Market Value -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Inventory Market Value</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${'$' + #numbers.formatDecimal(inventoryMarketValue, 1, 2)}">$0.00</dd>
+                </div>
+            </div>
+
+            <!-- Unrealized Profit -->
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Unrealized Profit</dt>
+                    <dd class="mt-1 text-2xl font-semibold"
+                        th:classappend="${unrealizedInventoryProfit >= 0} ? 'text-cwz-green' : 'text-red-600'"
+                        th:text="${'$' + #numbers.formatDecimal(unrealizedInventoryProfit, 1, 2)}">$0.00</dd>
+                    <p class="text-xs text-gray-400 mt-1">Market Value - Cost Basis</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unrealized Collection Value -->
+        <div class="bg-gradient-to-r from-cwz-green to-cwz-blue rounded-xl p-6 mb-8 text-white shadow-md">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium opacity-80 uppercase tracking-wider">Total Unrealized Value</p>
+                    <p class="text-4xl font-bold mt-1" th:text="${'$' + #numbers.formatDecimal(unrealizedValue, 1, 2)}">$0.00</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-full">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs mt-4 opacity-70 italic">* Total market value of all unsold tracked items (Collection + Inventory + Grading).</p>
+        </div>
+
+        <!-- Inventory Counts -->
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Inventory Counts</h2>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6 flex items-center">
+                    <div class="p-3 rounded-full bg-cwz-gold/10 text-cwz-gold mr-4">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Collection</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${collectionCount}">0</dd>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6 flex items-center">
+                    <div class="p-3 rounded-full bg-cwz-pink/10 text-cwz-pink mr-4">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Grading Pipeline</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${gradingCount}">0</dd>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:p-6 flex items-center">
+                    <div class="p-3 rounded-full bg-cwz-blue/10 text-cwz-blue mr-4">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Inventory</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-gray-900" th:text="${inventoryCount}">0</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

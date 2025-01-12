@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title layout:title-pattern="$CONTENT_TITLE - PokeWallet">PokeWallet</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cwz: {
+                            green: '#15884d',
+                            gray: '#e0dbd8',
+                            pink: '#d63b83',
+                            blue: '#11b2d6',
+                            gold: '#d5ad2d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="bg-cwz-gray/30 text-base text-gray-800">
+    <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-cwz-gray">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-2xl font-bold text-cwz-green tracking-tight">collectingwithzak</a>
+                    </div>
+                    <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+                        <a href="/lots" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-cwz-green hover:border-cwz-green transition-colors">Lots</a>
+                        <a href="/sales" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-cwz-blue hover:border-cwz-blue transition-colors">Sales</a>
+                        <a href="/grading" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-cwz-pink hover:border-cwz-pink transition-colors">Grading</a>
+                        <a href="/collection" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-cwz-gold hover:border-cwz-gold transition-colors">Collection</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-10">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white p-6 shadow-lg rounded-xl border border-cwz-gray/50">
+                <div layout:fragment="content">
+                    <!-- Content will be replaced -->
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

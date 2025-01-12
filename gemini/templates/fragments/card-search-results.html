@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <ul th:if="${!cards.isEmpty()}" class="divide-y divide-gray-200">
+        <li th:each="card : ${cards}" class="p-4 hover:bg-gray-50 cursor-pointer"
+            th:attr="data-pokemon-card-id=${card.id}">
+            <div class="flex items-center">
+                <img th:src="${card.imageUrl}" alt="Card Image" class="h-16 w-12 object-cover rounded-md">
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-900" th:text="${card.name}"></p>
+                    <p class="text-sm text-gray-500" th:text="${card.setName}"></p>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <div th:if="${cards.isEmpty()}" class="p-4 text-sm text-gray-500">
+        No cards found.
+    </div>
+</body>
+</html>

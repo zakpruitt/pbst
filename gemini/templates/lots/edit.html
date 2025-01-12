@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Edit Lot</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <form id="lotForm" th:action="@{/api/lots/{id}(id=${lot.id})}" method="post" class="space-y-8" onsubmit="prepareSnapshot()">
+        <input type="hidden" name="_method" value="put"/>
+        <input type="hidden" name="status" th:value="${lot.status}">
+
+        <!-- Header & Lot Details -->
+        <div class="bg-white border-b border-gray-200 pb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate">Edit Lot</h3>
+                    <p class="mt-1 text-sm text-gray-500" th:text="${'Editing offer: ' + lot.description}"></p>
+                </div>
+                <div class="text-right bg-green-50 px-4 py-2 rounded-lg border border-green-100">
+                    <p class="text-xs font-medium text-cwz-green uppercase tracking-wider">Total Offer</p>
+                    <p id="offer-price" class="text-3xl font-bold text-cwz-green" th:text="${'$' + #numbers.formatDecimal(lot.totalCost, 1, 2)}">$0.00</p>
+                    <input type="hidden" name="totalCost" id="hiddenTotalCost" th:value="${lot.totalCost}">
+                </div>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                <div class="sm:col-span-3">
+                    <label for="sellerName" class="block text-sm font-medium text-gray-700">Seller Name</label>
+                    <input type="text" name="description" id="sellerName" th:value="${lot.description}" required
+                           class="mt-1 shadow-sm focus:ring-cwz-green focus:border-cwz-green block w-full sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="sm:col-span-3">
+                    <label for="purchaseDate" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" name="purchaseDate" id="purchaseDate" th:value="${lot.purchaseDate}" required
+                           class="mt-1 shadow-sm focus:ring-cwz-green focus:border-cwz-green block w-full sm:text-sm border-gray-300 rounded-md">
+                </div>
+            </div>
+        </div>
+
+        <!-- Comping Sheet Section -->
+        <div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Comping Sheet</h3>
+
+            <!-- Comp List -->
+            <div id="comp-list" class="space-y-3 mt-4">
+                <!-- Pre-populated rows from snapshot -->
+                <div th:each="item, iterStat : ${snapshotItems}" th:replace="~{fragments/comp-item-row :: compItemRow(${iterStat.index}, ${item})}"></div>
+            </div>
+        </div>
+
+        <!-- Hidden Snapshot Field -->
+        <input type="hidden" name="lotContentSnapshot" id="lotContentSnapshot">
+
+        <!-- Footer Actions -->
+        <div class="pt-6 border-t border-gray-200 flex justify-end space-x-3">
+            <a th:href="@{/lots/{id}(id=${lot.id})}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cwz-green">Cancel</a>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-cwz-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cwz-green transition-all transform hover:scale-105">
+                Save Changes
+            </button>
+        </div>
+    </form>
+
+    <script>
+        let itemIndex = [[${snapshotItems.size()}]]; // Start index from the size of existing items
+        function getNextItemIndex() { return itemIndex++; }
+
+        function updateOfferPrice() {
+            let totalOffer = 0;
+            let totalMarket = 0;
+
+            document.querySelectorAll('.comp-item-wrapper').forEach(wrapper => {
+                const row = wrapper.querySelector('.comp-item-row');
+                const marketValue = parseFloat(row.querySelector('.market-value').value) || 0;
+                const percentage = parseFloat(row.querySelector('.percentage').value) || 100;
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 1;
+
+                const rowTotal = marketValue * (percentage / 100) * quantity;
+                const rowMarketTotal = marketValue * quantity;
+
+                row.querySelector('.row-total').innerText = '$' + rowTotal.toFixed(2);
+
+                const costBasisInput = row.querySelector('.cost-basis');
+                if (costBasisInput) {
+                    costBasisInput.value = (rowTotal / quantity).toFixed(2);
+                }
+
+                totalOffer += rowTotal;
+                totalMarket += rowMarketTotal;
+            });
+
+            document.getElementById('offer-price').innerText = '$' + totalOffer.toFixed(2);
+            document.getElementById('hiddenTotalCost').value = totalOffer.toFixed(2);
+            document.getElementById('hiddenEstimatedMarketValue').value = totalMarket.toFixed(2);
+        }
+
+        function prepareSnapshot() {
+            const snapshot = [];
+            document.querySelectorAll('.comp-item-wrapper').forEach(wrapper => {
+                const row = wrapper.querySelector('.comp-item-row');
+                const details = wrapper.querySelector('.details-row');
+
+                const item = {
+                    pokemonCardId: row.querySelector('input[name*="pokemonCardId"]').value,
+                    name: row.querySelector('input[name*="name"]').value,
+                    setName: row.querySelector('.snapshot-set').value,
+                    quantity: row.querySelector('.quantity').value,
+                    marketValue: row.querySelector('.market-value').value,
+                    percentage: row.querySelector('.percentage').value,
+                    itemType: row.querySelector('.item-type-select').value,
+                    isTracked: row.querySelector('.track-checkbox').checked,
+                    purpose: details.querySelector('select[name*="purpose"]').value,
+                    gradingCompany: details.querySelector('select[name*="gradingCompany"]').value,
+                    grade: details.querySelector('input[name*="grade"], select[name*="grade"]').value,
+                };
+                snapshot.push(item);
+            });
+            document.getElementById('lotContentSnapshot').value = JSON.stringify(snapshot);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateOfferPrice(); // Initial calculation on page load
+        });
+
+        document.getElementById('comp-list').addEventListener('input', function(e) {
+            if (e.target.classList.contains('market-value') ||
+                e.target.classList.contains('percentage') ||
+                e.target.classList.contains('quantity')) {
+                updateOfferPrice();
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

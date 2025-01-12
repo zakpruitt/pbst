@@ -1,6 +1,6 @@
 package com.zakpruitt.pbst.repositories;
 
-import com.zakpruitt.pbst.entities.Sale;
+import com.zakpruitt.pbst.entities.LotPurchase;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -8,8 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 
 @Repository
-public interface SaleRepository extends JpaRepository<Sale, Long> {
+public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
 
-    @Query("SELECT SUM(s.netAmount) FROM Sale s")
-    BigDecimal sumNetAmount();
+    @Query("SELECT SUM(l.totalCost) FROM LotPurchase l")
+    BigDecimal sumTotalCost();
+
 }

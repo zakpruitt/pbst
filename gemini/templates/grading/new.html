@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>New Grading Submission</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <form action="/api/grading-submissions" method="post" class="space-y-8 divide-y divide-gray-200">
+            <div class="space-y-8 divide-y divide-gray-200">
+                <div>
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">New Grading Submission</h3>
+                        <p class="mt-1 text-sm text-gray-500">Create a new submission and select items to send.</p>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <!-- Name is auto-generated -->
+
+                        <div class="sm:col-span-3">
+                            <label for="company" class="block text-sm font-medium text-gray-700"> Grading Company </label>
+                            <div class="mt-1">
+                                <select id="company" name="company" class="shadow-sm focus:ring-cwz-pink focus:border-cwz-pink block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="PSA">PSA</option>
+                                    <option value="BGS">BGS</option>
+                                    <option value="TAG">TAG</option>
+                                    <option value="CGC">CGC</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            <label for="submissionMethod" class="block text-sm font-medium text-gray-700"> Submission Method </label>
+                            <div class="mt-1">
+                                <input type="text" name="submissionMethod" id="submissionMethod" placeholder="e.g. GameStop, Self" required class="shadow-sm focus:ring-cwz-pink focus:border-cwz-pink block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            <label for="sendDate" class="block text-sm font-medium text-gray-700"> Send Date </label>
+                            <div class="mt-1">
+                                <input type="date" name="sendDate" id="sendDate" th:value="${today}" required class="shadow-sm focus:ring-cwz-pink focus:border-cwz-pink block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            <label for="totalGradingCost" class="block text-sm font-medium text-gray-700"> Estimated Cost </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">$</span>
+                                </div>
+                                <input type="number" step="0.01" name="totalGradingCost" id="totalGradingCost" class="pl-7 shadow-sm focus:ring-cwz-pink focus:border-cwz-pink block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Auto-calculated: ($25/card + 4.225% tax)</p>
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            <label for="notes" class="block text-sm font-medium text-gray-700"> Notes </label>
+                            <div class="mt-1">
+                                <textarea id="notes" name="notes" rows="3" class="shadow-sm focus:ring-cwz-pink focus:border-cwz-pink block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Optional notes about this submission..."></textarea>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="status" value="PREPARING">
+                    </div>
+                </div>
+
+                <div class="pt-8">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Select Items to Grade</h3>
+                        <p class="mt-1 text-sm text-gray-500">Select items from your "To Grade" inventory.</p>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex flex-col">
+                            <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                                        <table class="min-w-full divide-y divide-gray-300" id="itemsTable">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="relative w-12 px-6 sm:w-16 sm:px-8">
+                                                        <input type="checkbox" id="selectAll" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-cwz-pink focus:ring-cwz-pink sm:left-6">
+                                                    </th>
+                                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Item</th>
+                                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Set</th>
+                                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Cost Basis</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200 bg-white">
+                                                <tr th:each="item, iterStat : ${itemsToGrade}">
+                                                    <td class="relative w-12 px-6 sm:w-16 sm:px-8">
+                                                        <input type="checkbox" th:name="'items[' + ${iterStat.index} + '].id'" th:value="${item.id}" class="item-checkbox absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-cwz-pink focus:ring-cwz-pink sm:left-6">
+                                                    </td>
+                                                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                        <div class="flex items-center">
+                                                            <div class="h-10 w-8 flex-shrink-0 bg-gray-100 rounded overflow-hidden border border-gray-200 mr-3 relative">
+                                                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" class="w-full h-full object-cover">
+                                                                <div th:unless="${item.imageUrl}" class="w-full h-full flex items-center justify-center text-gray-300 text-[8px]">IMG</div>
+                                                            </div>
+                                                            <span th:text="${item.manualNameOverride ?: 'Unknown Item'}"></span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" th:text="${item.setName}"></td>
+                                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" th:text="${item.costBasis != null ? '$' + #numbers.formatDecimal(item.costBasis, 1, 2) : '-'}"></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p th:if="${#lists.isEmpty(itemsToGrade)}" class="mt-4 text-sm text-gray-500 italic text-center">No items marked as "To Grade". Go to your inventory to add some!</p>
+                    </div>
+                </div>
+
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <a href="/grading" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cwz-pink">Cancel</a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-cwz-pink hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cwz-pink">Create Submission</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const COST_PER_CARD = 25.00;
+        const TAX_RATE = 0.04225;
+
+        function updateEstimatedCost() {
+            const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+            const subtotal = checkedCount * COST_PER_CARD;
+            const total = subtotal * (1 + TAX_RATE);
+            document.getElementById('totalGradingCost').value = total.toFixed(2);
+        }
+
+        document.querySelectorAll('.item-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateEstimatedCost);
+        });
+
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+            });
+            updateEstimatedCost();
+        });
+    </script>
+</body>
+</html>

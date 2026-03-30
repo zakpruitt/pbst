@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E '\\\\.\\(go|mod|sum|yml|yaml|html|env\\)$')",
+      "Bash(go build:*)",
+      "Bash(go vet:*)",
+      "Bash(xargs grep:*)",
+      "Bash(find C:\\\\Users\\\\pruit\\\\Desktop\\\\dev\\\\pbst\\\\old-java-code\\\\src:*)",
+      "Bash(wc:*)",
+      "Bash(go get:*)"
+    ]
+  }
+}

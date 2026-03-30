@@ -1,0 +1,17 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pbst-db
+    environment:
+      POSTGRES_USER: pbstuser
+      POSTGRES_PASSWORD: pbstpassword
+      POSTGRES_DB: pbstdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pbst_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pbst_pgdata:

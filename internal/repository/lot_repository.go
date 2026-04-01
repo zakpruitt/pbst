@@ -1,0 +1,83 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/zakpruitt/pbst/internal/models"
+	"gorm.io/gorm"
+)
+
+type LotRepository struct {
+	db *gorm.DB
+}
+
+func NewLotRepository(db *gorm.DB) *LotRepository {
+	return &LotRepository{db: db}
+}
+
+func (r *LotRepository) CreateLot(ctx context.Context, lot *models.LotPurchase) error {
+	err := r.db.WithContext(ctx).Create(lot).Error
+	if err != nil {
+		return fmt.Errorf("CreateLot: %w", err)
+	}
+	return nil
+}
+
+func (r *LotRepository) GetAllLots(ctx context.Context) ([]models.LotPurchase, error) {
+	var lots []models.LotPurchase
+	err := r.db.WithContext(ctx).Find(&lots).Error
+	if err != nil {
+		return nil, fmt.Errorf("GetAllLots: %w", err)
+	}
+	return lots, nil
+}
+
+func (r *LotRepository) GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error) {
+	var lot models.LotPurchase
+	err := r.db.WithContext(ctx).First(&lot, id).Error
+	if err != nil {
+		return nil, fmt.Errorf("GetLotByID: %w", err)
+	}
+	return &lot, nil
+}
+
+func (r *LotRepository) GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error) {
+	var lot models.LotPurchase
+	err := r.db.WithContext(ctx).
+		Preload("TrackedItems").
+		Preload("TrackedItems.PokemonCard").
+		First(&lot, id).Error
+	if err != nil {
+		return nil, fmt.Errorf("GetLotWithItems: %w", err)
+	}
+	return &lot, nil
+}
+
+func (r *LotRepository) UpdateLot(ctx context.Context, lot *models.LotPurchase) error {
+	err := r.db.WithContext(ctx).Save(lot).Error
+	if err != nil {
+		return fmt.Errorf("UpdateLot: %w", err)
+	}
+	return nil
+}
+
+func (r *LotRepository) UpdateStatus(ctx context.Context, id uint, status string) error {
+	err := r.db.WithContext(ctx).Model(&models.LotPurchase{}).Where("id = ?", id).Update("status", status).Error
+	if err != nil {
+		return fmt.Errorf("UpdateStatus: %w", err)
+	}
+	return nil
+}
+
+func (r *LotRepository) GetTotalCostNonRejected(ctx context.Context) (float64, error) {
+	var total float64
+	err := r.db.WithContext(ctx).Model(&models.LotPurchase{}).
+		Where("status != ?", "REJECTED").
+		Select("COALESCE(SUM(total_cost), 0)").
+		Scan(&total).Error
+	if err != nil {
+		return 0, fmt.Errorf("GetTotalCostNonRejected: %w", err)
+	}
+	return total, nil
+}

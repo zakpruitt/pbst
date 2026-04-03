@@ -1,0 +1,87 @@
+{{define "content"}}
+<a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">← Grading</a>
+<h4 class="mb-4">New Submission</h4>
+
+<form method="POST" action="/grading">
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Submission Details</h6>
+      <div class="row g-2">
+        <div class="col-sm-4">
+          <label class="form-label small text-muted mb-1">Grading Company</label>
+          <select name="company" class="form-select form-select-sm" required>
+            <option value="PSA">PSA</option>
+            <option value="BGS">BGS</option>
+            <option value="CGC">CGC</option>
+            <option value="TAG">TAG</option>
+          </select>
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label small text-muted mb-1">Submission Method</label>
+          <input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Select Items to Include</span>
+      <small class="text-muted fw-normal">Items from your To Grade inventory</small>
+    </div>
+    {{if not .Unattached}}
+    <div class="card-body text-muted">
+      No items in your To Grade inventory yet.
+      <a href="/inventory?purpose=PENDING_GRADE">Check inventory</a> or
+      <a href="/lots/new">add a lot</a> with cards marked "To Grade".
+    </div>
+    {{else}}
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:2rem">
+            <input type="checkbox" class="form-check-input" id="select-all"
+              onchange="document.querySelectorAll('.item-cb').forEach(cb => cb.checked = this.checked)">
+          </th>
+          <th>Card</th>
+          <th>Set</th>
+          <th class="text-end">Cost Basis</th>
+          <th class="text-end">Market</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Unattached}}
+        <tr>
+          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input item-cb"></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+              {{end}}{{end}}
+              <span class="fw-medium">
+                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                {{else}}Unnamed{{end}}
+              </span>
+            </div>
+          </td>
+          <td class="text-muted small align-middle">
+            {{if .PokemonCard}}{{.PokemonCard.SetName}}<br>#{{.PokemonCard.CardNumber}} · {{.PokemonCard.Rarity}}{{end}}
+          </td>
+          <td class="text-end align-middle">{{fmtMoney .CostBasis}}</td>
+          <td class="text-end align-middle text-muted">
+            {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center">
+    <span class="text-muted small">Submission name is auto-generated (e.g. PSA Submission #1)</span>
+    <button type="submit" class="btn btn-success">Create Submission</button>
+  </div>
+</form>
+{{end}}

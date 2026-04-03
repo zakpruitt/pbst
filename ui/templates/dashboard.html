@@ -1,0 +1,148 @@
+{{define "content"}}
+<h4 class="mb-4">Dashboard</h4>
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Total Spent</p>
+        <h5 class="mb-0">{{fmtMoney .TotalSpent}}</h5>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Total Gross</p>
+        <h5 class="mb-0">{{fmtMoney .TotalGross}}</h5>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Total Net</p>
+        <h5 class="mb-0">{{fmtMoney .TotalNet}}</h5>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Margin</p>
+        <h5 class="mb-0 {{if lt .Margin 0.0}}text-danger{{else}}text-success{{end}}">{{fmtMoney .Margin}}</h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-header">Financials</div>
+      <div class="card-body d-flex align-items-center">
+        <canvas id="financialChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header">Inventory</div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="inventoryChart" style="max-height:220px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const accent  = '#1db954';
+  const muted   = '#536471';
+  const danger  = '#dc3545';
+  const blue    = '#0d6efd';
+  const border  = '#e1e8ed';
+
+  Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = muted;
+
+  // Financial bar chart
+  new Chart(document.getElementById('financialChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Spent', 'Gross', 'Net'],
+      datasets: [{
+        data: [{{.TotalSpent}}, {{.TotalGross}}, {{.TotalNet}}],
+        backgroundColor: [
+          'rgba(220,53,69,0.75)',
+          'rgba(13,110,253,0.75)',
+          'rgba(29,185,84,0.75)',
+        ],
+        borderColor: [danger, blue, accent],
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' $' + ctx.parsed.y.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: border } },
+        y: {
+          grid: { color: border },
+          ticks: { callback: v => '$' + v.toFixed(0) }
+        }
+      }
+    }
+  });
+
+  // Inventory doughnut
+  const pcCount      = {{.PCCount}};
+  const gradingCount = {{.GradingCount}};
+  const invCount     = {{.InventoryCount}};
+  const total        = pcCount + gradingCount + invCount;
+
+  new Chart(document.getElementById('inventoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Collection', 'In Grading', 'Graded'],
+      datasets: [{
+        data: [pcCount, gradingCount, invCount],
+        backgroundColor: [
+          'rgba(29,185,84,0.8)',
+          'rgba(255,193,7,0.8)',
+          'rgba(13,110,253,0.8)',
+        ],
+        borderColor: ['#fff','#fff','#fff'],
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+              return ` ${ctx.parsed} items (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
+{{end}}

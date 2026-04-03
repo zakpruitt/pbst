@@ -1,0 +1,46 @@
+{{define "content"}}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">Lots</h4>
+  <a href="/lots/new" class="btn btn-success btn-sm">+ New Lot</a>
+</div>
+
+{{template "lots-list" .}}
+{{end}}
+
+{{define "lots-list"}}
+<div id="lots-list">
+  {{if not .Lots}}
+  <p class="text-muted">No lots yet. <a href="/lots/new">Add one</a>.</p>
+  {{else}}
+  <table class="table table-hover bg-white">
+    <thead class="table-light">
+      <tr>
+        <th>Seller</th>
+        <th>Date</th>
+        <th class="text-end">Cost</th>
+        <th class="text-end">EMV</th>
+        <th class="text-center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Lots}}
+      <tr style="cursor:pointer" onclick="window.location='/lots/{{.ID}}'">
+        <td>
+          <span class="fw-medium">{{.SellerName}}</span>
+          {{if .Description}}<br><small class="text-muted">{{.Description}}</small>{{end}}
+        </td>
+        <td class="text-muted">{{fmtDate .PurchaseDate}}</td>
+        <td class="text-end">{{fmtMoney .TotalCost}}</td>
+        <td class="text-end text-muted">
+          {{if .EstimatedMarketValue}}{{fmtMoney .EstimatedMarketValue}}{{else}}—{{end}}
+        </td>
+        <td class="text-center">
+          <span class="badge {{statusClass .Status}}">{{.Status}}</span>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,101 @@
+{{define "content"}}
+<h4 class="mb-4">Inventory</h4>
+
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {{if eq .Purpose "PERSONAL_COLLECTION"}}active{{end}}"
+       href="/inventory?purpose=PERSONAL_COLLECTION"
+       hx-get="/inventory?purpose=PERSONAL_COLLECTION"
+       hx-target="#inventory-list"
+       hx-swap="outerHTML"
+       hx-push-url="true">Collection</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{if eq .Purpose "PENDING_GRADE"}}active{{end}}"
+       href="/inventory?purpose=PENDING_GRADE"
+       hx-get="/inventory?purpose=PENDING_GRADE"
+       hx-target="#inventory-list"
+       hx-swap="outerHTML"
+       hx-push-url="true">To Grade</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{if eq .Purpose "IN_GRADING"}}active{{end}}"
+       href="/inventory?purpose=IN_GRADING"
+       hx-get="/inventory?purpose=IN_GRADING"
+       hx-target="#inventory-list"
+       hx-swap="outerHTML"
+       hx-push-url="true">In Grading</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{if eq .Purpose "GRADED_INVENTORY"}}active{{end}}"
+       href="/inventory?purpose=GRADED_INVENTORY"
+       hx-get="/inventory?purpose=GRADED_INVENTORY"
+       hx-target="#inventory-list"
+       hx-swap="outerHTML"
+       hx-push-url="true">Graded Inventory</a>
+  </li>
+</ul>
+
+{{template "inventory-list" .}}
+{{end}}
+
+{{define "inventory-list"}}
+<div id="inventory-list">
+  {{if not .Items}}
+  <p class="text-muted">No items in this category.</p>
+  {{else}}
+  <table class="table table-hover bg-white">
+    <thead class="table-light">
+      <tr>
+        <th>Item</th>
+        <th>Set</th>
+        <th class="text-end">Cost Basis</th>
+        <th class="text-end">Market</th>
+        <th class="text-center">Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Items}}
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+            <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+            {{end}}{{end}}
+            <div>
+              {{if .ManualNameOverride.Valid}}
+              <span class="fw-medium">{{.ManualNameOverride.String}}</span>
+              {{else if .PokemonCard}}
+              <span class="fw-medium">{{.PokemonCard.Name}}</span>
+              {{else if .SealedProduct}}
+              <span class="fw-medium">{{.SealedProduct.Name}}</span>
+              {{else}}
+              <span class="text-muted fst-italic">Unnamed</span>
+              {{end}}
+              <br><small class="text-muted">{{fmtDate .AcquisitionDate}}</small>
+            </div>
+          </div>
+        </td>
+        <td class="text-muted small">
+          {{if .PokemonCard}}
+          {{.PokemonCard.SetName}}<br>#{{.PokemonCard.CardNumber}} · {{.PokemonCard.Rarity}}
+          {{else if .SealedProduct}}
+          {{.SealedProduct.SetName}}
+          {{else}}—{{end}}
+        </td>
+        <td class="text-end">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end text-muted">
+          {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
+        </td>
+        <td class="text-center">
+          {{if .GradedDetails}}{{if .GradedDetails.Grade}}
+          <span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+          {{else}}—{{end}}{{else}}—{{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</div>
+{{end}}

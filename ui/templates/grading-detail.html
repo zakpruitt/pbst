@@ -1,0 +1,224 @@
+{{define "content"}}
+<div class="d-flex align-items-center gap-2 mb-1">
+  <a href="/grading" class="text-muted text-decoration-none small">← Grading</a>
+</div>
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h4 class="mb-1">{{.Submission.SubmissionName}}</h4>
+    <small class="text-muted">
+      {{.Submission.Company}}
+      {{if .Submission.SubmissionMethod}} · {{.Submission.SubmissionMethod}}{{end}}
+      {{if .Submission.SendDate.Valid}} · Sent {{fmtDate .Submission.SendDate.Time}}{{end}}
+      {{if .Submission.ReturnDate.Valid}} · Returned {{fmtDate .Submission.ReturnDate.Time}}{{end}}
+      {{if .Submission.TotalGradingCost}} · Total cost {{fmtMoney .Submission.TotalGradingCost}}{{end}}
+    </small>
+  </div>
+  <span class="badge {{statusClass .Submission.Status}} fs-6">{{.Submission.Status}}</span>
+</div>
+
+{{if eq .Submission.Status "PREPPING"}}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Attach Items</span>
+        <small class="text-muted">PENDING_GRADE inventory not yet in a submission</small>
+      </div>
+      {{if not .Unattached}}
+      <div class="card-body text-muted">No unattached items to grade.</div>
+      {{else}}
+      <form method="POST" action="/grading/{{.Submission.ID}}/items">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:2rem"></th>
+              <th>Name</th>
+              <th>Set</th>
+              <th>Card #</th>
+              <th class="text-end">Cost Basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Unattached}}
+            <tr>
+              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input"></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                  <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+                  {{end}}{{end}}
+                  <span>
+                    {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                    {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                    {{else}}Unnamed{{end}}
+                  </span>
+                </div>
+              </td>
+              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
+              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
+              <td class="text-end">{{fmtMoney .CostBasis}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        <div class="card-footer d-flex justify-content-end">
+          <button type="submit" class="btn btn-sm btn-primary">Attach Selected</button>
+        </div>
+      </form>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Attached Items</span>
+        <span class="badge bg-secondary">{{len .Submission.Items}}</span>
+      </div>
+      {{if not .Submission.Items}}
+      <div class="card-body text-muted">No items attached yet.</div>
+      {{else}}
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Set</th>
+            <th class="text-end">Cost Basis</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Submission.Items}}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+                {{end}}{{end}}
+                <span>
+                  {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                  {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                  {{else}}Unnamed{{end}}
+                </span>
+              </div>
+            </td>
+            <td class="text-muted small">
+              {{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}
+            </td>
+            <td class="text-end">{{fmtMoney .CostBasis}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{end}}
+    </div>
+
+    {{if .Submission.Items}}
+    <div class="mt-3 d-flex justify-content-end">
+      <form method="POST" action="/grading/{{.Submission.ID}}/advance">
+        <input type="hidden" name="new_status" value="IN_TRANSIT">
+        <button type="submit" class="btn btn-secondary">Mark Sent</button>
+      </form>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+{{else if eq .Submission.Status "IN_TRANSIT"}}
+<div class="card">
+  <div class="card-header">Record Grades</div>
+  {{if not .Submission.Items}}
+  <div class="card-body text-muted">No items in this submission.</div>
+  {{else}}
+  <form method="POST" action="/grading/{{.Submission.ID}}/return">
+    {{range .Submission.Items}}
+    <input type="hidden" name="item_ids" value="{{.ID}}">
+    {{end}}
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th>
+          <th>Set</th>
+          <th>Card #</th>
+          <th>Grade</th>
+          <th>Upcharge ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Submission.Items}}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+              {{end}}{{end}}
+              <span>
+                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                {{else}}Unnamed{{end}}
+              </span>
+            </div>
+          </td>
+          <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
+          <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
+          <td><input type="text" name="grade_{{.ID}}" class="form-control form-control-sm" placeholder="e.g. 9" style="width:90px"></td>
+          <td><input type="number" name="upcharge_{{.ID}}" step="0.01" min="0" value="0" class="form-control form-control-sm" style="width:100px"></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    <div class="card-footer d-flex justify-content-end">
+      <button type="submit" class="btn btn-success">Record Return</button>
+    </div>
+  </form>
+  {{end}}
+</div>
+
+{{else}}
+<div class="card">
+  <div class="card-header">Items</div>
+  {{if not .Submission.Items}}
+  <div class="card-body text-muted">No items.</div>
+  {{else}}
+  <table class="table table-sm mb-0">
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Set</th>
+        <th>Card #</th>
+        <th>Grade</th>
+        <th class="text-end">Upcharge</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Submission.Items}}
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+            <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+            {{end}}{{end}}
+            <span>
+              {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+              {{else if .PokemonCard}}{{.PokemonCard.Name}}
+              {{else}}Unnamed{{end}}
+            </span>
+          </div>
+        </td>
+        <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
+        <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
+        <td>
+          {{if .GradedDetails}}{{if .GradedDetails.Grade}}
+          <span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+          {{else}}—{{end}}{{else}}—{{end}}
+        </td>
+        <td class="text-end">
+          {{if .GradedDetails}}{{if .GradedDetails.GradingUpcharge}}{{fmtMoney .GradedDetails.GradingUpcharge}}{{else}}—{{end}}{{else}}—{{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</div>
+{{end}}
+{{end}}

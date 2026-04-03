@@ -1,0 +1,74 @@
+{{define "content"}}
+<h4 class="mb-4">Sales</h4>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h6 class="card-title mb-3">Record Sale</h6>
+    <form hx-post="/sales" hx-target="#sales-list" hx-swap="outerHTML"
+          hx-on::after-request="if(event.detail.successful) this.reset()">
+      <div class="row g-2">
+        <div class="col-12">
+          <input name="title" class="form-control form-control-sm" placeholder="Item name / title" required>
+        </div>
+        <div class="col-sm-6">
+          <input name="sale_date" type="date" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-sm-6">
+          <input name="ebay_order_id" class="form-control form-control-sm" placeholder="eBay order ID (optional)">
+        </div>
+        <div class="col-sm-4">
+          <input name="gross_amount" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Gross" required>
+        </div>
+        <div class="col-sm-4">
+          <input name="ebay_fees" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Fees" value="0">
+        </div>
+        <div class="col-sm-4">
+          <input name="shipping_cost" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Shipping" value="0">
+        </div>
+        <div class="col-sm-6">
+          <input name="buyer_username" class="form-control form-control-sm" placeholder="Buyer username (optional)">
+        </div>
+        <div class="col-sm-6 d-flex align-items-end">
+          <button type="submit" class="btn btn-success btn-sm">Record Sale</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{template "sales-list" .}}
+{{end}}
+
+{{define "sales-list"}}
+<div id="sales-list">
+  {{if not .Sales}}
+  <p class="text-muted">No sales yet.</p>
+  {{else}}
+  <table class="table table-hover bg-white">
+    <thead class="table-light">
+      <tr>
+        <th>Item</th>
+        <th>Date</th>
+        <th class="text-end">Gross</th>
+        <th class="text-end">Fees</th>
+        <th class="text-end">Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Sales}}
+      <tr>
+        <td>
+          <span class="fw-medium">{{.Title}}</span>
+          {{if .BuyerUsername}}<br><small class="text-muted">{{.BuyerUsername}}</small>{{end}}
+        </td>
+        <td class="text-muted">{{fmtDate .SaleDate}}</td>
+        <td class="text-end">{{fmtMoney .GrossAmount}}</td>
+        <td class="text-end text-muted">{{if .EbayFees}}{{fmtMoney .EbayFees}}{{else}}—{{end}}</td>
+        <td class="text-end fw-semibold text-success">{{fmtMoney .NetAmount}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</div>
+{{end}}

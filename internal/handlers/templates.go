@@ -15,6 +15,12 @@ var viewFuncs = template.FuncMap{
 		}
 		return t.Format("Jan 2, 2006")
 	},
+	"fmtDateInput": func(t time.Time) string {
+		if t.IsZero() {
+			return ""
+		}
+		return t.Format("2006-01-02")
+	},
 	"fmtMoney": func(f float64) string {
 		return fmt.Sprintf("$%.2f", f)
 	},

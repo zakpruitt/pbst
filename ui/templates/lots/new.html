@@ -164,10 +164,10 @@
             <input type="hidden" class="row-rarity"      value="${esc(data.rarity || '')}">
             <input type="hidden" class="row-image-url"   value="${esc(data.image_url || '')}">
 
-            <div class="d-flex" style="min-height:110px">
+            <div class="d-flex">
 
                 {{/* Image panel: 35% wide, full height */}}
-                <div style="width:35%;flex-shrink:0;background:#f8f9fa;border-right:1px solid #e1e8ed;padding:6px">
+                <div style="width:25%;flex-shrink:0;background:#f8f9fa;border-right:1px solid #e1e8ed;padding:6px">
                     ${imgInner}
                 </div>
 
@@ -176,7 +176,7 @@
 
                     {{/* Row 1: short name | type | remove */}}
                     <div class="d-flex gap-1 align-items-center">
-                        <input class="form-control form-control-sm row-name" style="width:22%;min-width:80px"
+                        <input class="form-control form-control-sm row-name" style="flex:1;min-width:0"
                                value="${esc(data.name || '')}" placeholder="Name">
                         <select class="form-select form-select-sm row-type" style="width:110px;flex-shrink:0" onchange="onTypeChange(this)">
                             <option value="RAW_CARD"       ${!isGraded && !isSealed ? 'selected' : ''}>Raw Card</option>

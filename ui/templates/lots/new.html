@@ -53,6 +53,8 @@
             <span>Buying <strong id="total-display" class="text-success">$0.00</strong></span>
             <span>Tracked EMV <strong id="tracked-emv-display" class="text-body">$0.00</strong></span>
             <span>Untracked EMV <strong id="untracked-emv-display" class="text-body">$0.00</strong></span>
+            <span>Est. Flip <strong id="flip-display" class="text-body">$0.00</strong>
+                <span class="text-muted" style="font-size:.7rem">(after 12% fees)</span></span>
             <button type="submit" class="btn btn-success btn-sm ms-auto">Save Lot</button>
         </div>
     </div>
@@ -137,94 +139,98 @@
 
     function buildRow(data) {
         const el        = document.createElement('div');
-        el.className    = 'item-row card p-3 mb-2';
+        el.className    = 'item-row card p-2 mb-2';
         const isGraded  = data.item_type === 'GRADED_CARD';
         const isSealed  = data.item_type === 'SEALED_PRODUCT';
         const isTracked = !!data.is_tracked;
         const purpose   = data.purpose || '';
 
         const thumbHtml = data.image_url
-            ? `<img src="${esc(data.image_url)}" class="card-thumb" data-card-img="${esc(data.image_url)}">`
-            : '<div style="width:56px;height:80px;border-radius:4px;background:#f0f0f0;flex-shrink:0"></div>';
+            ? `<img src="${esc(data.image_url)}" class="card-thumb" data-card-img="${esc(data.image_url)}" style="flex-shrink:0">`
+            : `<div style="width:56px;height:80px;border-radius:4px;background:#e9ecef;flex-shrink:0"></div>`;
 
-        const setInfoHtml = (data.set_name || data.card_number)
-            ? `<div class="text-muted small mt-1">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
+        const setInfo = (data.set_name || data.card_number)
+            ? `<div class="text-muted" style="font-size:.78rem;margin-top:2px">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
             : '';
 
         el.innerHTML = `
-            {{/* Hidden fields captured on submit */}}
             <input type="hidden" class="row-card-id"     value="${esc(data.pokemon_card_id || '')}">
             <input type="hidden" class="row-set-name"    value="${esc(data.set_name || '')}">
             <input type="hidden" class="row-card-number" value="${esc(data.card_number || '')}">
             <input type="hidden" class="row-rarity"      value="${esc(data.rarity || '')}">
             <input type="hidden" class="row-image-url"   value="${esc(data.image_url || '')}">
 
-            {{/* Top section: image | name/set/type/track | remove */}}
-            <div class="d-flex gap-3 align-items-start">
+            <div class="d-flex gap-2 align-items-start">
                 ${thumbHtml}
                 <div class="flex-grow-1" style="min-width:0">
-                    <div class="d-flex align-items-start gap-2 mb-1">
-                        <input class="form-control form-control-sm row-name flex-grow-1"
+
+                    {{/* Line 1: name | type | remove */}}
+                    <div class="d-flex gap-1 align-items-center mb-1">
+                        <input class="form-control form-control-sm row-name" style="min-width:0"
                                value="${esc(data.name || '')}" placeholder="Item name">
-                        <button type="button" onclick="removeRow(this)"
-                                class="btn btn-sm btn-outline-danger px-2 py-0" style="flex-shrink:0">✕</button>
-                    </div>
-                    ${setInfoHtml}
-                    <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-                        <select class="form-select form-select-sm row-type" style="width:130px" onchange="onTypeChange(this)">
+                        <select class="form-select form-select-sm row-type" style="width:120px;flex-shrink:0" onchange="onTypeChange(this)">
                             <option value="RAW_CARD"       ${!isGraded && !isSealed ? 'selected' : ''}>Raw Card</option>
-                            <option value="GRADED_CARD"    ${isGraded ? 'selected' : ''}>Graded Card</option>
+                            <option value="GRADED_CARD"    ${isGraded ? 'selected' : ''}>Graded</option>
                             <option value="SEALED_PRODUCT" ${isSealed ? 'selected' : ''}>Sealed</option>
                         </select>
-                        <label class="d-flex align-items-center gap-1 text-muted small mb-0">
+                        <button type="button" onclick="removeRow(this)"
+                                class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0">✕</button>
+                    </div>
+
+                    {{/* Line 2: set info + track */}}
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        ${setInfo}
+                        <label class="d-flex align-items-center gap-1 text-muted mb-0" style="font-size:.8rem;margin-left:auto">
                             <input type="checkbox" class="form-check-input row-track"
                                    onchange="togglePurpose(this)" ${isTracked ? 'checked' : ''}>
                             Track
                         </label>
-                        <select class="form-select form-select-sm row-purpose" style="width:160px;${isTracked ? '' : 'display:none'}">
+                        <select class="form-select form-select-sm row-purpose" style="width:150px;${isTracked ? '' : 'display:none'}">
                             <option value="PERSONAL_COLLECTION" ${purpose === 'PERSONAL_COLLECTION' ? 'selected' : ''}>Collection</option>
                             <option value="IN_GRADING"          ${purpose === 'IN_GRADING'          ? 'selected' : ''}>In Grading</option>
                             <option value="GRADED_INVENTORY"    ${purpose === 'GRADED_INVENTORY'    ? 'selected' : ''}>Graded Inventory</option>
                         </select>
                     </div>
+
                 </div>
             </div>
 
-            {{/* Graded fields (visible only when GRADED_CARD) */}}
-            <div class="row-graded-fields d-flex gap-2 mt-2 align-items-center" style="${isGraded ? '' : 'display:none'}">
-                <span class="text-muted small text-nowrap">Company</span>
-                <select class="form-select form-select-sm row-grading-company" style="width:90px">
-                    <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
-                    <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
-                    <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
-                    <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
-                </select>
-                <span class="text-muted small text-nowrap">Grade</span>
-                <input type="text" class="form-control form-control-sm row-grade"
-                       style="width:70px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
+            {{/* Graded fields — wrapper div hides/shows; inner div uses flex */}}
+            <div class="row-graded-fields" style="${isGraded ? '' : 'display:none'}">
+                <div class="d-flex gap-2 align-items-center mt-2">
+                    <span class="text-muted small text-nowrap">Company</span>
+                    <select class="form-select form-select-sm row-grading-company" style="width:90px">
+                        <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
+                        <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
+                        <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
+                        <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
+                    </select>
+                    <span class="text-muted small text-nowrap">Grade</span>
+                    <input type="text" class="form-control form-control-sm row-grade"
+                           style="width:70px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
+                </div>
             </div>
 
-            {{/* Pricing row: labelled columns */}}
-            <hr class="my-2">
-            <div class="d-flex gap-3 align-items-end flex-wrap">
+            {{/* Pricing row */}}
+            <div class="d-flex gap-3 align-items-end flex-wrap mt-2 pt-2 border-top">
                 <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">Qty</span>
+                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">Qty</span>
                     <input type="number" class="form-control form-control-sm row-qty text-end"
-                           style="width:64px" value="${data.qty || 1}" min="1" oninput="recalcRow(this)">
+                           style="width:60px" value="${data.qty || 1}" min="1" oninput="recalcRow(this)">
                 </div>
                 <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">Market $</span>
+                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">Market $</span>
                     <input type="number" class="form-control form-control-sm row-market text-end"
-                           style="width:90px" step="0.01" value="${(data.market_price || 0).toFixed(2)}" oninput="recalcRow(this)">
+                           style="width:88px" step="0.01" value="${(data.market_price || 0).toFixed(2)}" oninput="recalcRow(this)">
                 </div>
                 <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">%</span>
+                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">%</span>
                     <input type="number" class="form-control form-control-sm row-pct text-end"
-                           style="width:64px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
+                           style="width:60px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
                 </div>
                 <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em">→ Offered</span>
-                    <strong class="text-success row-offered" style="line-height:2">$0.00</strong>
+                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">→ Offered</span>
+                    <strong class="text-success row-offered" style="line-height:2.1">$0.00</strong>
                 </div>
             </div>`;
 
@@ -280,12 +286,11 @@
         const market  = parseFloat(row.querySelector('.row-market').value) || 0;
         const qty     = parseInt(row.querySelector('.row-qty').value)      || 1;
         const pct     = parseFloat(row.querySelector('.row-pct').value)    || 0;
-        const offered = market * qty * (pct / 100);
-        row.querySelector('.row-offered').textContent = '$' + offered.toFixed(2);
+        row.querySelector('.row-offered').textContent = '$' + (market * qty * (pct / 100)).toFixed(2);
     }
 
     function recalcTotal() {
-        let totalEmv = 0, totalBuying = 0, trackedEmv = 0;
+        let totalEmv = 0, totalBuying = 0, trackedEmv = 0, untrackedBuying = 0;
 
         itemsList.querySelectorAll('.item-row').forEach(row => {
             const market  = parseFloat(row.querySelector('.row-market').value) || 0;
@@ -297,13 +302,23 @@
 
             totalEmv    += emv;
             totalBuying += offered;
-            if (tracked) trackedEmv += emv;
+            if (tracked) {
+                trackedEmv += emv;
+            } else {
+                untrackedBuying += offered;
+            }
         });
+
+        const untrackedEmv  = totalEmv - trackedEmv;
+        const estFlip       = (untrackedEmv * 0.88) - untrackedBuying;
 
         document.getElementById('emv-display').textContent          = '$' + totalEmv.toFixed(2);
         document.getElementById('total-display').textContent         = '$' + totalBuying.toFixed(2);
         document.getElementById('tracked-emv-display').textContent   = '$' + trackedEmv.toFixed(2);
-        document.getElementById('untracked-emv-display').textContent = '$' + (totalEmv - trackedEmv).toFixed(2);
+        document.getElementById('untracked-emv-display').textContent = '$' + untrackedEmv.toFixed(2);
+        const flipEl = document.getElementById('flip-display');
+        flipEl.textContent = '$' + estFlip.toFixed(2);
+        flipEl.className   = estFlip >= 0 ? 'text-success' : 'text-danger';
     }
 
     // ── Submit: serialize rows into snapshot JSON ─────────────────────────────

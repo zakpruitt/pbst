@@ -53,7 +53,8 @@
             <span>Tracked EMV <strong id="tracked-emv-display" class="text-body">$0.00</strong></span>
             <span>Untracked EMV <strong id="untracked-emv-display" class="text-body">$0.00</strong></span>
             <span>Est. Flip <strong id="flip-display" class="text-body">$0.00</strong>
-                <span class="text-muted" style="font-size:.7rem">(after 12% fees)</span></span>
+                <span class="text-muted" style="font-size:.7rem">(−12% fees)</span></span>
+            <span>Est. Flip (gross) <strong id="flip-gross-display" class="text-body">$0.00</strong></span>
             <button type="submit" class="btn btn-success btn-sm ms-auto">Save Changes</button>
         </div>
     </div>
@@ -142,18 +143,19 @@
 
     function buildRow(data) {
         const el        = document.createElement('div');
-        el.className    = 'item-row card p-2 mb-2';
+        el.className    = 'item-row card mb-2';
         const isGraded  = data.item_type === 'GRADED_CARD';
         const isSealed  = data.item_type === 'SEALED_PRODUCT';
         const isTracked = !!data.is_tracked;
-        const purpose   = data.purpose || '';
+        const purpose   = data.purpose || (isTracked ? 'GRADED_INVENTORY' : '');
 
-        const thumbHtml = data.image_url
-            ? `<img src="${esc(data.image_url)}" class="card-thumb" data-card-img="${esc(data.image_url)}" style="flex-shrink:0">`
-            : `<div style="width:56px;height:80px;border-radius:4px;background:#e9ecef;flex-shrink:0"></div>`;
+        const imgInner = data.image_url
+            ? `<img src="${esc(data.image_url)}" data-card-img="${esc(data.image_url)}"
+                    style="width:100%;height:100%;object-fit:contain">`
+            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#adb5bd;font-size:.7rem">No image</div>`;
 
         const setInfo = (data.set_name || data.card_number)
-            ? `<div class="text-muted" style="font-size:.78rem;margin-top:2px">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
+            ? `<div class="text-muted" style="font-size:.75rem;margin-top:2px">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
             : '';
 
         el.innerHTML = `
@@ -163,77 +165,84 @@
             <input type="hidden" class="row-rarity"      value="${esc(data.rarity || '')}">
             <input type="hidden" class="row-image-url"   value="${esc(data.image_url || '')}">
 
-            <div class="d-flex gap-2 align-items-start">
-                ${thumbHtml}
-                <div class="flex-grow-1" style="min-width:0">
+            <div class="d-flex" style="min-height:110px">
 
-                    {{/* Line 1: name | type | remove */}}
-                    <div class="d-flex gap-1 align-items-center mb-1">
-                        <input class="form-control form-control-sm row-name" style="min-width:0"
-                               value="${esc(data.name || '')}" placeholder="Item name">
-                        <select class="form-select form-select-sm row-type" style="width:120px;flex-shrink:0" onchange="onTypeChange(this)">
+                {{/* Image panel: 35% wide, full height */}}
+                <div style="width:35%;flex-shrink:0;background:#f8f9fa;border-right:1px solid #e1e8ed;padding:6px">
+                    ${imgInner}
+                </div>
+
+                {{/* Content panel: remaining 65% */}}
+                <div style="flex:1;min-width:0;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+
+                    {{/* Row 1: short name | type | remove */}}
+                    <div class="d-flex gap-1 align-items-center">
+                        <input class="form-control form-control-sm row-name" style="width:22%;min-width:80px"
+                               value="${esc(data.name || '')}" placeholder="Name">
+                        <select class="form-select form-select-sm row-type" style="width:110px;flex-shrink:0" onchange="onTypeChange(this)">
                             <option value="RAW_CARD"       ${!isGraded && !isSealed ? 'selected' : ''}>Raw Card</option>
-                            <option value="GRADED_CARD"    ${isGraded ? 'selected' : ''}>Graded</option>
-                            <option value="SEALED_PRODUCT" ${isSealed ? 'selected' : ''}>Sealed</option>
+                            <option value="GRADED_CARD"    ${isGraded  ? 'selected' : ''}>Graded Card</option>
+                            <option value="SEALED_PRODUCT" ${isSealed  ? 'selected' : ''}>Sealed</option>
                         </select>
                         <button type="button" onclick="removeRow(this)"
-                                class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0">✕</button>
+                                class="btn btn-sm btn-outline-danger px-2 ms-auto" style="flex-shrink:0">✕</button>
                     </div>
 
-                    {{/* Line 2: set info + track */}}
+                    {{/* Row 2: set info */}}
+                    ${setInfo}
+
+                    {{/* Row 3: track + purpose */}}
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        ${setInfo}
-                        <label class="d-flex align-items-center gap-1 text-muted mb-0" style="font-size:.8rem;margin-left:auto">
+                        <label class="d-flex align-items-center gap-1 text-muted mb-0" style="font-size:.8rem">
                             <input type="checkbox" class="form-check-input row-track"
                                    onchange="togglePurpose(this)" ${isTracked ? 'checked' : ''}>
                             Track
                         </label>
-                        <select class="form-select form-select-sm row-purpose" style="width:150px;${isTracked ? '' : 'display:none'}">
-                            <option value="PERSONAL_COLLECTION" ${purpose === 'PERSONAL_COLLECTION' ? 'selected' : ''}>Collection</option>
-                            <option value="IN_GRADING"          ${purpose === 'IN_GRADING'          ? 'selected' : ''}>In Grading</option>
-                            <option value="GRADED_INVENTORY"    ${purpose === 'GRADED_INVENTORY'    ? 'selected' : ''}>Graded Inventory</option>
+                        <select class="form-select form-select-sm row-purpose" style="width:160px;${isTracked ? '' : 'display:none'}">
+                            <option value="GRADED_INVENTORY"    ${purpose === 'GRADED_INVENTORY'    || (!purpose && isTracked) ? 'selected' : ''}>Inventory</option>
+                            <option value="PERSONAL_COLLECTION" ${purpose === 'PERSONAL_COLLECTION' ? 'selected' : ''}>Personal Collection</option>
                         </select>
                     </div>
 
-                </div>
-            </div>
+                    {{/* Graded company + grade (visible only when GRADED_CARD) */}}
+                    <div class="row-graded-fields" style="${isGraded ? '' : 'display:none'}">
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="text-muted small text-nowrap">Company</span>
+                            <select class="form-select form-select-sm row-grading-company" style="width:85px">
+                                <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
+                                <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
+                                <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
+                                <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
+                            </select>
+                            <span class="text-muted small text-nowrap">Grade</span>
+                            <input type="text" class="form-control form-control-sm row-grade"
+                                   style="width:65px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
+                        </div>
+                    </div>
 
-            {{/* Graded fields — wrapper div hides/shows; inner div uses flex */}}
-            <div class="row-graded-fields" style="${isGraded ? '' : 'display:none'}">
-                <div class="d-flex gap-2 align-items-center mt-2">
-                    <span class="text-muted small text-nowrap">Company</span>
-                    <select class="form-select form-select-sm row-grading-company" style="width:90px">
-                        <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
-                        <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
-                        <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
-                        <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
-                    </select>
-                    <span class="text-muted small text-nowrap">Grade</span>
-                    <input type="text" class="form-control form-control-sm row-grade"
-                           style="width:70px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
-                </div>
-            </div>
+                    {{/* Pricing row */}}
+                    <div class="d-flex gap-3 align-items-end flex-wrap pt-1 border-top mt-auto">
+                        <div class="d-flex flex-column gap-1">
+                            <span class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">Qty</span>
+                            <input type="number" class="form-control form-control-sm row-qty text-end"
+                                   style="width:58px" value="${data.qty || 1}" min="1" oninput="recalcRow(this)">
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <span class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">Market $</span>
+                            <input type="number" class="form-control form-control-sm row-market text-end"
+                                   style="width:84px" step="0.01" value="${(data.market_price || 0).toFixed(2)}" oninput="recalcRow(this)">
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <span class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">%</span>
+                            <input type="number" class="form-control form-control-sm row-pct text-end"
+                                   style="width:58px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <span class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">→ Offered</span>
+                            <strong class="text-success row-offered" style="line-height:2.1">$0.00</strong>
+                        </div>
+                    </div>
 
-            {{/* Pricing row */}}
-            <div class="d-flex gap-3 align-items-end flex-wrap mt-2 pt-2 border-top">
-                <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">Qty</span>
-                    <input type="number" class="form-control form-control-sm row-qty text-end"
-                           style="width:60px" value="${data.qty || 1}" min="1" oninput="recalcRow(this)">
-                </div>
-                <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">Market $</span>
-                    <input type="number" class="form-control form-control-sm row-market text-end"
-                           style="width:88px" step="0.01" value="${(data.market_price || 0).toFixed(2)}" oninput="recalcRow(this)">
-                </div>
-                <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">%</span>
-                    <input type="number" class="form-control form-control-sm row-pct text-end"
-                           style="width:60px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
-                </div>
-                <div class="d-flex flex-column gap-1">
-                    <span class="text-muted" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em">→ Offered</span>
-                    <strong class="text-success row-offered" style="line-height:2.1">$0.00</strong>
                 </div>
             </div>`;
 
@@ -253,8 +262,6 @@
 
         if (isGraded && row.querySelector('.row-track').checked) {
             purpose.value = 'GRADED_INVENTORY';
-        } else if (!isGraded && purpose.value === 'GRADED_INVENTORY') {
-            purpose.value = 'PERSONAL_COLLECTION';
         }
     };
 
@@ -262,9 +269,7 @@
         const row     = cb.closest('.item-row');
         const purpose = row.querySelector('.row-purpose');
         purpose.style.display = cb.checked ? '' : 'none';
-        if (cb.checked && row.querySelector('.row-type').value === 'GRADED_CARD') {
-            purpose.value = 'GRADED_INVENTORY';
-        }
+        if (cb.checked) purpose.value = 'GRADED_INVENTORY'; // default to Inventory
         recalcTotal();
     };
 
@@ -313,15 +318,21 @@
         });
 
         const untrackedEmv = totalEmv - trackedEmv;
-        const estFlip      = (untrackedEmv * 0.88) - untrackedBuying;
+        const estFlipNet   = (untrackedEmv * 0.88) - untrackedBuying;
+        const estFlipGross = untrackedEmv - untrackedBuying;
 
         document.getElementById('emv-display').textContent          = '$' + totalEmv.toFixed(2);
         document.getElementById('total-display').textContent         = '$' + totalBuying.toFixed(2);
         document.getElementById('tracked-emv-display').textContent   = '$' + trackedEmv.toFixed(2);
         document.getElementById('untracked-emv-display').textContent = '$' + untrackedEmv.toFixed(2);
+
         const flipEl = document.getElementById('flip-display');
-        flipEl.textContent = '$' + estFlip.toFixed(2);
-        flipEl.className   = estFlip >= 0 ? 'text-success' : 'text-danger';
+        flipEl.textContent = '$' + estFlipNet.toFixed(2);
+        flipEl.className   = estFlipNet >= 0 ? 'text-success' : 'text-danger';
+
+        const flipGrossEl = document.getElementById('flip-gross-display');
+        flipGrossEl.textContent = '$' + estFlipGross.toFixed(2);
+        flipGrossEl.className   = estFlipGross >= 0 ? 'text-success' : 'text-danger';
     }
 
     // ── Submit: serialize rows into snapshot JSON ─────────────────────────────

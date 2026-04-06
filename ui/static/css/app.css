@@ -11,6 +11,7 @@ body { background: #f7f9f9; font-family: -apple-system, BlinkMacSystemFont, "Seg
 
 /* Cards */
 .card { border: 1px solid #e1e8ed; border-top: 3px solid var(--accent); box-shadow: none; border-radius: 10px; }
+.item-row.card { border-top: 1px solid #e1e8ed; overflow: hidden; padding: 0 !important; }
 .card-header { background: #fff; border-bottom: 1px solid #e1e8ed; font-weight: 600; font-size: .875rem; }
 .card-footer { background: #fff; border-top: 1px solid #e1e8ed; }
 
@@ -51,4 +52,4 @@ h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: 
 #cp img { width: 200px; border-radius: 10px; display: block; }
 
 /* Inline card thumbnails */
-.card-thumb { height: 80px; width: auto; border-radius: 4px; cursor: default; }
+.card-thumb { height: 48px; width: auto; border-radius: 4px; cursor: default; }

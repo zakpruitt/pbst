@@ -1,0 +1,54 @@
+:root {
+  --bs-success:     #1db954;
+  --bs-success-rgb: 29,185,84;
+  --accent:         #1db954;
+}
+
+body { background: #f7f9f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+/* Narrow centered content */
+.container { max-width: 900px; }
+
+/* Cards */
+.card { border: 1px solid #e1e8ed; border-top: 3px solid var(--accent); box-shadow: none; border-radius: 10px; }
+.card-header { background: #fff; border-bottom: 1px solid #e1e8ed; font-weight: 600; font-size: .875rem; }
+.card-footer { background: #fff; border-top: 1px solid #e1e8ed; }
+
+/* Tables */
+.table { border-color: #e1e8ed; }
+.table-light { background-color: #f7f9f9 !important; }
+.table thead th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: #536471; font-weight: 600; border-bottom: 1px solid #e1e8ed; }
+.table-hover > tbody > tr:hover > td { background-color: #f7f9f9; }
+
+/* Navbar */
+.navbar { border-bottom: 1px solid #e1e8ed; }
+.navbar-brand { font-size: 1.1rem; letter-spacing: -.01em; }
+.nav-link { font-size: .9rem; color: #536471; transition: color .15s; }
+.nav-link:hover { color: #0d6efd; }
+.nav-link.active-page { color: var(--accent); font-weight: 600; }
+
+/* Badges */
+.badge { font-weight: 500; letter-spacing: .02em; }
+
+/* Page headings */
+h4 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #536471; font-weight: 600; }
+
+/* Clickable row cursor */
+.table tbody tr[onclick] { cursor: pointer; }
+
+/* Search result hover */
+.search-result-btn:hover { background: #f7f9f9 !important; }
+
+/* Floating card image preview */
+#cp {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.22));
+}
+#cp img { width: 200px; border-radius: 10px; display: block; }
+
+/* Inline card thumbnails */
+.card-thumb { height: 40px; width: auto; border-radius: 4px; vertical-align: middle; margin-right: 8px; cursor: default; }

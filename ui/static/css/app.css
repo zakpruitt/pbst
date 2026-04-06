@@ -1,7 +1,7 @@
 :root {
-  --bs-success:     #1db954;
-  --bs-success-rgb: 29,185,84;
-  --accent:         #1db954;
+  --bs-success:     #3deb94;
+  --bs-success-rgb: 61,235,148;
+  --accent:         #3deb94;
 }
 
 body { background: #f7f9f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }

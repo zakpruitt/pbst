@@ -88,8 +88,8 @@
     }
     .gallade {
       image-rendering: pixelated;
-      vertical-align: middle;
-      margin-right: 6px;
+      display: block;
+      margin: 0 auto 6px;
     }
   </style>
 </head>
@@ -99,10 +99,10 @@
 
   <div class="login-card">
     <div class="text-center mb-4">
-      <img class="gallade" height="52"
+      <img class="gallade" height="96"
            src="https://raw.githubusercontent.com/msikma/pokesprite/refs/heads/master/pokemon-gen7x/shiny/gallade-mega.png"
            alt="Mega Gallade">
-      <span class="brand-name">collectingwithzak</span>
+      <div class="brand-name mt-1">collectingwithzak</div>
     </div>
 
     <div id="error-msg" class="alert alert-danger d-none py-2 small mb-3"></div>
@@ -127,10 +127,10 @@
 
     const container = document.getElementById('sprites');
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 12; i++) {
       const name  = POKEMON_NAMES[Math.floor(Math.random() * POKEMON_NAMES.length)];
       const base  = Math.random() < 0.28 ? SHINY : REGULAR;
-      const size  = 28 + Math.floor(Math.random() * 38);  // 28–66px
+      const size  = 80 + Math.floor(Math.random() * 80);  // 80–160px
       const dur   = 16 + Math.random() * 18;              // 16–34s
       const delay = -(Math.random() * dur);               // stagger into cycle
 

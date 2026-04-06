@@ -14,7 +14,7 @@ type InventoryViewHandler struct {
 
 func NewInventoryViewHandler(itemRepo *repository.TrackedItemRepository) *InventoryViewHandler {
 	return &InventoryViewHandler{
-		tmpl:     parseTemplate("inventory"),
+		tmpl:     parseTemplate("inventory/index"),
 		itemRepo: itemRepo,
 	}
 }

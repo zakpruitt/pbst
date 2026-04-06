@@ -27,10 +27,10 @@ func NewLotViewHandler(
 	lotSvc *services.LotService,
 ) *LotViewHandler {
 	return &LotViewHandler{
-		lots:      parseTemplate("lots"),
-		lotDetail: parseTemplate("lot-detail"),
-		lotNew:    parseTemplate("lot-new"),
-		lotEdit:   parseTemplate("lot-edit"),
+		lots:      parseTemplate("lots/index"),
+		lotDetail: parseTemplate("lots/detail"),
+		lotNew:    parseTemplate("lots/new"),
+		lotEdit:   parseTemplate("lots/edit"),
 		lotRepo:   lotRepo,
 		lotSvc:    lotSvc,
 	}

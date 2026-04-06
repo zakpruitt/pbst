@@ -17,7 +17,7 @@ type SaleViewHandler struct {
 
 func NewSaleViewHandler(saleRepo *repository.SaleRepository) *SaleViewHandler {
 	return &SaleViewHandler{
-		tmpl:     parseTemplate("sales"),
+		tmpl:     parseTemplate("sales/index"),
 		saleRepo: saleRepo,
 	}
 }

@@ -25,9 +25,9 @@ func NewGradingViewHandler(
 	gradingSvc *services.GradingService,
 ) *GradingViewHandler {
 	return &GradingViewHandler{
-		grading:       parseTemplate("grading"),
-		gradingNew:    parseTemplate("grading-new"),
-		gradingDetail: parseTemplate("grading-detail"),
+		grading:       parseTemplate("grading/index"),
+		gradingNew:    parseTemplate("grading/new"),
+		gradingDetail: parseTemplate("grading/detail"),
 		gradingRepo:   gradingRepo,
 		itemRepo:      itemRepo,
 		gradingSvc:    gradingSvc,

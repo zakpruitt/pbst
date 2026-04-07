@@ -7,7 +7,10 @@
       "Bash(xargs grep:*)",
       "Bash(find C:\\\\Users\\\\pruit\\\\Desktop\\\\dev\\\\pbst\\\\old-java-code\\\\src:*)",
       "Bash(wc:*)",
-      "Bash(go get:*)"
+      "Bash(go get:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -4,74 +4,84 @@
        name: '{{js .Name}}',
        qty: {{if .Qty}}{{.Qty}}{{else}}1{{end}},
        market: {{printf "%.2f" .MarketPrice}},
-       pct: {{if .Percentage}}{{printf "%.0f" .Percentage}}{{else}}60{{end}},
-       type: '{{.ItemType}}',
-       tracked: {{.IsTracked}},
-       gradingCompany: '{{.GradingCompany}}',
-       grade: '{{js .Grade}}',
-       cardId: '{{.PokemonCardID}}',
-       imageUrl: '{{js .ImageURL}}',
-       setName: '{{js .SetName}}',
-       cardNumber: '{{js .CardNumber}}',
-       rarity: '{{js .Rarity}}',
-       get offered(){ return (this.qty * this.market * this.pct / 100).toFixed(2) },
-       get isGraded(){ return this.type === 'GRADED_CARD' },
-       get borderColor(){
-         if(this.type==='GRADED_CARD') return '#f0b429';
-         if(this.type==='SEALED_PRODUCT') return '#0d6efd';
-         return 'transparent';
-       }
-     }"
-     :style="'border-left:3px solid '+borderColor">
+pct: {{if .Percentage}}{{printf "%.0f" .Percentage}}{{else}}60{{end}},
+type: '{{.ItemType}}',
+tracked: {{.IsTracked}},
+gradingCompany: '{{.GradingCompany}}',
+grade: '{{js .Grade}}',
+cardId: '{{.PokemonCardID}}',
+imageUrl: '{{js .ImageURL}}',
+setName: '{{js .SetName}}',
+cardNumber: '{{js .CardNumber}}',
+rarity: '{{js .Rarity}}',
+get offered(){ return (this.qty * this.market * this.pct / 100).toFixed(2) },
+get isGraded(){ return this.type === 'GRADED_CARD' },
+get borderColor(){
+if(this.type==='GRADED_CARD') return '#f0b429';
+if(this.type==='SEALED_PRODUCT') return '#0d6efd';
+return 'transparent';
+}
+}"
+:style="'border-left:3px solid '+borderColor">
 
-    <div class="lot-row-grid p-2">
+<div class="d-flex gap-3 p-2 align-items-center">
 
-        <template x-if="imageUrl">
-            <div class="lot-row-img">
-                <img :src="imageUrl" :data-card-img="imageUrl">
-            </div>
-        </template>
+    <template x-if="imageUrl">
+        <div style="width: 70px; flex-shrink: 0;" class="d-flex justify-content-center">
+            <img :src="imageUrl" :data-card-img="imageUrl"
+                 class="img-fluid rounded shadow-sm"
+                 style="object-fit: contain;">
+        </div>
+    </template>
 
-        <div class="d-flex gap-2 align-items-center">
+    <div class="flex-grow-1 d-flex flex-column" style="min-width: 0; gap: 0.35rem;">
+
+        <div class="d-flex gap-2 align-items-center w-100">
             <input class="form-control form-control-sm flex-grow-1"
-                   x-model="name" placeholder="Name" style="min-width:0">
-            <select class="form-select form-select-sm" style="width:120px;flex-shrink:0"
-                    x-model="type">
-                <option value="RAW_CARD">Raw Card</option>
-                <option value="GRADED_CARD">Graded Card</option>
-                <option value="SEALED_PRODUCT">Sealed</option>
-            </select>
-            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-0"
-                    style="flex-shrink:0;line-height:1.6"
-                    @click="$el.closest('.item-row').remove(); $dispatch('lot:changed')">✕</button>
-        </div>
+                   x-model="name" placeholder="Name" style="min-width: 0;">
 
-        <div class="d-flex gap-2 align-items-center">
-            <div class="d-flex gap-2 align-items-center" x-show="isGraded" x-cloak>
-                <span class="text-muted small text-nowrap">Company</span>
-                <select class="form-select form-select-sm" style="width:85px"
-                        x-model="gradingCompany">
-                    <option value="PSA">PSA</option>
-                    <option value="BGS">BGS</option>
-                    <option value="CGC">CGC</option>
-                    <option value="TAG">TAG</option>
+            <div class="d-flex gap-2 ms-auto" style="flex-shrink: 0;">
+                <select class="form-select form-select-sm" style="width: 210px;"
+                        x-model="type">
+                    <option value="RAW_CARD">Raw Card</option>
+                    <option value="GRADED_CARD">Graded Card</option>
+                    <option value="SEALED_PRODUCT">Sealed</option>
                 </select>
-                <span class="text-muted small text-nowrap">Grade</span>
-                <input type="text" class="form-control form-control-sm"
-                       style="width:60px" placeholder="e.g. 9" x-model="grade">
+
+                <button type="button" class="btn btn-sm btn-outline-danger p-0"
+                        style="height: 31px; width: 31px; display: flex; align-items: center; justify-content: center;"
+                        @click="$el.closest('.item-row').remove(); $dispatch('lot:changed')">✕</button>
             </div>
-            {{if or .SetName .CardNumber}}
-            <span class="text-muted" style="font-size:.72rem">
-                {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
-            </span>
-            {{end}}
-            <label class="d-flex align-items-center gap-1 text-muted small mb-0 ms-auto"
-                   style="flex-shrink:0;white-space:nowrap">
-                <input type="checkbox" class="form-check-input mt-0" x-model="tracked"> Track
-            </label>
         </div>
 
-        <div class="d-flex align-items-center gap-2" style="font-size:.85rem">
+        <div class="d-flex align-items-start w-100" style="min-height: 31px;">
+
+            <div class="text-muted text-truncate flex-grow-1" style="font-size:.72rem; padding-top: 4px;">
+                {{if or .SetName .CardNumber}}
+                {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
+                {{end}}
+            </div>
+
+            <template x-if="isGraded">
+                <div class="d-flex gap-2 ms-auto" style="flex-shrink: 0;">
+
+                    <div class="input-group input-group-sm" style="width: 210px;">
+                        <select class="form-select shadow-none" style="width: 110px; flex: none;" x-model="gradingCompany">
+                            <option value="PSA">PSA</option>
+                            <option value="BGS">BGS</option>
+                            <option value="CGC">CGC</option>
+                            <option value="TAG">TAG</option>
+                        </select>
+                        <input type="text" class="form-control shadow-none text-center px-2"
+                               style="flex-grow: 1;" placeholder="Grade" x-model="grade">
+                    </div>
+
+                    <div style="width: 31px;"></div>
+                </div>
+            </template>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.85rem; flex-wrap: wrap;">
             <span class="text-muted">Qty</span>
             <input type="number" class="form-control form-control-sm text-end"
                    style="width:50px" min="1" x-model.number="qty">
@@ -80,11 +90,19 @@
                    style="width:80px" step="0.01" x-model.number="market">
             <span class="text-muted">%</span>
             <input type="number" class="form-control form-control-sm text-end"
-                   style="width:50px" min="0" max="100" x-model.number="pct">
+                   style="width:55px" min="0" max="100" x-model.number="pct">
             <span class="text-muted">→</span>
             <strong class="text-success" x-text="'$'+offered"></strong>
+
+            <label class="d-flex align-items-center gap-2 mb-0 ms-auto" style="cursor: pointer;">
+                <span class="text-muted small">Track</span>
+                <input type="checkbox" class="form-check-input mt-0"
+                       style="width: 31px; height: 31px; cursor: pointer; border-color: #0d6efd;"
+                       x-model="tracked">
+            </label>
         </div>
 
     </div>
+</div>
 </div>
 {{end}}

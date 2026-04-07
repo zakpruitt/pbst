@@ -156,7 +156,7 @@ document.getElementById('lot-form').addEventListener('submit', () => {
             name: d.name, pokemon_card_id: d.cardId, set_name: d.setName,
             card_number: d.cardNumber, rarity: d.rarity, image_url: d.imageUrl,
             qty: d.qty, market_price: d.market, percentage: d.pct, offered,
-            item_type: d.type, is_tracked: d.tracked, purpose: d.purpose,
+            item_type: d.type, is_tracked: d.tracked, purpose: d.tracked ? 'GRADED_INVENTORY' : '',
             grading_company: d.gradingCompany, grade: d.grade,
         };
     });

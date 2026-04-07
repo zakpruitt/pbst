@@ -7,7 +7,6 @@
        pct:      {{if .Percentage}}{{printf "%.0f" .Percentage}}{{else}}70{{end}},
        type:     '{{.ItemType}}',
        tracked:  {{.IsTracked}},
-       purpose:  '{{if .Purpose}}{{.Purpose}}{{else if .IsTracked}}GRADED_INVENTORY{{end}}',
        gradingCompany: '{{.GradingCompany}}',
        grade:    '{{js .Grade}}',
        cardId:   '{{.PokemonCardID}}',
@@ -18,7 +17,7 @@
        get offered(){ return (this.qty * this.market * this.pct / 100).toFixed(2) },
        get isGraded(){ return this.type === 'GRADED_CARD' },
        get borderStyle(){
-         if(this.type==='GRADED_CARD')   return '4px solid #f0b429';
+         if(this.type==='GRADED_CARD')    return '4px solid #f0b429';
          if(this.type==='SEALED_PRODUCT') return '4px solid #0d6efd';
          return '';
        }
@@ -27,20 +26,17 @@
 
     <div class="d-flex">
 
-        {{/* Image panel: 80px wide, stretches full row height via flex default stretch */}}
-        <div style="flex-shrink:0;width:80px;display:flex;background:#f8f9fa;border-right:1px solid #e9ecef">
+        <div style="flex-shrink:0;width:80px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;border-right:1px solid #e9ecef;padding:4px">
             <template x-if="imageUrl">
-                <img :src="imageUrl" style="width:100%;object-fit:contain">
+                <img :src="imageUrl" style="width:100%;height:100%;object-fit:contain">
             </template>
             <template x-if="!imageUrl">
-                <div style="width:100%;background:#e9ecef"></div>
+                <div style="width:100%;height:100%;background:#e9ecef;border-radius:4px"></div>
             </template>
         </div>
 
-        {{/* Content panel */}}
         <div class="p-2 flex-grow-1" style="min-width:0">
 
-            {{/* Row 1: name | type | remove | track */}}
             <div class="d-flex gap-2 align-items-center">
                 <input class="form-control form-control-sm flex-grow-1"
                        x-model="name" placeholder="Name" style="min-width:0">
@@ -54,29 +50,16 @@
                         class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0"
                         @click="$el.closest('.item-row').remove(); $dispatch('lot:changed')">✕</button>
                 <label class="d-flex align-items-center gap-1 text-muted small mb-0" style="flex-shrink:0;white-space:nowrap">
-                    <input type="checkbox" class="form-check-input"
-                           x-model="tracked"
-                           @change="if(tracked && !purpose) purpose='GRADED_INVENTORY'"> Track
+                    <input type="checkbox" class="form-check-input" x-model="tracked"> Track
                 </label>
             </div>
 
-            {{/* Row 2: set info */}}
             {{if or .SetName .CardNumber}}
             <div class="text-muted" style="font-size:.75rem;margin-top:2px">
                 {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
             </div>
             {{end}}
 
-            {{/* Row 3: purpose (only when tracked) */}}
-            <div class="d-flex align-items-center gap-2 mt-1" x-show="tracked" x-cloak>
-                <span class="text-muted small">Purpose</span>
-                <select class="form-select form-select-sm" style="width:160px" x-model="purpose">
-                    <option value="GRADED_INVENTORY">Inventory</option>
-                    <option value="PERSONAL_COLLECTION">Personal Collection</option>
-                </select>
-            </div>
-
-            {{/* Row 4: graded company + grade (only when GRADED_CARD) */}}
             <div class="d-flex gap-2 align-items-center mt-1" x-show="isGraded" x-cloak>
                 <span class="text-muted small text-nowrap">Company</span>
                 <select class="form-select form-select-sm" style="width:85px" x-model="gradingCompany">
@@ -90,7 +73,6 @@
                        style="width:65px" placeholder="e.g. 9" x-model="grade">
             </div>
 
-            {{/* Row 5: pricing */}}
             <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
                 <span class="text-muted" style="font-size:.7rem">Qty</span>
                 <input type="number" class="form-control form-control-sm text-end"

@@ -1,67 +1,66 @@
 {{define "lot-row"}}
 <div class="item-row card mb-2"
      x-data="{
-       name:     '{{js .Name}}',
-       qty:      {{if .Qty}}{{.Qty}}{{else}}1{{end}},
-       market:   {{printf "%.2f" .MarketPrice}},
-       pct:      {{if .Percentage}}{{printf "%.0f" .Percentage}}{{else}}60{{end}},
-       type:     '{{.ItemType}}',
-       tracked:  {{.IsTracked}},
+       name: '{{js .Name}}',
+       qty: {{if .Qty}}{{.Qty}}{{else}}1{{end}},
+       market: {{printf "%.2f" .MarketPrice}},
+       pct: {{if .Percentage}}{{printf "%.0f" .Percentage}}{{else}}60{{end}},
+       type: '{{.ItemType}}',
+       tracked: {{.IsTracked}},
        gradingCompany: '{{.GradingCompany}}',
-       grade:    '{{js .Grade}}',
-       cardId:   '{{.PokemonCardID}}',
+       grade: '{{js .Grade}}',
+       cardId: '{{.PokemonCardID}}',
        imageUrl: '{{js .ImageURL}}',
-       setName:  '{{js .SetName}}',
-       cardNumber:'{{js .CardNumber}}',
-       rarity:   '{{js .Rarity}}',
+       setName: '{{js .SetName}}',
+       cardNumber: '{{js .CardNumber}}',
+       rarity: '{{js .Rarity}}',
        get offered(){ return (this.qty * this.market * this.pct / 100).toFixed(2) },
        get isGraded(){ return this.type === 'GRADED_CARD' },
-       get borderStyle(){
-         if(this.type==='GRADED_CARD')    return '4px solid #f0b429';
-         if(this.type==='SEALED_PRODUCT') return '4px solid #0d6efd';
-         return '';
+       get borderColor(){
+         if(this.type==='GRADED_CARD') return '#f0b429';
+         if(this.type==='SEALED_PRODUCT') return '#0d6efd';
+         return 'transparent';
        }
      }"
-     :style="{ borderLeft: borderStyle }">
+     :style="'border-left:3px solid '+borderColor">
 
-    <div class="d-flex">
+    <div class="d-flex gap-2 align-items-start p-2">
 
-        {{/* Image panel — flex column so single child fills full height */}}
-        <div style="flex-shrink:0;width:80px;display:flex;flex-direction:column;background:#f8f9fa;border-right:1px solid #e9ecef">
-            <img x-show="imageUrl" :src="imageUrl"
-                 style="flex:1;width:100%;min-height:0;object-fit:contain;display:block">
-            <div x-show="!imageUrl"
-                 style="flex:1;background:#e9ecef"></div>
-        </div>
+        <template x-if="imageUrl">
+            <img :src="imageUrl" :data-card-img="imageUrl"
+                 class="card-thumb" style="flex-shrink:0">
+        </template>
 
-        <div class="p-2 flex-grow-1" style="min-width:0">
+        <div class="flex-grow-1" style="min-width:0">
 
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-1 align-items-center mb-1">
                 <input class="form-control form-control-sm flex-grow-1"
                        x-model="name" placeholder="Name" style="min-width:0">
-                <select class="form-select form-select-sm" style="width:110px;flex-shrink:0"
+                <select class="form-select form-select-sm" style="width:108px;flex-shrink:0"
                         x-model="type">
                     <option value="RAW_CARD">Raw Card</option>
                     <option value="GRADED_CARD">Graded Card</option>
                     <option value="SEALED_PRODUCT">Sealed</option>
                 </select>
-                <button type="button"
-                        class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0"
+                <button type="button" class="btn btn-sm btn-outline-danger px-1 py-0"
+                        style="flex-shrink:0;line-height:1.5"
                         @click="$el.closest('.item-row').remove(); $dispatch('lot:changed')">✕</button>
-                <label class="d-flex align-items-center gap-1 text-muted small mb-0" style="flex-shrink:0;white-space:nowrap">
+                <label class="d-flex align-items-center gap-1 text-muted small mb-0"
+                       style="flex-shrink:0;white-space:nowrap">
                     <input type="checkbox" class="form-check-input" x-model="tracked"> Track
                 </label>
             </div>
 
             {{if or .SetName .CardNumber}}
-            <div class="text-muted" style="font-size:.75rem;margin-top:2px">
+            <div class="text-muted" style="font-size:.72rem">
                 {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
             </div>
             {{end}}
 
-            <div class="d-flex gap-2 align-items-center mt-1" x-show="isGraded" style="display:none">
+            <div class="d-flex gap-2 align-items-center mt-1" x-show="isGraded" x-cloak>
                 <span class="text-muted small text-nowrap">Company</span>
-                <select class="form-select form-select-sm" style="width:85px" x-model="gradingCompany">
+                <select class="form-select form-select-sm" style="width:85px"
+                        x-model="gradingCompany">
                     <option value="PSA">PSA</option>
                     <option value="BGS">BGS</option>
                     <option value="CGC">CGC</option>
@@ -69,21 +68,21 @@
                 </select>
                 <span class="text-muted small text-nowrap">Grade</span>
                 <input type="text" class="form-control form-control-sm"
-                       style="width:65px" placeholder="e.g. 9" x-model="grade">
+                       style="width:60px" placeholder="e.g. 9" x-model="grade">
             </div>
 
-            <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
-                <span class="text-muted" style="font-size:.7rem">Qty</span>
+            <div class="d-flex align-items-center gap-1 mt-1" style="font-size:.8rem">
+                <span class="text-muted">Qty</span>
                 <input type="number" class="form-control form-control-sm text-end"
-                       style="width:52px" min="1" x-model.number="qty">
-                <span class="text-muted" style="font-size:.7rem">Market $</span>
+                       style="width:48px" min="1" x-model.number="qty">
+                <span class="text-muted">Mkt $</span>
                 <input type="number" class="form-control form-control-sm text-end"
-                       style="width:80px" step="0.01" x-model.number="market">
-                <span class="text-muted" style="font-size:.7rem">%</span>
+                       style="width:76px" step="0.01" x-model.number="market">
+                <span class="text-muted">%</span>
                 <input type="number" class="form-control form-control-sm text-end"
-                       style="width:52px" min="0" max="100" x-model.number="pct">
-                <span class="text-muted small">→</span>
-                <strong class="text-success" x-text="'$' + offered"></strong>
+                       style="width:48px" min="0" max="100" x-model.number="pct">
+                <span class="text-muted">→</span>
+                <strong class="text-success" x-text="'$'+offered"></strong>
             </div>
 
         </div>

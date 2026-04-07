@@ -3,7 +3,6 @@
 <h4 class="mb-4">New Lot</h4>
 
 <form id="lot-form" method="POST" action="/lots">
-    {{/* Hidden fields populated on submit by serializeSnapshot() */}}
     <input type="hidden" id="snapshot-input" name="lot_content_snapshot" value="[]">
     <input type="hidden" id="total-cost-input" name="total_cost" value="0">
     <input type="hidden" id="emv-input" name="estimated_market_value" value="0">
@@ -25,351 +24,145 @@
         </div>
     </div>
 
-    <div class="card mb-3">
+    {{/* Card search — Alpine component */}}
+    <div class="card mb-3" x-data="cardSearch()">
         <div class="card-body">
             <h6 class="card-title mb-3">Add Items</h6>
             <div class="position-relative mb-2">
-                <input id="card-search" type="text" class="form-control form-control-sm"
-                       placeholder="Search cards by name or set…" autocomplete="off">
-                <div id="search-results"
-                     class="position-absolute w-100 bg-white border rounded-3 shadow mt-1 d-none"
-                     style="z-index:100;max-height:280px;overflow-y:auto"></div>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Search cards by name or set…" autocomplete="off"
+                       x-model="query" @input.debounce.300ms="search()" @keydown.escape="clear()">
+                <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                     style="z-index:100;max-height:280px;overflow-y:auto"
+                     x-show="results.length > 0" x-cloak
+                     @click.outside="clear()">
+                    <template x-for="c in results" :key="c.id">
+                        <button type="button"
+                                class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                                @click="pick(c)">
+                            <template x-if="c.image_url">
+                                <img :src="c.image_url" style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
+                            </template>
+                            <template x-if="!c.image_url">
+                                <div style="width:34px"></div>
+                            </template>
+                            <span>
+                                <strong class="d-block" x-text="c.name"></strong>
+                                <span class="text-muted small" x-text="c.set_name + ' #' + c.card_number"></span><br>
+                                <span class="text-success small" x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span>
+                            </span>
+                        </button>
+                    </template>
+                </div>
             </div>
-            <button type="button" onclick="addManualRow()" class="btn btn-sm btn-outline-secondary">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    hx-get="/lots/partials/row"
+                    hx-target="#items-list"
+                    hx-swap="beforeend">
                 + Add row manually
             </button>
         </div>
     </div>
 
-    <div id="items-list"></div>
+    {{/* Items list + totals footer wrapped in one Alpine root for reactivity */}}
+    <div x-data="lotTotals()" @input.window="recalc()" @change.window="recalc()" @lot:changed.window="recalc()">
 
-    <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
-        Search for a card above or add a row manually.
-    </div>
+        <div id="items-list"></div>
 
-    <div class="card p-3 mb-3">
-        <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
-            <span>EMV <strong id="emv-display" class="text-body">$0.00</strong></span>
-            <span>Buying <strong id="total-display" class="text-success">$0.00</strong></span>
-            <span>Tracked EMV <strong id="tracked-emv-display" class="text-body">$0.00</strong></span>
-            <span>Untracked EMV <strong id="untracked-emv-display" class="text-body">$0.00</strong></span>
-            <span>Est. Flip <strong id="flip-display" class="text-body">$0.00</strong>
-                <span class="text-muted" style="font-size:.7rem">(−12% fees)</span></span>
-            <span>Est. Flip (gross) <strong id="flip-gross-display" class="text-body">$0.00</strong></span>
-            <button type="submit" class="btn btn-success btn-sm ms-auto">Save Lot</button>
+        <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
+            Search for a card above or add a row manually.
         </div>
+
+        <div class="card p-3 mb-3">
+            <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+                <span>EMV <strong class="text-body" x-text="'$' + totalEmv.toFixed(2)"></strong></span>
+                <span>Buying <strong class="text-success" x-text="'$' + totalBuying.toFixed(2)"></strong></span>
+                <span>Tracked EMV <strong class="text-body" x-text="'$' + trackedEmv.toFixed(2)"></strong></span>
+                <span>Untracked EMV <strong class="text-body" x-text="'$' + untrackedEmv.toFixed(2)"></strong></span>
+                <span>Est. Flip
+                    <strong :class="estFlipNet >= 0 ? 'text-success' : 'text-danger'"
+                            x-text="'$' + estFlipNet.toFixed(2)"></strong>
+                    <span class="text-muted" style="font-size:.7rem">(−12% fees)</span>
+                </span>
+                <span>Est. Flip (gross)
+                    <strong :class="estFlipGross >= 0 ? 'text-success' : 'text-danger'"
+                            x-text="'$' + estFlipGross.toFixed(2)"></strong>
+                </span>
+                <button type="submit" class="btn btn-success btn-sm ms-auto">Save Lot</button>
+            </div>
+        </div>
+
     </div>
 </form>
 
 <script>
-(function () {
-    // ── DOM refs ──────────────────────────────────────────────────────────────
-    const searchInput   = document.getElementById('card-search');
-    const searchResults = document.getElementById('search-results');
-    const itemsList     = document.getElementById('items-list');
-    const emptyMsg      = document.getElementById('empty-msg');
-    let debounceTimer;
-
-    // ── Card search ───────────────────────────────────────────────────────────
-    searchInput.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        const q = searchInput.value.trim();
-        if (!q) { hideSearch(); return; }
-
-        debounceTimer = setTimeout(async () => {
-            const res   = await fetch('/api/v1/cards/search?q=' + encodeURIComponent(q));
-            const cards = await res.json();
-
-            searchResults.innerHTML = (!cards || !cards.length)
-                ? '<p class="px-3 py-2 small text-muted mb-0">No cards found.</p>'
-                : cards.map(c => `
-                    <button type="button"
-                        class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
-                        data-id="${esc(c.id)}" data-name="${esc(c.name)}" data-set="${esc(c.set_name)}"
-                        data-card="${esc(c.card_number)}" data-rarity="${esc(c.rarity)}"
-                        data-market="${c.market_price || 0}" data-img="${esc(c.image_url || '')}"
-                        onclick="pickCard(this)">
-                        ${c.image_url
-                            ? `<img src="${esc(c.image_url)}" style="height:64px;width:auto;border-radius:4px;flex-shrink:0">`
-                            : '<div style="width:44px"></div>'}
-                        <span>
-                            <strong class="d-block">${esc(c.name)}</strong>
-                            <span class="text-muted small">${esc(c.set_name)} #${esc(c.card_number)}</span><br>
-                            <span class="text-success small">${c.market_price ? '$' + c.market_price.toFixed(2) : ''}</span>
-                        </span>
-                    </button>`).join('');
-
-            searchResults.classList.remove('d-none');
-        }, 300);
-    });
-
-    document.addEventListener('click', e => {
-        if (!searchResults.contains(e.target) && e.target !== searchInput) hideSearch();
-    });
-
-    function hideSearch() {
-        searchResults.innerHTML = '';
-        searchResults.classList.add('d-none');
-    }
-
-    // ── Row management ────────────────────────────────────────────────────────
-    window.pickCard = function (btn) {
-        hideSearch();
-        searchInput.value = '';
-        appendRow({
-            pokemon_card_id: btn.dataset.id,
-            name:            btn.dataset.name,
-            set_name:        btn.dataset.set,
-            card_number:     btn.dataset.card,
-            rarity:          btn.dataset.rarity,
-            market_price:    parseFloat(btn.dataset.market) || 0,
-            item_type:       'RAW_CARD',
-            image_url:       btn.dataset.img,
-        });
-    };
-
-    window.addManualRow = function () {
-        appendRow({ name: '', item_type: 'RAW_CARD', market_price: 0 });
-    };
-
-    function appendRow(data) {
-        emptyMsg.style.display = 'none';
-        itemsList.appendChild(buildRow(data));
-        recalcTotal();
-    }
-
-    function buildRow(data) {
-        const el        = document.createElement('div');
-        el.className    = 'item-row card mb-2';
-        const isGraded  = data.item_type === 'GRADED_CARD';
-        const isSealed  = data.item_type === 'SEALED_PRODUCT';
-        const isTracked = !!data.is_tracked;
-        const purpose   = data.purpose || (isTracked ? 'GRADED_INVENTORY' : '');
-
-        const imgSrc = esc(data.image_url || '');
-
-        const setInfo = (data.set_name || data.card_number)
-            ? `<div class="text-muted" style="font-size:.75rem;margin-top:2px">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
-            : '';
-
-        el.innerHTML = `
-            <input type="hidden" class="row-card-id"     value="${esc(data.pokemon_card_id || '')}">
-            <input type="hidden" class="row-set-name"    value="${esc(data.set_name || '')}">
-            <input type="hidden" class="row-card-number" value="${esc(data.card_number || '')}">
-            <input type="hidden" class="row-rarity"      value="${esc(data.rarity || '')}">
-            <input type="hidden" class="row-image-url"   value="${imgSrc}">
-
-            <div class="d-flex">
-
-                {{/* Image panel: 80px wide, stretches full row height via flex default stretch */}}
-                <div style="flex-shrink:0;width:80px;display:flex;background:#f8f9fa;border-right:1px solid #e9ecef">
-                    ${imgSrc
-                        ? `<img src="${imgSrc}" data-card-img="${imgSrc}" style="width:100%;object-fit:contain">`
-                        : `<div style="width:100%;background:#e9ecef"></div>`}
-                </div>
-
-                {{/* Content panel */}}
-                <div class="p-2 flex-grow-1" style="min-width:0">
-
-                    {{/* Row 1: name | type | remove | track */}}
-                    <div class="d-flex gap-2 align-items-center">
-                        <input class="form-control form-control-sm row-name flex-grow-1"
-                               value="${esc(data.name || '')}" placeholder="Name" style="min-width:0">
-                        <select class="form-select form-select-sm row-type" style="width:110px;flex-shrink:0" onchange="onTypeChange(this)">
-                            <option value="RAW_CARD"       ${!isGraded && !isSealed ? 'selected' : ''}>Raw Card</option>
-                            <option value="GRADED_CARD"    ${isGraded  ? 'selected' : ''}>Graded Card</option>
-                            <option value="SEALED_PRODUCT" ${isSealed  ? 'selected' : ''}>Sealed</option>
-                        </select>
-                        <button type="button" onclick="removeRow(this)"
-                                class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0">✕</button>
-                        <label class="d-flex align-items-center gap-1 text-muted small mb-0" style="flex-shrink:0;white-space:nowrap">
-                            <input type="checkbox" class="form-check-input row-track"
-                                   onchange="togglePurpose(this)" ${isTracked ? 'checked' : ''}>
-                            Track
-                        </label>
-                    </div>
-
-                    {{/* Row 2: set info */}}
-                    ${setInfo}
-
-                    {{/* Row 3: purpose (only when tracked) */}}
-                    <div class="row-purpose-row d-flex align-items-center gap-2 mt-1" style="${isTracked ? '' : 'display:none !important'}">
-                        <span class="text-muted small">Purpose</span>
-                        <select class="form-select form-select-sm row-purpose" style="width:160px">
-                            <option value="GRADED_INVENTORY"    ${purpose === 'GRADED_INVENTORY'    || (!purpose && isTracked) ? 'selected' : ''}>Inventory</option>
-                            <option value="PERSONAL_COLLECTION" ${purpose === 'PERSONAL_COLLECTION' ? 'selected' : ''}>Personal Collection</option>
-                        </select>
-                    </div>
-
-                    {{/* Row 4: graded company + grade (only when GRADED_CARD) */}}
-                    <div class="row-graded-fields" style="${isGraded ? '' : 'display:none'}">
-                        <div class="d-flex gap-2 align-items-center mt-1">
-                            <span class="text-muted small text-nowrap">Company</span>
-                            <select class="form-select form-select-sm row-grading-company" style="width:85px">
-                                <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
-                                <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
-                                <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
-                                <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
-                            </select>
-                            <span class="text-muted small text-nowrap">Grade</span>
-                            <input type="text" class="form-control form-control-sm row-grade"
-                                   style="width:65px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
-                        </div>
-                    </div>
-
-                    {{/* Row 5: pricing */}}
-                    <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
-                        <span class="text-muted" style="font-size:.7rem">Qty</span>
-                        <input type="number" class="form-control form-control-sm row-qty text-end"
-                               style="width:52px" value="${data.qty || 1}" min="1" oninput="recalcRow(this)">
-                        <span class="text-muted" style="font-size:.7rem">Market $</span>
-                        <input type="number" class="form-control form-control-sm row-market text-end"
-                               style="width:80px" step="0.01" value="${(data.market_price || 0).toFixed(2)}" oninput="recalcRow(this)">
-                        <span class="text-muted" style="font-size:.7rem">%</span>
-                        <input type="number" class="form-control form-control-sm row-pct text-end"
-                               style="width:52px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
-                        <span class="text-muted small">→</span>
-                        <strong class="text-success row-offered">$0.00</strong>
-                    </div>
-
-                </div>
-            </div>`;
-
-        applyTypeBorder(el, data.item_type || 'RAW_CARD');
-        recalcOffered(el);
-        return el;
-    }
-
-    // ── Row event handlers ────────────────────────────────────────────────────
-    window.onTypeChange = function (sel) {
-        const row      = sel.closest('.item-row');
-        const isGraded = sel.value === 'GRADED_CARD';
-
-        row.querySelector('.row-graded-fields').style.display = isGraded ? '' : 'none';
-        applyTypeBorder(row, sel.value);
-    };
-
-    window.togglePurpose = function (cb) {
-        const row        = cb.closest('.item-row');
-        const purposeRow = row.querySelector('.row-purpose-row');
-        if (cb.checked) {
-            purposeRow.style.removeProperty('display');
-            row.querySelector('.row-purpose').value = 'GRADED_INVENTORY';
-        } else {
-            purposeRow.style.setProperty('display', 'none', 'important');
-        }
-        recalcTotal();
-    };
-
-    window.removeRow = function (btn) {
-        btn.closest('.item-row').remove();
-        if (!itemsList.children.length) emptyMsg.style.display = '';
-        recalcTotal();
-    };
-
-    window.recalcRow = function (el) {
-        recalcOffered(el.closest('.item-row'));
-        recalcTotal();
-    };
-
-    function applyTypeBorder(row, type) {
-        const colors = { GRADED_CARD: '#f0b429', SEALED_PRODUCT: '#0d6efd' };
-        row.style.borderLeft = colors[type] ? `4px solid ${colors[type]}` : '';
-    }
-
-    // ── Calculations ──────────────────────────────────────────────────────────
-    function recalcOffered(row) {
-        const market  = parseFloat(row.querySelector('.row-market').value) || 0;
-        const qty     = parseInt(row.querySelector('.row-qty').value)      || 1;
-        const pct     = parseFloat(row.querySelector('.row-pct').value)    || 0;
-        row.querySelector('.row-offered').textContent = '$' + (market * qty * (pct / 100)).toFixed(2);
-    }
-
-    function recalcTotal() {
-        let totalEmv = 0, totalBuying = 0, trackedEmv = 0, untrackedBuying = 0;
-
-        itemsList.querySelectorAll('.item-row').forEach(row => {
-            const market  = parseFloat(row.querySelector('.row-market').value) || 0;
-            const qty     = parseInt(row.querySelector('.row-qty').value)      || 1;
-            const pct     = parseFloat(row.querySelector('.row-pct').value)    || 0;
-            const emv     = market * qty;
-            const offered = emv * (pct / 100);
-            const tracked = row.querySelector('.row-track').checked;
-
-            totalEmv    += emv;
-            totalBuying += offered;
-            if (tracked) {
-                trackedEmv += emv;
-            } else {
-                untrackedBuying += offered;
-            }
-        });
-
-        const untrackedEmv = totalEmv - trackedEmv;
-        const estFlipNet   = (untrackedEmv * 0.88) - untrackedBuying;
-        const estFlipGross = untrackedEmv - untrackedBuying;
-
-        document.getElementById('emv-display').textContent          = '$' + totalEmv.toFixed(2);
-        document.getElementById('total-display').textContent         = '$' + totalBuying.toFixed(2);
-        document.getElementById('tracked-emv-display').textContent   = '$' + trackedEmv.toFixed(2);
-        document.getElementById('untracked-emv-display').textContent = '$' + untrackedEmv.toFixed(2);
-
-        const flipEl = document.getElementById('flip-display');
-        flipEl.textContent = '$' + estFlipNet.toFixed(2);
-        flipEl.className   = estFlipNet >= 0 ? 'text-success' : 'text-danger';
-
-        const flipGrossEl = document.getElementById('flip-gross-display');
-        flipGrossEl.textContent = '$' + estFlipGross.toFixed(2);
-        flipGrossEl.className   = estFlipGross >= 0 ? 'text-success' : 'text-danger';
-    }
-
-    // ── Submit: serialize rows into snapshot JSON ─────────────────────────────
-    document.getElementById('lot-form').addEventListener('submit', () => {
-        const rows = [];
-        let totalCost = 0, totalEmv = 0;
-
-        itemsList.querySelectorAll('.item-row').forEach(row => {
-            const qty     = parseInt(row.querySelector('.row-qty').value)      || 1;
-            const market  = parseFloat(row.querySelector('.row-market').value) || 0;
-            const pct     = parseFloat(row.querySelector('.row-pct').value)    || 0;
-            const offered = market * qty * pct / 100;
-            const tracked = row.querySelector('.row-track').checked;
-
-            totalCost += offered;
-            totalEmv  += market * qty;
-
-            rows.push({
-                name:            row.querySelector('.row-name').value,
-                pokemon_card_id: row.querySelector('.row-card-id').value,
-                set_name:        row.querySelector('.row-set-name').value,
-                card_number:     row.querySelector('.row-card-number').value,
-                rarity:          row.querySelector('.row-rarity').value,
-                image_url:       row.querySelector('.row-image-url').value,
-                qty,
-                market_price:    market,
-                percentage:      pct,
-                offered:         offered,
-                item_type:       row.querySelector('.row-type').value,
-                is_tracked:      tracked,
-                purpose:         tracked ? row.querySelector('.row-purpose').value : '',
-                grading_company: row.querySelector('.row-grading-company')?.value || '',
-                grade:           row.querySelector('.row-grade')?.value || '',
+function cardSearch() {
+    return {
+        query: '',
+        results: [],
+        async search() {
+            const q = this.query.trim();
+            if (!q) { this.results = []; return; }
+            const res = await fetch('/api/v1/cards/search?q=' + encodeURIComponent(q));
+            this.results = await res.json() || [];
+        },
+        clear() { this.query = ''; this.results = []; },
+        async pick(c) {
+            this.clear();
+            const params = new URLSearchParams({
+                card_id: c.id || '', name: c.name || '', set: c.set_name || '',
+                card: c.card_number || '', rarity: c.rarity || '',
+                market: c.market_price || 0, img: c.image_url || '',
             });
-        });
+            const html = await fetch('/lots/partials/row?' + params).then(r => r.text());
+            const list = document.getElementById('items-list');
+            list.insertAdjacentHTML('beforeend', html);
+            document.getElementById('empty-msg').style.display = 'none';
+        },
+    };
+}
 
-        document.getElementById('snapshot-input').value   = JSON.stringify(rows);
-        document.getElementById('total-cost-input').value = totalCost.toFixed(2);
-        document.getElementById('emv-input').value        = totalEmv.toFixed(2);
+function lotTotals() {
+    return {
+        totalEmv: 0, totalBuying: 0, trackedEmv: 0, untrackedEmv: 0,
+        estFlipNet: 0, estFlipGross: 0,
+        recalc() {
+            let te = 0, tb = 0, trk = 0, uBuy = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const d = Alpine.$data(row); if (!d) return;
+                const emv = (d.market || 0) * (d.qty || 1);
+                const buy = emv * ((d.pct || 0) / 100);
+                te += emv; tb += buy;
+                d.tracked ? trk += emv : uBuy += buy;
+            });
+            this.totalEmv = te; this.totalBuying = tb; this.trackedEmv = trk;
+            this.untrackedEmv = te - trk;
+            this.estFlipNet   = (this.untrackedEmv * 0.88) - uBuy;
+            this.estFlipGross = this.untrackedEmv - uBuy;
+            const list = document.getElementById('items-list');
+            document.getElementById('empty-msg').style.display =
+                list.children.length ? 'none' : '';
+        },
+    };
+}
+
+document.getElementById('lot-form').addEventListener('submit', () => {
+    let totalCost = 0, totalEmv = 0;
+    const rows = [...document.querySelectorAll('.item-row')].map(row => {
+        const d = Alpine.$data(row);
+        const offered = d.qty * d.market * d.pct / 100;
+        totalCost += offered; totalEmv += d.qty * d.market;
+        return {
+            name: d.name, pokemon_card_id: d.cardId, set_name: d.setName,
+            card_number: d.cardNumber, rarity: d.rarity, image_url: d.imageUrl,
+            qty: d.qty, market_price: d.market, percentage: d.pct, offered,
+            item_type: d.type, is_tracked: d.tracked, purpose: d.purpose,
+            grading_company: d.gradingCompany, grade: d.grade,
+        };
     });
-
-    // ── Utility ───────────────────────────────────────────────────────────────
-    function esc(s) {
-        return String(s ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-    }
-})();
+    document.getElementById('snapshot-input').value   = JSON.stringify(rows);
+    document.getElementById('total-cost-input').value = totalCost.toFixed(2);
+    document.getElementById('emv-input').value        = totalEmv.toFixed(2);
+});
 </script>
 {{end}}

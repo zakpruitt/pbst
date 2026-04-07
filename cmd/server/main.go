@@ -55,7 +55,7 @@ func main() {
 	viewMW := func(h http.HandlerFunc) http.Handler { return auth.RequestLogger(auth.SessionAuthView(store)(h)) }
 
 	dash    := handlers.NewDashboardViewHandler(lotRepo, saleRepo, itemRepo)
-	lots    := handlers.NewLotViewHandler(lotRepo, lotSvc)
+	lots    := handlers.NewLotViewHandler(lotRepo, lotSvc, cardRepo)
 	sales   := handlers.NewSaleViewHandler(saleRepo)
 	inv     := handlers.NewInventoryViewHandler(itemRepo)
 	grading := handlers.NewGradingViewHandler(gradingRepo, itemRepo, gradingSvc)
@@ -66,6 +66,7 @@ func main() {
 	mux.Handle("POST /lots",                    viewMW(lots.SaveLot))
 	mux.Handle("GET /lots/{id}",                viewMW(lots.LotDetail))
 	mux.Handle("GET /lots/{id}/edit",           viewMW(lots.LotEditForm))
+	mux.Handle("GET /lots/partials/row",        viewMW(lots.RowPartial))
 	mux.Handle("POST /lots/{id}",               viewMW(lots.UpdateLot))
 	mux.Handle("POST /lots/{id}/status",        viewMW(lots.UpdateLotStatus))
 	mux.Handle("GET /sales",                    viewMW(sales.Sales))

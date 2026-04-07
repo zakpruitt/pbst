@@ -73,6 +73,28 @@ func parseTemplate(page string) *template.Template {
 	)
 }
 
+// parseTemplateWithPartial parses a page template together with a partial,
+// so the page can call {{template "partial-name" .}} server-side.
+func parseTemplateWithPartial(page, partial string) *template.Template {
+	return template.Must(
+		template.New("").Funcs(viewFuncs).ParseFiles(
+			"ui/templates/layout.html",
+			"ui/templates/"+page+".html",
+			"ui/templates/"+partial+".html",
+		),
+	)
+}
+
+// parsePartialTemplate parses a standalone partial (no layout wrapper).
+// The returned template should be executed by its defined name.
+func parsePartialTemplate(partial string) *template.Template {
+	return template.Must(
+		template.New("").Funcs(viewFuncs).ParseFiles(
+			"ui/templates/" + partial + ".html",
+		),
+	)
+}
+
 func execTemplate(w http.ResponseWriter, tmpl *template.Template, name string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.ExecuteTemplate(w, name, data); err != nil {

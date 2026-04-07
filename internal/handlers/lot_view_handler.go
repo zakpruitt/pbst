@@ -18,21 +18,26 @@ type LotViewHandler struct {
 	lotDetail *template.Template
 	lotNew    *template.Template
 	lotEdit   *template.Template
+	rowPartial *template.Template
 	lotRepo   *repository.LotRepository
 	lotSvc    *services.LotService
+	cardRepo  *repository.PokemonCardRepository
 }
 
 func NewLotViewHandler(
 	lotRepo *repository.LotRepository,
 	lotSvc *services.LotService,
+	cardRepo *repository.PokemonCardRepository,
 ) *LotViewHandler {
 	return &LotViewHandler{
-		lots:      parseTemplate("lots/index"),
-		lotDetail: parseTemplate("lots/detail"),
-		lotNew:    parseTemplate("lots/new"),
-		lotEdit:   parseTemplate("lots/edit"),
-		lotRepo:   lotRepo,
-		lotSvc:    lotSvc,
+		lots:       parseTemplate("lots/index"),
+		lotDetail:  parseTemplate("lots/detail"),
+		lotNew:     parseTemplateWithPartial("lots/new", "lots/partials/row"),
+		lotEdit:    parseTemplateWithPartial("lots/edit", "lots/partials/row"),
+		rowPartial: parsePartialTemplate("lots/partials/row"),
+		lotRepo:    lotRepo,
+		lotSvc:     lotSvc,
+		cardRepo:   cardRepo,
 	}
 }
 
@@ -88,16 +93,44 @@ func (h *LotViewHandler) LotEditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshotJSON := template.JS("[]")
+	var items []models.SnapshotItem
 	if lot.LotContentSnapshot != "" {
-		snapshotJSON = template.JS(lot.LotContentSnapshot)
+		if err := json.Unmarshal([]byte(lot.LotContentSnapshot), &items); err != nil {
+			serverError(w, err)
+			return
+		}
 	}
 
 	execTemplate(w, h.lotEdit, "layout", map[string]any{
-		"Page":         "lots",
-		"Lot":          lot,
-		"SnapshotJSON": snapshotJSON,
+		"Page":          "lots",
+		"Lot":           lot,
+		"SnapshotItems": items,
 	})
+}
+
+// RowPartial renders a single lot item row as an HTML fragment.
+// Used by HTMX "Add row manually" and by the Alpine card-picker fetch.
+func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	market, _ := strconv.ParseFloat(q.Get("market"), 64)
+	qty, _ := strconv.Atoi(q.Get("qty"))
+	if qty == 0 {
+		qty = 1
+	}
+
+	item := models.SnapshotItem{
+		PokemonCardID: q.Get("card_id"),
+		Name:          q.Get("name"),
+		SetName:       q.Get("set"),
+		CardNumber:    q.Get("card"),
+		Rarity:        q.Get("rarity"),
+		ImageURL:      q.Get("img"),
+		ItemType:      "RAW_CARD",
+		Qty:           qty,
+		MarketPrice:   market,
+		Percentage:    70,
+	}
+	execTemplate(w, h.rowPartial, "lot-row", item)
 }
 
 func (h *LotViewHandler) SaveLot(w http.ResponseWriter, r *http.Request) {

@@ -128,7 +128,7 @@ func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
 		ItemType:      "RAW_CARD",
 		Qty:           qty,
 		MarketPrice:   market,
-		Percentage:    70,
+		Percentage:    60,
 	}
 	execTemplate(w, h.rowPartial, "lot-row", item)
 }

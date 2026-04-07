@@ -24,53 +24,52 @@
         </div>
     </div>
 
-    {{/* Card search — Alpine component */}}
-    <div class="card mb-3" x-data="cardSearch()">
-        <div class="card-body">
-            <h6 class="card-title mb-3">Add Items</h6>
-            <div class="position-relative mb-2">
-                <input type="text" class="form-control form-control-sm"
-                       placeholder="Search cards by name or set…" autocomplete="off"
-                       x-model="query" @input.debounce.300ms="search()" @keydown.escape="clear()">
-                <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
-                     style="z-index:100;max-height:280px;overflow-y:auto"
-                     x-show="results.length > 0" x-cloak
-                     @click.outside="clear()">
-                    <template x-for="c in results" :key="c.id">
-                        <button type="button"
-                                class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
-                                @click="pick(c)">
-                            <template x-if="c.image_url">
-                                <img :src="c.image_url" style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
-                            </template>
-                            <template x-if="!c.image_url">
-                                <div style="width:34px"></div>
-                            </template>
-                            <span>
-                                <strong class="d-block" x-text="c.name"></strong>
-                                <span class="text-muted small" x-text="c.set_name + ' #' + c.card_number"></span><br>
-                                <span class="text-success small" x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span>
-                            </span>
-                        </button>
-                    </template>
-                </div>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                    hx-get="/lots/partials/row"
-                    hx-target="#items-list"
-                    hx-swap="beforeend">
-                + Add row manually
-            </button>
-        </div>
-    </div>
-
-    {{/* Items list + totals footer wrapped in one Alpine root for reactivity */}}
     <div x-data="lotTotals()" @input.window="recalc()" @change.window="recalc()" @lot:changed.window="recalc()">
 
         <div id="items-list"></div>
 
         <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
-            Search for a card above or add a row manually.
+            Search for a card below or add a row manually.
+        </div>
+
+        {{/* Add Items — below the list so new items appear above it */}}
+        <div class="card mb-3" x-data="cardSearch()">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Add Items</h6>
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control form-control-sm"
+                           placeholder="Search cards by name or set…" autocomplete="off"
+                           x-model="query" @input.debounce.300ms="search()" @keydown.escape="clear()">
+                    <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                         style="z-index:100;max-height:280px;overflow-y:auto;display:none"
+                         x-show="results.length > 0"
+                         @click.outside="clear()">
+                        <template x-for="c in results" :key="c.id">
+                            <button type="button"
+                                    class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                                    @click="pick(c)">
+                                <template x-if="c.image_url">
+                                    <img :src="c.image_url" style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
+                                </template>
+                                <template x-if="!c.image_url">
+                                    <div style="width:34px"></div>
+                                </template>
+                                <span>
+                                    <strong class="d-block" x-text="c.name"></strong>
+                                    <span class="text-muted small" x-text="c.set_name + ' #' + c.card_number"></span><br>
+                                    <span class="text-success small" x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span>
+                                </span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        hx-get="/lots/partials/row"
+                        hx-target="#items-list"
+                        hx-swap="beforeend">
+                    + Add row manually
+                </button>
+            </div>
         </div>
 
         <div class="card p-3 mb-3">
@@ -156,7 +155,8 @@ document.getElementById('lot-form').addEventListener('submit', () => {
             name: d.name, pokemon_card_id: d.cardId, set_name: d.setName,
             card_number: d.cardNumber, rarity: d.rarity, image_url: d.imageUrl,
             qty: d.qty, market_price: d.market, percentage: d.pct, offered,
-            item_type: d.type, is_tracked: d.tracked, purpose: d.tracked ? 'GRADED_INVENTORY' : '',
+            item_type: d.type, is_tracked: d.tracked,
+            purpose: d.tracked ? 'GRADED_INVENTORY' : '',
             grading_company: d.gradingCompany, grade: d.grade,
         };
     });

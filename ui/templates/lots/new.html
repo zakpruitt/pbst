@@ -146,39 +146,44 @@
         const isTracked = !!data.is_tracked;
         const purpose   = data.purpose || (isTracked ? 'GRADED_INVENTORY' : '');
 
-        // ── Thumbnail (inline, 64px tall) ────────────────────────────────────
-        const thumbHtml = data.image_url
-            ? `<img src="${esc(data.image_url)}" data-card-img="${esc(data.image_url)}"
-                    style="height:64px;width:auto;border-radius:4px;flex-shrink:0">`
-            : `<div style="width:44px;height:64px;background:#e9ecef;border-radius:4px;flex-shrink:0"></div>`;
-
         // ── Set info line ─────────────────────────────────────────────────────
         const setInfo = (data.set_name || data.card_number)
             ? `<div class="text-muted" style="font-size:.75rem;margin-top:1px">${esc(data.set_name || '')}${data.card_number ? ' #' + esc(data.card_number) : ''}</div>`
             : '';
+
+        const imgSrc  = esc(data.image_url || '');
+        const imgAttr = imgSrc ? `src="${imgSrc}" data-card-img="${imgSrc}"` : '';
 
         el.innerHTML = `
             <input type="hidden" class="row-card-id"     value="${esc(data.pokemon_card_id || '')}">
             <input type="hidden" class="row-set-name"    value="${esc(data.set_name || '')}">
             <input type="hidden" class="row-card-number" value="${esc(data.card_number || '')}">
             <input type="hidden" class="row-rarity"      value="${esc(data.rarity || '')}">
-            <input type="hidden" class="row-image-url"   value="${esc(data.image_url || '')}">
+            <input type="hidden" class="row-image-url"   value="${imgSrc}">
 
-            <div class="d-flex gap-2 align-items-start p-2">
-                ${thumbHtml}
+            {{/* Outer flex: image column stretches to full row height by default */}}
+            <div class="d-flex">
 
-                <div class="flex-grow-1" style="min-width:0">
+                {{/* Image column: fixed 52px, display:flex so height:100% works on img */}}
+                <div style="flex-shrink:0;width:52px;display:flex;align-items:center;justify-content:center;padding:4px;background:#f8f9fa;border-right:1px solid #e9ecef">
+                    ${imgSrc
+                        ? `<img ${imgAttr} style="width:100%;height:100%;object-fit:contain;border-radius:3px">`
+                        : `<div style="width:100%;height:100%;background:#e9ecef;border-radius:3px"></div>`}
+                </div>
 
-                    {{/* Row 1: name | type | track | purpose | remove */}}
-                    <div class="d-flex gap-1 align-items-center flex-wrap mb-1">
-                        <input class="form-control form-control-sm row-name" style="flex:1;min-width:120px"
+                {{/* Content: everything else */}}
+                <div class="flex-grow-1 p-2" style="min-width:0">
+
+                    {{/* Row 1: name (20%) | type | [Track  Purpose▾] | remove */}}
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <input class="form-control form-control-sm row-name" style="flex:0 0 20%;min-width:90px"
                                value="${esc(data.name || '')}" placeholder="Name">
                         <select class="form-select form-select-sm row-type" style="width:108px;flex-shrink:0" onchange="onTypeChange(this)">
                             <option value="RAW_CARD"       ${!isGraded && !isSealed ? 'selected' : ''}>Raw Card</option>
                             <option value="GRADED_CARD"    ${isGraded  ? 'selected' : ''}>Graded Card</option>
                             <option value="SEALED_PRODUCT" ${isSealed  ? 'selected' : ''}>Sealed</option>
                         </select>
-                        <label class="d-flex align-items-center gap-1 text-muted small mb-0" style="flex-shrink:0">
+                        <label class="d-flex align-items-center gap-1 text-muted small mb-0 px-1" style="flex-shrink:0;white-space:nowrap">
                             <input type="checkbox" class="form-check-input row-track"
                                    onchange="togglePurpose(this)" ${isTracked ? 'checked' : ''}>
                             Track
@@ -188,29 +193,13 @@
                             <option value="PERSONAL_COLLECTION" ${purpose === 'PERSONAL_COLLECTION' ? 'selected' : ''}>Personal Collection</option>
                         </select>
                         <button type="button" onclick="removeRow(this)"
-                                class="btn btn-sm btn-outline-danger px-2" style="flex-shrink:0">✕</button>
+                                class="btn btn-sm btn-outline-danger px-2 ms-auto" style="flex-shrink:0">✕</button>
                     </div>
 
                     {{/* Row 2: set info */}}
                     ${setInfo}
 
-                    {{/* Row 3: graded company + grade (only when GRADED_CARD) */}}
-                    <div class="row-graded-fields" style="${isGraded ? '' : 'display:none'}">
-                        <div class="d-flex gap-2 align-items-center mt-1">
-                            <span class="text-muted small text-nowrap">Company</span>
-                            <select class="form-select form-select-sm row-grading-company" style="width:85px">
-                                <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
-                                <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
-                                <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
-                                <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
-                            </select>
-                            <span class="text-muted small text-nowrap">Grade</span>
-                            <input type="text" class="form-control form-control-sm row-grade"
-                                   style="width:65px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
-                        </div>
-                    </div>
-
-                    {{/* Row 4: pricing — inline labels */}}
+                    {{/* Row 3: pricing + graded fields on same line (graded part hidden until needed) */}}
                     <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
                         <span class="text-muted" style="font-size:.7rem">Qty</span>
                         <input type="number" class="form-control form-control-sm row-qty text-end"
@@ -223,6 +212,19 @@
                                style="width:52px" value="${data.percentage || 70}" min="0" max="100" oninput="recalcRow(this)">
                         <span class="text-muted small">→</span>
                         <strong class="text-success row-offered">$0.00</strong>
+                        {{/* Graded company + grade: inline after offered, same row */}}
+                        <div class="row-graded-fields" style="${isGraded ? 'display:contents' : 'display:none'}">
+                            <span class="text-muted small text-nowrap ms-2">Company</span>
+                            <select class="form-select form-select-sm row-grading-company" style="width:80px">
+                                <option value="PSA" ${data.grading_company === 'PSA' ? 'selected' : ''}>PSA</option>
+                                <option value="BGS" ${data.grading_company === 'BGS' ? 'selected' : ''}>BGS</option>
+                                <option value="CGC" ${data.grading_company === 'CGC' ? 'selected' : ''}>CGC</option>
+                                <option value="TAG" ${data.grading_company === 'TAG' ? 'selected' : ''}>TAG</option>
+                            </select>
+                            <span class="text-muted small text-nowrap">Grade</span>
+                            <input type="text" class="form-control form-control-sm row-grade"
+                                   style="width:60px" placeholder="e.g. 9" value="${esc(data.grade || '')}">
+                        </div>
                     </div>
 
                 </div>
@@ -239,7 +241,7 @@
         const isGraded = sel.value === 'GRADED_CARD';
         const purpose  = row.querySelector('.row-purpose');
 
-        row.querySelector('.row-graded-fields').style.display = isGraded ? '' : 'none';
+        row.querySelector('.row-graded-fields').style.display = isGraded ? 'contents' : 'none';
         applyTypeBorder(row, sel.value);
 
         if (isGraded && row.querySelector('.row-track').checked) {

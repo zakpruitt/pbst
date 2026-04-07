@@ -54,3 +54,26 @@ h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: 
 
 /* Inline card thumbnails */
 .card-thumb { height: 48px; width: auto; border-radius: 4px; cursor: default; }
+
+/* Lot row grid — image spans all content rows */
+.lot-row-grid {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+}
+.lot-row-img {
+  grid-row: 1 / -1;          /* span every row */
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.lot-row-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+/* When no image: content fills both columns */
+.lot-row-grid > :not(.lot-row-img) { grid-column: 2; }
+.lot-row-grid:not(:has(.lot-row-img)) > * { grid-column: 1 / -1; }

@@ -45,10 +45,10 @@ var syncSets = []string{
 	"24423", // M-P Promotional Cards
 	"24399", // Mega Brave
 	"24400", // Mega Symphonia
-	"24459", // Inferno X
-	"24499", // High Class Pack: MEGA Dream ex
-	"24600", // Nihil Zero
-	"24653", // Ninja Spinner
+	"Inferno X",
+	"Mega Dream",
+	"Nihil Zero",
+	"Ninja Spinner",
 }
 
 type PokeWalletSync struct {
@@ -73,7 +73,7 @@ func (j *PokeWalletSync) Run(ctx context.Context) {
 	slog.Info("pokewallet sync started", "interval", "5m", "sets", len(syncSets))
 	j.syncAll(ctx)
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(12 * time.Hour)
 	defer ticker.Stop()
 
 	for {

@@ -11,7 +11,7 @@ body { background: #f7f9f9; font-family: -apple-system, BlinkMacSystemFont, "Seg
 
 /* Cards */
 .card { border: 1px solid #e1e8ed; border-top: 3px solid var(--accent); box-shadow: none; border-radius: 10px; }
-.item-row.card { border-top: 1px solid #e1e8ed; overflow: hidden; padding: 0 !important; }
+.item-row.card { border-top: 1px solid #e1e8ed; }
 .card-header { background: #fff; border-bottom: 1px solid #e1e8ed; font-weight: 600; font-size: .875rem; }
 .card-footer { background: #fff; border-top: 1px solid #e1e8ed; }
 

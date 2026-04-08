@@ -68,9 +68,7 @@
       <td class="text-end fw-medium">{{fmtMoney .Offered}}</td>
       <td class="text-center"><small class="text-muted">{{itemTypeLabel .ItemType}}</small></td>
       <td class="text-center">
-        {{if .IsTracked}}
-        <span class="badge bg-success">{{purposeLabel .Purpose}}</span>
-        {{else}}—{{end}}
+        {{if .IsTracked}}<span class="text-success">✓</span>{{else}}—{{end}}
       </td>
     </tr>
     {{end}}

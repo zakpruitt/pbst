@@ -106,17 +106,16 @@
     });
 
     // ── Inventory doughnut ────────────────────────────────────────────────────
-    const pcCount      = {{.PCCount}};
     const gradingCount = {{.GradingCount}};
     const invCount     = {{.InventoryCount}};
-    const total        = pcCount + gradingCount + invCount;
+    const total        = gradingCount + invCount;
 
     new Chart(document.getElementById('inventoryChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Collection', 'In Grading', 'Graded'],
+            labels: ['In Grading', 'Inventory'],
             datasets: [{
-                data: [pcCount, gradingCount, invCount],
+                data: [gradingCount, invCount],
                 backgroundColor: [
                     'rgba(39,174,96,0.8)',
                     'rgba(255,193,7,0.8)',

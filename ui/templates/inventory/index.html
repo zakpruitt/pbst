@@ -3,20 +3,12 @@
 
 <ul class="nav nav-tabs mb-4">
   <li class="nav-item">
-    <a class="nav-link {{if eq .Purpose "PERSONAL_COLLECTION"}}active{{end}}"
-       href="/inventory?purpose=PERSONAL_COLLECTION"
-       hx-get="/inventory?purpose=PERSONAL_COLLECTION"
+    <a class="nav-link {{if eq .Purpose "INVENTORY"}}active{{end}}"
+       href="/inventory?purpose=INVENTORY"
+       hx-get="/inventory?purpose=INVENTORY"
        hx-target="#inventory-list"
        hx-swap="outerHTML"
-       hx-push-url="true">Collection</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {{if eq .Purpose "PENDING_GRADE"}}active{{end}}"
-       href="/inventory?purpose=PENDING_GRADE"
-       hx-get="/inventory?purpose=PENDING_GRADE"
-       hx-target="#inventory-list"
-       hx-swap="outerHTML"
-       hx-push-url="true">To Grade</a>
+       hx-push-url="true">Inventory</a>
   </li>
   <li class="nav-item">
     <a class="nav-link {{if eq .Purpose "IN_GRADING"}}active{{end}}"
@@ -27,12 +19,12 @@
        hx-push-url="true">In Grading</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {{if eq .Purpose "GRADED_INVENTORY"}}active{{end}}"
-       href="/inventory?purpose=GRADED_INVENTORY"
-       hx-get="/inventory?purpose=GRADED_INVENTORY"
+    <a class="nav-link {{if eq .Purpose "PENDING_GRADE"}}active{{end}}"
+       href="/inventory?purpose=PENDING_GRADE"
+       hx-get="/inventory?purpose=PENDING_GRADE"
        hx-target="#inventory-list"
        hx-swap="outerHTML"
-       hx-push-url="true">Graded Inventory</a>
+       hx-push-url="true">To Grade</a>
   </li>
 </ul>
 

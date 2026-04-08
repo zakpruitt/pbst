@@ -156,7 +156,7 @@ document.getElementById('lot-form').addEventListener('submit', () => {
             card_number: d.cardNumber, rarity: d.rarity, image_url: d.imageUrl,
             qty: d.qty, market_price: d.market, percentage: d.pct, offered,
             item_type: d.type, is_tracked: d.tracked,
-            purpose: d.tracked ? 'GRADED_INVENTORY' : '',
+            purpose: d.tracked ? 'INVENTORY' : '',
             grading_company: d.gradingCompany, grade: d.grade,
         };
     });

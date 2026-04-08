@@ -26,12 +26,10 @@ var viewFuncs = template.FuncMap{
 	},
 	"purposeLabel": func(p string) string {
 		switch p {
-		case "PERSONAL_COLLECTION":
-			return "Collection"
+		case "INVENTORY":
+			return "Inventory"
 		case "IN_GRADING":
 			return "In Grading"
-		case "GRADED_INVENTORY":
-			return "Graded"
 		case "PENDING_GRADE":
 			return "To Grade"
 		default:

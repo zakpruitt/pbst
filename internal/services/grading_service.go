@@ -46,6 +46,10 @@ func (s *GradingService) CreateWithItems(ctx context.Context, company, method st
 		if err != nil {
 			return nil, fmt.Errorf("CreateWithItems: attach: %w", err)
 		}
+		err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, submission.ID, "IN_GRADING")
+		if err != nil {
+			return nil, fmt.Errorf("CreateWithItems: set IN_GRADING: %w", err)
+		}
 	}
 
 	return submission, nil
@@ -70,6 +74,9 @@ func (s *GradingService) AttachItems(ctx context.Context, submissionID uint, ite
 	err = s.itemRepo.AttachToSubmission(ctx, itemIDs, submissionID)
 	if err != nil {
 		return fmt.Errorf("AttachItems: %w", err)
+	}
+	if err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, submissionID, "IN_GRADING"); err != nil {
+		return fmt.Errorf("AttachItems: set IN_GRADING: %w", err)
 	}
 	return nil
 }

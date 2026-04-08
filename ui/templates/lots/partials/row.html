@@ -22,19 +22,19 @@ if(this.type==='SEALED_PRODUCT') return '#0d6efd';
 return 'transparent';
 }
 }"
-:style="'border-left:3px solid '+borderColor">
+     :style="'border-left:3px solid '+borderColor">
 
 <div class="d-flex gap-3 p-2 align-items-center">
 
     <template x-if="imageUrl">
-        <div style="width: 70px; flex-shrink: 0;" class="d-flex justify-content-center">
+        <div class="lot-img-wrap">
             <img :src="imageUrl" :data-card-img="imageUrl"
                  class="img-fluid rounded shadow-sm"
                  style="object-fit: contain;">
         </div>
     </template>
 
-    <div class="flex-grow-1 d-flex flex-column" style="min-width: 0; gap: 0.35rem;">
+    <div class="flex-grow-1 d-flex flex-column lot-row-content" >
 
         <div class="d-flex gap-2 align-items-center w-100">
             <input class="form-control form-control-sm flex-grow-1"
@@ -48,15 +48,14 @@ return 'transparent';
                     <option value="SEALED_PRODUCT">Sealed</option>
                 </select>
 
-                <button type="button" class="btn btn-sm btn-outline-danger p-0"
-                        style="height: 31px; width: 31px; display: flex; align-items: center; justify-content: center;"
+                <button type="button" class="btn btn-sm btn-outline-danger p-0 lot-btn-sq"
                         @click="$el.closest('.item-row').remove(); $dispatch('lot:changed')">✕</button>
             </div>
         </div>
 
-        <div class="d-flex align-items-start w-100" style="min-height: 31px;">
+        <div class="d-flex align-items-start w-100 lot-row-middle">
 
-            <div class="text-muted text-truncate flex-grow-1" style="font-size:.72rem; padding-top: 4px;">
+            <div class="text-muted text-truncate flex-grow-1 lot-row-meta">
                 {{if or .SetName .CardNumber}}
                 {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
                 {{end}}
@@ -81,7 +80,7 @@ return 'transparent';
             </template>
         </div>
 
-        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.85rem; flex-wrap: wrap;">
+        <div class="d-flex align-items-center gap-2 mt-1 lot-row-pricing">
             <span class="text-muted">Qty</span>
             <input type="number" class="form-control form-control-sm text-end"
                    style="width:50px" min="1" x-model.number="qty">
@@ -96,8 +95,7 @@ return 'transparent';
 
             <label class="d-flex align-items-center gap-2 mb-0 ms-auto" style="cursor: pointer;">
                 <span class="text-muted small">Track</span>
-                <input type="checkbox" class="form-check-input mt-0"
-                       style="width: 31px; height: 31px; cursor: pointer; border-color: #0d6efd;"
+                <input type="checkbox" class="form-check-input mt-0 lot-track-check"
                        x-model="tracked">
             </label>
         </div>

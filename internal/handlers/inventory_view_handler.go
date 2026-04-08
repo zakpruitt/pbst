@@ -22,7 +22,7 @@ func NewInventoryViewHandler(itemRepo *repository.TrackedItemRepository) *Invent
 func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request) {
 	purpose := r.URL.Query().Get("purpose")
 	if purpose == "" {
-		purpose = "PERSONAL_COLLECTION"
+		purpose = "INVENTORY"
 	}
 	items, err := h.itemRepo.GetItemsByPurpose(r.Context(), purpose)
 	if err != nil {

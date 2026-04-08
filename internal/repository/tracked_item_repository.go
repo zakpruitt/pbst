@@ -92,7 +92,7 @@ func (r *TrackedItemRepository) UpdateGradedDetails(ctx context.Context, itemID 
 			"grading_company":  details.GradingCompany,
 			"grade":            details.Grade,
 			"grading_upcharge": details.GradingUpcharge,
-			"purpose":          "GRADED_INVENTORY",
+			"purpose":          "INVENTORY",
 		}).Error
 	if err != nil {
 		return fmt.Errorf("UpdateGradedDetails: %w", err)

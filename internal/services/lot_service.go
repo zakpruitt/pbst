@@ -53,8 +53,8 @@ func snapshotToTrackedItem(lot *models.LotPurchase, item models.SnapshotItem) *m
 	}
 
 	purpose := item.Purpose
-	if item.ItemType == "GRADED_CARD" && purpose == "" {
-		purpose = "GRADED_INVENTORY"
+	if purpose == "" && item.IsTracked {
+		purpose = "INVENTORY"
 	}
 
 	ti := &models.TrackedItem{

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/zakpruitt/pbst/internal/models"
 	"github.com/zakpruitt/pbst/internal/repository"
 	"github.com/zakpruitt/pbst/internal/services"
 )
@@ -44,14 +45,16 @@ func (h *GradingViewHandler) Grading(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GradingViewHandler) GradingNew(w http.ResponseWriter, r *http.Request) {
-	unattached, err := h.itemRepo.GetPendingGradeUnattached(r.Context())
+	items, err := h.itemRepo.GetInventoryItems(r.Context())
 	if err != nil {
 		serverError(w, err)
 		return
 	}
+	raw, graded := splitInventoryItems(items)
 	execTemplate(w, h.gradingNew, "layout", map[string]any{
-		"Page":       "grading",
-		"Unattached": unattached,
+		"Page":        "grading",
+		"RawItems":    raw,
+		"GradedItems": graded,
 	})
 }
 
@@ -86,12 +89,14 @@ func (h *GradingViewHandler) GradingDetail(w http.ResponseWriter, r *http.Reques
 		"Submission": submission,
 	}
 	if submission.Status == "PREPPING" {
-		unattached, err := h.itemRepo.GetPendingGradeUnattached(r.Context())
+		items, err := h.itemRepo.GetInventoryItems(r.Context())
 		if err != nil {
 			serverError(w, err)
 			return
 		}
-		data["Unattached"] = unattached
+		raw, graded := splitInventoryItems(items)
+		data["RawItems"] = raw
+		data["GradedItems"] = graded
 	}
 	execTemplate(w, h.gradingDetail, "layout", data)
 }
@@ -127,6 +132,17 @@ func (h *GradingViewHandler) AttachItems(w http.ResponseWriter, r *http.Request)
 		}
 	}
 	http.Redirect(w, r, fmt.Sprintf("/grading/%d", id), http.StatusSeeOther)
+}
+
+func splitInventoryItems(items []models.TrackedItem) (raw, graded []models.TrackedItem) {
+	for _, item := range items {
+		if item.GradedDetails != nil && item.GradedDetails.GradingCompany != "" {
+			graded = append(graded, item)
+		} else {
+			raw = append(raw, item)
+		}
+	}
+	return
 }
 
 func (h *GradingViewHandler) RecordReturn(w http.ResponseWriter, r *http.Request) {

@@ -62,14 +62,14 @@ func (r *TrackedItemRepository) UpdateItemsStatusBySubmission(ctx context.Contex
 	return nil
 }
 
-func (r *TrackedItemRepository) GetPendingGradeUnattached(ctx context.Context) ([]models.TrackedItem, error) {
+func (r *TrackedItemRepository) GetInventoryItems(ctx context.Context) ([]models.TrackedItem, error) {
 	var items []models.TrackedItem
 	err := r.db.WithContext(ctx).
 		Preload("PokemonCard").
-		Where("purpose = ? AND grading_submission_id IS NULL", "PENDING_GRADE").
+		Where("purpose = ?", "INVENTORY").
 		Find(&items).Error
 	if err != nil {
-		return nil, fmt.Errorf("GetPendingGradeUnattached: %w", err)
+		return nil, fmt.Errorf("GetInventoryItems: %w", err)
 	}
 	return items, nil
 }

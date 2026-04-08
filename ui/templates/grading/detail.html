@@ -22,26 +22,29 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Attach Items</span>
-        <small class="text-muted">PENDING_GRADE inventory not yet in a submission</small>
+        <small class="text-muted fw-normal">From inventory</small>
       </div>
-      {{if not .Unattached}}
-      <div class="card-body text-muted">No unattached items to grade.</div>
+      {{if and (not .RawItems) (not .GradedItems)}}
+      <div class="card-body text-muted">No inventory items available.</div>
       {{else}}
       <form method="POST" action="/grading/{{.Submission.ID}}/items">
+        {{if .RawItems}}
+        <div class="px-3 pt-2 pb-1"><h6 class="mb-0">Raw Cards</h6></div>
         <table class="table table-sm mb-0">
           <thead class="table-light">
             <tr>
-              <th style="width:2rem"></th>
-              <th>Name</th>
+              <th style="width:2rem">
+                <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'raw-cb')">
+              </th>
+              <th>Card</th>
               <th>Set</th>
-              <th>Card #</th>
               <th class="text-end">Cost Basis</th>
             </tr>
           </thead>
           <tbody>
-            {{range .Unattached}}
+            {{range .RawItems}}
             <tr>
-              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input"></td>
+              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb"></td>
               <td>
                 <div class="d-flex align-items-center gap-2">
                   {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
@@ -54,13 +57,53 @@
                   </span>
                 </div>
               </td>
-              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
-              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
+              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}</td>
               <td class="text-end">{{fmtMoney .CostBasis}}</td>
             </tr>
             {{end}}
           </tbody>
         </table>
+        {{end}}
+        {{if .GradedItems}}
+        <div class="px-3 pt-2 pb-1"><h6 class="mb-0">Previously Graded</h6></div>
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:2rem">
+                <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'graded-cb')">
+              </th>
+              <th>Card</th>
+              <th>Set</th>
+              <th class="text-center">Current Grade</th>
+              <th class="text-end">Cost Basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .GradedItems}}
+            <tr>
+              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb"></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                  <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+                  {{end}}{{end}}
+                  <span>
+                    {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                    {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                    {{else}}Unnamed{{end}}
+                  </span>
+                </div>
+              </td>
+              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}</td>
+              <td class="text-center">
+                {{if .GradedDetails}}<span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>{{else}}—{{end}}
+              </td>
+              <td class="text-end">{{fmtMoney .CostBasis}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+        {{end}}
         <div class="card-footer d-flex justify-content-end">
           <button type="submit" class="btn btn-sm btn-primary">Attach Selected</button>
         </div>
@@ -222,3 +265,9 @@
 </div>
 {{end}}
 {{end}}
+
+<script>
+function toggleSection(master, cls) {
+    document.querySelectorAll('.' + cls).forEach(cb => cb.checked = master.checked);
+}
+</script>

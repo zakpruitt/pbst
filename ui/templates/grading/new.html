@@ -24,24 +24,26 @@
     </div>
   </div>
 
+  {{if and (not .RawItems) (not .GradedItems)}}
+  <div class="card mb-3">
+    <div class="card-body text-muted">
+      No items in your inventory yet.
+      <a href="/lots/new">Add a lot</a> and mark cards as tracked.
+    </div>
+  </div>
+  {{else}}
+
+  {{if .RawItems}}
   <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Select Items to Include</span>
-      <small class="text-muted fw-normal">Items from your To Grade inventory</small>
+      <span>Raw Cards</span>
+      <small class="text-muted fw-normal">{{len .RawItems}} item{{if gt (len .RawItems) 1}}s{{end}}</small>
     </div>
-    {{if not .Unattached}}
-    <div class="card-body text-muted">
-      No items in your To Grade inventory yet.
-      <a href="/inventory?purpose=PENDING_GRADE">Check inventory</a> or
-      <a href="/lots/new">add a lot</a> with cards marked "To Grade".
-    </div>
-    {{else}}
     <table class="table table-sm table-hover mb-0">
       <thead class="table-light">
         <tr>
           <th style="width:2rem">
-            <input type="checkbox" class="form-check-input" id="select-all"
-              onchange="document.querySelectorAll('.item-cb').forEach(cb => cb.checked = this.checked)">
+            <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'raw-cb')">
           </th>
           <th>Card</th>
           <th>Set</th>
@@ -50,9 +52,9 @@
         </tr>
       </thead>
       <tbody>
-        {{range .Unattached}}
+        {{range .RawItems}}
         <tr>
-          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input item-cb"></td>
+          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb item-cb"></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
@@ -76,12 +78,70 @@
         {{end}}
       </tbody>
     </table>
-    {{end}}
   </div>
+  {{end}}
+
+  {{if .GradedItems}}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Previously Graded</span>
+      <small class="text-muted fw-normal">{{len .GradedItems}} item{{if gt (len .GradedItems) 1}}s{{end}} · eligible for resubmission</small>
+    </div>
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:2rem">
+            <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'graded-cb')">
+          </th>
+          <th>Card</th>
+          <th>Set</th>
+          <th class="text-center">Current Grade</th>
+          <th class="text-end">Cost Basis</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .GradedItems}}
+        <tr>
+          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb item-cb"></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+              {{end}}{{end}}
+              <span class="fw-medium">
+                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                {{else}}Unnamed{{end}}
+              </span>
+            </div>
+          </td>
+          <td class="text-muted small align-middle">
+            {{if .PokemonCard}}{{.PokemonCard.SetName}}<br>#{{.PokemonCard.CardNumber}}{{end}}
+          </td>
+          <td class="text-center align-middle">
+            {{if .GradedDetails}}
+            <span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+            {{else}}—{{end}}
+          </td>
+          <td class="text-end align-middle">{{fmtMoney .CostBasis}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+
+  {{end}}
 
   <div class="d-flex justify-content-between align-items-center">
     <span class="text-muted small">Submission name is auto-generated (e.g. PSA Submission #1)</span>
     <button type="submit" class="btn btn-success">Create Submission</button>
   </div>
 </form>
+
+<script>
+function toggleSection(master, cls) {
+    document.querySelectorAll('.' + cls).forEach(cb => cb.checked = master.checked);
+}
+</script>
 {{end}}

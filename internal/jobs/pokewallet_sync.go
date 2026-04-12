@@ -67,7 +67,7 @@ func NewPokeWalletSync(cardRepo *repository.PokemonCardRepository, apiKey, baseU
 	}
 }
 
-// Run syncs all sets immediately then every 5 minutes until ctx is cancelled.
+// Run syncs all sets immediately then every 5 minutes until ctx is canceled.
 // Call as: go job.Run(ctx)
 func (j *PokeWalletSync) Run(ctx context.Context) {
 	slog.Info("pokewallet sync started", "interval", "5m", "sets", len(syncSets))

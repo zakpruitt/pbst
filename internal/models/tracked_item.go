@@ -16,6 +16,7 @@ type TrackedItem struct {
 	Notes                 sql.NullString `gorm:"type:text" json:"notes"`
 	Purpose               string         `json:"purpose"`
 	LotPurchaseID         uint           `json:"lot_purchase_id"`
+	LotPurchase           *LotPurchase   `json:"lot_purchase"`
 	PokemonCardID         sql.NullString `gorm:"column:pokemon_card_id" json:"pokemon_card_id"`
 	PokemonCard           *PokemonCard   `json:"pokemon_card"`
 	SealedProductID       sql.NullString `gorm:"column:sealed_product_id" json:"sealed_product_id"`

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -25,60 +26,83 @@ func main() {
 	if err := godotenv.Load(".env." + env); err != nil {
 		slog.Debug("no env file loaded", "file", ".env."+env)
 	}
+	slog.Info(fmt.Sprintf("APP LAUNCHING IN %s", env))
 
+	// Infrastructure
 	database := db.NewConnection()
-	store    := auth.NewStore()
+	store := auth.NewStore()
 
-	lotRepo     := repository.NewLotRepository(database)
-	saleRepo    := repository.NewSaleRepository(database)
-	itemRepo    := repository.NewTrackedItemRepository(database)
+	// Repositories
+	lotRepo := repository.NewLotRepository(database)
+	saleRepo := repository.NewSaleRepository(database)
+	itemRepo := repository.NewTrackedItemRepository(database)
 	gradingRepo := repository.NewGradingRepository(database)
-	cardRepo    := repository.NewPokemonCardRepository(database)
+	cardRepo := repository.NewPokemonCardRepository(database)
 
-	lotSvc     := services.NewLotService(lotRepo, itemRepo)
+	// Services
+	lotSvc := services.NewLotService(lotRepo, itemRepo)
 	gradingSvc := services.NewGradingService(gradingRepo, itemRepo)
 
-	go jobs.NewPokeWalletSync(cardRepo, os.Getenv("POKEWALLET_API_KEY"), os.Getenv("POKEWALLET_BASE_URL")).
-		Run(context.Background())
+	// Background jobs
+	backgroundJobs := []jobs.Job{
+		jobs.NewPokeWalletSync(cardRepo, os.Getenv("POKEWALLET_API_KEY"), os.Getenv("POKEWALLET_BASE_URL")),
+		jobs.NewEbaySalesSync(saleRepo, os.Getenv("EBAY_CLIENT_ID"), os.Getenv("EBAY_CLIENT_SECRET"), os.Getenv("EBAY_REFRESH_TOKEN")),
+	}
+	for _, job := range backgroundJobs {
+		go job.Run(context.Background())
+	}
 
 	mux := http.NewServeMux()
 
-	// Auth
-	mux.Handle("POST /api/v1/login",  auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogin)))
-	mux.Handle("POST /api/v1/logout", auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogout)))
+	// Middleware
+	apiMiddleware := func(h http.HandlerFunc) http.Handler {
+		return auth.RequestLogger(auth.SessionAuth(store)(h))
+	}
+	viewMiddleware := func(h http.HandlerFunc) http.Handler {
+		return auth.RequestLogger(auth.SessionAuthView(store)(h))
+	}
 
-	// Card search (used by lot forms)
-	apiMW  := func(h http.HandlerFunc) http.Handler { return auth.RequestLogger(auth.SessionAuth(store)(h)) }
-	mux.Handle("GET /api/v1/cards/search", apiMW(handlers.NewPokemonCardHandler(cardRepo).HandleSearchCards))
-
-	// Views
-	viewMW := func(h http.HandlerFunc) http.Handler { return auth.RequestLogger(auth.SessionAuthView(store)(h)) }
-
-	dash    := handlers.NewDashboardViewHandler(lotRepo, saleRepo, itemRepo)
-	lots    := handlers.NewLotViewHandler(lotRepo, lotSvc, cardRepo)
-	sales   := handlers.NewSaleViewHandler(saleRepo)
-	inv     := handlers.NewInventoryViewHandler(itemRepo)
+	// Handlers
+	lots := handlers.NewLotViewHandler(lotRepo, lotSvc, cardRepo)
+	sales := handlers.NewSaleViewHandler(saleRepo)
 	grading := handlers.NewGradingViewHandler(gradingRepo, itemRepo, gradingSvc)
 
-	mux.Handle("GET /",                         viewMW(dash.Dashboard))
-	mux.Handle("GET /lots",                     viewMW(lots.Lots))
-	mux.Handle("GET /lots/new",                 viewMW(lots.LotNew))
-	mux.Handle("POST /lots",                    viewMW(lots.SaveLot))
-	mux.Handle("GET /lots/{id}",                viewMW(lots.LotDetail))
-	mux.Handle("GET /lots/{id}/edit",           viewMW(lots.LotEditForm))
-	mux.Handle("GET /lots/partials/row",        viewMW(lots.RowPartial))
-	mux.Handle("POST /lots/{id}",               viewMW(lots.UpdateLot))
-	mux.Handle("POST /lots/{id}/status",        viewMW(lots.UpdateLotStatus))
-	mux.Handle("GET /sales",                    viewMW(sales.Sales))
-	mux.Handle("POST /sales",                   viewMW(sales.CreateSale))
-	mux.Handle("GET /inventory",                viewMW(inv.Inventory))
-	mux.Handle("GET /grading",                  viewMW(grading.Grading))
-	mux.Handle("GET /grading/new",              viewMW(grading.GradingNew))
-	mux.Handle("POST /grading",                 viewMW(grading.CreateGrading))
-	mux.Handle("GET /grading/{id}",             viewMW(grading.GradingDetail))
-	mux.Handle("POST /grading/{id}/advance",    viewMW(grading.AdvanceGradingStatus))
-	mux.Handle("POST /grading/{id}/items",      viewMW(grading.AttachItems))
-	mux.Handle("POST /grading/{id}/return",     viewMW(grading.RecordReturn))
+	// Auth
+	mux.Handle("POST /api/v1/login", auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogin)))
+	mux.Handle("POST /api/v1/logout", auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogout)))
+
+	// API
+	mux.Handle("GET /api/v1/cards/search", apiMiddleware(handlers.HandleSearchCards(cardRepo)))
+
+	// Dashboard
+	mux.Handle("GET /", viewMiddleware(handlers.NewDashboardHandler(lotRepo, saleRepo, itemRepo)))
+
+	// Lots
+	mux.Handle("GET /lots", viewMiddleware(lots.Lots))
+	mux.Handle("GET /lots/new", viewMiddleware(lots.LotNew))
+	mux.Handle("POST /lots", viewMiddleware(lots.SaveLot))
+	mux.Handle("GET /lots/{id}", viewMiddleware(lots.LotDetail))
+	mux.Handle("GET /lots/{id}/edit", viewMiddleware(lots.LotEditForm))
+	mux.Handle("GET /lots/partials/row", viewMiddleware(lots.RowPartial))
+	mux.Handle("POST /lots/{id}", viewMiddleware(lots.UpdateLot))
+	mux.Handle("POST /lots/{id}/status", viewMiddleware(lots.UpdateLotStatus))
+
+	// Sales
+	mux.Handle("GET /sales", viewMiddleware(sales.Sales))
+	mux.Handle("POST /sales", viewMiddleware(sales.CreateSale))
+
+	// Inventory
+	mux.Handle("GET /inventory", viewMiddleware(handlers.NewInventoryHandler(itemRepo)))
+
+	// Grading
+	mux.Handle("GET /grading", viewMiddleware(grading.Grading))
+	mux.Handle("GET /grading/new", viewMiddleware(grading.GradingNew))
+	mux.Handle("POST /grading", viewMiddleware(grading.CreateGrading))
+	mux.Handle("GET /grading/{id}", viewMiddleware(grading.GradingDetail))
+	mux.Handle("GET /grading/{id}/edit", viewMiddleware(grading.GradingEditForm))
+	mux.Handle("POST /grading/{id}", viewMiddleware(grading.UpdateGrading))
+	mux.Handle("POST /grading/{id}/advance", viewMiddleware(grading.AdvanceGradingStatus))
+	mux.Handle("POST /grading/{id}/return", viewMiddleware(grading.RecordReturn))
 
 	// Static
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))

@@ -39,11 +39,10 @@
   <table class="table table-hover bg-white">
     <thead class="table-light">
       <tr>
-        <th>Item</th>
-        <th>Set</th>
-        <th class="text-end">Cost Basis</th>
-        <th class="text-end">Market</th>
-        <th class="text-center">Grade</th>
+        <th style="width:100%">Item</th>
+        <th class="text-end text-nowrap ps-4">Cost Basis</th>
+        <th class="text-end text-nowrap ps-4">Market</th>
+        <th class="text-center text-nowrap ps-4">Grade</th>
       </tr>
     </thead>
     <tbody>
@@ -64,24 +63,23 @@
               {{else}}
               <span class="text-muted fst-italic">Unnamed</span>
               {{end}}
-              <br><small class="text-muted">{{fmtDate .AcquisitionDate}}</small>
+              <div class="text-muted inv-subtext">
+                {{if .PokemonCard}}{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
+                {{else if .SealedProduct}}{{.SealedProduct.SetName}}{{end}}
+              </div>
+              <div class="text-muted inv-subtext">
+                {{fmtDate .AcquisitionDate}}{{if .LotPurchase}} · <a href="/lots/{{.LotPurchaseID}}" class="text-muted">{{.LotPurchase.SellerName}}</a>{{end}}
+              </div>
             </div>
           </div>
         </td>
-        <td class="text-muted small">
-          {{if .PokemonCard}}
-          {{.PokemonCard.SetName}}<br>#{{.PokemonCard.CardNumber}} · {{.PokemonCard.Rarity}}
-          {{else if .SealedProduct}}
-          {{.SealedProduct.SetName}}
-          {{else}}—{{end}}
-        </td>
-        <td class="text-end">{{fmtMoney .CostBasis}}</td>
-        <td class="text-end text-muted">
+        <td class="text-end align-middle text-nowrap ps-4">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 text-muted">
           {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
         </td>
-        <td class="text-center">
+        <td class="text-center align-middle text-nowrap ps-4">
           {{if .GradedDetails}}{{if .GradedDetails.Grade}}
-          <span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+          <span class="badge {{gradeClass .GradedDetails.GradingCompany}}">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
           {{else}}—{{end}}{{else}}—{{end}}
         </td>
       </tr>

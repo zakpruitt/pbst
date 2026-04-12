@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-const sessionCookie = "pbst_session"
+const sessionCookieName = "pbst_session"
 
 // SessionAuth validates the session cookie and returns JSON 401 if invalid.
 // Used for /api/v1/* routes.
 func SessionAuth(store *Store) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie(sessionCookie)
+			cookie, err := r.Cookie(sessionCookieName)
 			if err != nil || !store.IsValid(cookie.Value) {
 				jsonError(w, http.StatusUnauthorized, "Unauthorized")
 				return
@@ -29,7 +29,7 @@ func SessionAuth(store *Store) func(http.Handler) http.Handler {
 func SessionAuthView(store *Store) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie(sessionCookie)
+			cookie, err := r.Cookie(sessionCookieName)
 			if err != nil || !store.IsValid(cookie.Value) {
 				http.Redirect(w, r, "/login.html", http.StatusFound)
 				return

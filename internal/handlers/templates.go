@@ -48,6 +48,23 @@ var viewFuncs = template.FuncMap{
 			return "bg-secondary"
 		}
 	},
+	"fmtPercent": func(f float64) string {
+		return fmt.Sprintf("%.3f%%", f*100)
+	},
+	"gradeClass": func(company string) string {
+		switch company {
+		case "PSA":
+			return "grade-psa"
+		case "BGS":
+			return "grade-bgs"
+		case "CGC":
+			return "grade-cgc"
+		case "TAG":
+			return "grade-tag"
+		default:
+			return "bg-secondary"
+		}
+	},
 	"itemTypeLabel": func(t string) string {
 		switch t {
 		case "RAW_CARD":
@@ -103,4 +120,15 @@ func execTemplate(w http.ResponseWriter, tmpl *template.Template, name string, d
 func serverError(w http.ResponseWriter, err error) {
 	slog.Error("view handler error", "error", err)
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+}
+
+// requirePathID parses the {id} path parameter and writes a 404 if it's missing or invalid.
+// Returns (id, true) on success, (0, false) on failure — the caller should return immediately on false.
+func requirePathID(w http.ResponseWriter, r *http.Request) (uint, bool) {
+	id, err := parsePathID(r, "id")
+	if err != nil {
+		http.NotFound(w, r)
+		return 0, false
+	}
+	return id, true
 }

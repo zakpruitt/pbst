@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // parsePathID parses an unsigned integer from a named URL path segment.
@@ -26,4 +28,23 @@ func parseFormIDs(form url.Values, key string) []uint {
 		}
 	}
 	return ids
+}
+
+// parseFormFloat parses a float64 from a form or query parameter.
+// Returns 0 if the value is missing or not a valid number.
+func parseFormFloat(r *http.Request, field string) float64 {
+	v, _ := strconv.ParseFloat(r.FormValue(field), 64)
+	return v
+}
+
+// parseFormDate parses a date string in "2006-01-02" format from a form field.
+// Returns the zero time if missing or invalid.
+func parseFormDate(r *http.Request, field string) time.Time {
+	t, _ := time.Parse("2006-01-02", r.FormValue(field))
+	return t
+}
+
+// nullString wraps a string in sql.NullString, marking it valid only when non-empty.
+func nullString(s string) sql.NullString {
+	return sql.NullString{String: s, Valid: s != ""}
 }

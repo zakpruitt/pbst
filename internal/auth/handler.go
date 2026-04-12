@@ -16,6 +16,18 @@ func NewHandler(store *Store) *Handler {
 	return &Handler{store: store}
 }
 
+func sessionCookie(value string, expires time.Time) *http.Cookie {
+	return &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    value,
+		Path:     "/",
+		Expires:  expires,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+}
+
 type loginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -49,34 +61,18 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    token,
-		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
+	http.SetCookie(w, sessionCookie(token, time.Now().Add(24*time.Hour)))
 	jsonOK(w, map[string]string{"message": "Logged in successfully"})
 }
 
 func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	if cookie, err := r.Cookie(sessionCookie); err == nil {
+	if cookie, err := r.Cookie(sessionCookieName); err == nil {
 		h.store.Delete(cookie.Value)
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0),
-		MaxAge:   -1,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	expiredCookie := sessionCookie("", time.Unix(0, 0))
+	expiredCookie.MaxAge = -1
+	http.SetCookie(w, expiredCookie)
 
 	jsonOK(w, map[string]string{"message": "Logged out successfully"})
 }

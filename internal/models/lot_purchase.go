@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,4 +20,15 @@ type LotPurchase struct {
 	CreatedAt            time.Time      `json:"created_at"`
 	UpdatedAt            time.Time      `json:"updated_at"`
 	DeletedAt            gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (l *LotPurchase) ParseSnapshot() ([]SnapshotItem, error) {
+	if l.LotContentSnapshot == "" {
+		return nil, nil
+	}
+	var items []SnapshotItem
+	if err := json.Unmarshal([]byte(l.LotContentSnapshot), &items); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

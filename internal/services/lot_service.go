@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/zakpruitt/pbst/internal/models"
@@ -22,27 +21,28 @@ func NewLotService(lotRepo *repository.LotRepository, itemRepo *repository.Track
 func (s *LotService) AcceptLot(ctx context.Context, id uint) error {
 	lot, err := s.lotRepo.GetLotByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("AcceptLot load: %w", err)
+		return fmt.Errorf("load lot: %w", err)
 	}
 
-	var snapshot []models.SnapshotItem
-	if lot.LotContentSnapshot != "" {
-		if err := json.Unmarshal([]byte(lot.LotContentSnapshot), &snapshot); err != nil {
-			return fmt.Errorf("AcceptLot parse snapshot: %w", err)
-		}
+	snapshot, err := lot.ParseSnapshot()
+	if err != nil {
+		return fmt.Errorf("parse snapshot: %w", err)
 	}
 
 	for _, item := range snapshot {
 		if !item.IsTracked {
 			continue
 		}
-		ti := snapshotToTrackedItem(lot, item)
-		if err := s.itemRepo.AddTrackedItem(ctx, ti); err != nil {
-			return fmt.Errorf("AcceptLot create item: %w", err)
+		if err := s.itemRepo.AddTrackedItem(ctx, snapshotToTrackedItem(lot, item)); err != nil {
+			return fmt.Errorf("create tracked item: %w", err)
 		}
 	}
 
 	return s.lotRepo.UpdateStatus(ctx, id, "ACCEPTED")
+}
+
+func (s *LotService) RejectLot(ctx context.Context, id uint) error {
+	return s.lotRepo.UpdateStatus(ctx, id, "REJECTED")
 }
 
 // snapshotToTrackedItem builds a TrackedItem from a lot and one of its snapshot entries.
@@ -79,8 +79,4 @@ func snapshotToTrackedItem(lot *models.LotPurchase, item models.SnapshotItem) *m
 	}
 
 	return ti
-}
-
-func (s *LotService) RejectLot(ctx context.Context, id uint) error {
-	return s.lotRepo.UpdateStatus(ctx, id, "REJECTED")
 }

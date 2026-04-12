@@ -1,177 +1,67 @@
 {{define "content"}}
 <div class="d-flex align-items-center gap-2 mb-1">
-  <a href="/grading" class="text-muted text-decoration-none small">← Grading</a>
+  <a href="/grading" class="text-muted text-decoration-none small">&larr; Grading</a>
 </div>
 <div class="d-flex justify-content-between align-items-start mb-4">
   <div>
     <h4 class="mb-1">{{.Submission.SubmissionName}}</h4>
     <small class="text-muted">
       {{.Submission.Company}}
-      {{if .Submission.SubmissionMethod}} · {{.Submission.SubmissionMethod}}{{end}}
-      {{if .Submission.SendDate.Valid}} · Sent {{fmtDate .Submission.SendDate.Time}}{{end}}
-      {{if .Submission.ReturnDate.Valid}} · Returned {{fmtDate .Submission.ReturnDate.Time}}{{end}}
-      {{if .Submission.TotalGradingCost}} · Total cost {{fmtMoney .Submission.TotalGradingCost}}{{end}}
+      {{if .Submission.SubmissionMethod}} &middot; {{.Submission.SubmissionMethod}}{{end}}
+      {{if .Submission.SendDate.Valid}} &middot; Sent {{fmtDate .Submission.SendDate.Time}}{{end}}
+      {{if .Submission.ReturnDate.Valid}} &middot; Returned {{fmtDate .Submission.ReturnDate.Time}}{{end}}
     </small>
   </div>
-  <span class="badge {{statusClass .Submission.Status}} fs-6">{{.Submission.Status}}</span>
-</div>
-
-{{if eq .Submission.Status "PREPPING"}}
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Attach Items</span>
-        <small class="text-muted fw-normal">From inventory</small>
-      </div>
-      {{if and (not .RawItems) (not .GradedItems)}}
-      <div class="card-body text-muted">No inventory items available.</div>
-      {{else}}
-      <form method="POST" action="/grading/{{.Submission.ID}}/items">
-        {{if .RawItems}}
-        <div class="px-3 pt-2 pb-1"><h6 class="mb-0">Raw Cards</h6></div>
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th style="width:2rem">
-                <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'raw-cb')">
-              </th>
-              <th>Card</th>
-              <th>Set</th>
-              <th class="text-end">Cost Basis</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range .RawItems}}
-            <tr>
-              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb"></td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-                  <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
-                  {{end}}{{end}}
-                  <span>
-                    {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-                    {{else if .PokemonCard}}{{.PokemonCard.Name}}
-                    {{else}}Unnamed{{end}}
-                  </span>
-                </div>
-              </td>
-              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}</td>
-              <td class="text-end">{{fmtMoney .CostBasis}}</td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-        {{end}}
-        {{if .GradedItems}}
-        <div class="px-3 pt-2 pb-1"><h6 class="mb-0">Previously Graded</h6></div>
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th style="width:2rem">
-                <input type="checkbox" class="form-check-input" onchange="toggleSection(this,'graded-cb')">
-              </th>
-              <th>Card</th>
-              <th>Set</th>
-              <th class="text-center">Current Grade</th>
-              <th class="text-end">Cost Basis</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range .GradedItems}}
-            <tr>
-              <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb"></td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-                  <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
-                  {{end}}{{end}}
-                  <span>
-                    {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-                    {{else if .PokemonCard}}{{.PokemonCard.Name}}
-                    {{else}}Unnamed{{end}}
-                  </span>
-                </div>
-              </td>
-              <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}</td>
-              <td class="text-center">
-                {{if .GradedDetails}}<span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>{{else}}—{{end}}
-              </td>
-              <td class="text-end">{{fmtMoney .CostBasis}}</td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-        {{end}}
-        <div class="card-footer d-flex justify-content-end">
-          <button type="submit" class="btn btn-sm btn-primary">Attach Selected</button>
-        </div>
-      </form>
-      {{end}}
-    </div>
-  </div>
-
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Attached Items</span>
-        <span class="badge bg-secondary">{{len .Submission.Items}}</span>
-      </div>
-      {{if not .Submission.Items}}
-      <div class="card-body text-muted">No items attached yet.</div>
-      {{else}}
-      <table class="table table-sm mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Name</th>
-            <th>Set</th>
-            <th class="text-end">Cost Basis</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range .Submission.Items}}
-          <tr>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-                <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
-                {{end}}{{end}}
-                <span>
-                  {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-                  {{else if .PokemonCard}}{{.PokemonCard.Name}}
-                  {{else}}Unnamed{{end}}
-                </span>
-              </div>
-            </td>
-            <td class="text-muted small">
-              {{if .PokemonCard}}{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}{{end}}
-            </td>
-            <td class="text-end">{{fmtMoney .CostBasis}}</td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
-      {{end}}
-    </div>
-
-    {{if .Submission.Items}}
-    <div class="mt-3 d-flex justify-content-end">
-      <form method="POST" action="/grading/{{.Submission.ID}}/advance">
-        <input type="hidden" name="new_status" value="IN_TRANSIT">
-        <button type="submit" class="btn btn-secondary">Mark Sent</button>
-      </form>
-    </div>
+  <div class="d-flex align-items-center gap-2">
+    {{if ne .Submission.Status "RETURNED"}}
+    <a href="/grading/{{.Submission.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
     {{end}}
+    <span class="badge {{statusClass .Submission.Status}} fs-6">{{.Submission.Status}}</span>
   </div>
 </div>
 
-{{else if eq .Submission.Status "IN_TRANSIT"}}
-<div class="card">
+{{if .Submission.Notes.Valid}}
+<div class="alert alert-light border mb-3 py-2 px-3 small text-muted">{{.Submission.Notes.String}}</div>
+{{end}}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row text-center">
+      <div class="col">
+        <div class="text-muted small text-uppercase">Cost/Card</div>
+        <div class="fw-semibold">{{fmtMoney .Submission.CostPerCard}}</div>
+      </div>
+      <div class="col">
+        <div class="text-muted small text-uppercase">Tax Rate</div>
+        <div class="fw-semibold">{{fmtPercent .Submission.TaxRate}}</div>
+      </div>
+      <div class="col">
+        <div class="text-muted small text-uppercase">Submission Cost</div>
+        <div class="fw-semibold">{{fmtMoney .Submission.SubmissionCost}}</div>
+      </div>
+      {{if eq .Submission.Status "RETURNED"}}
+      <div class="col">
+        <div class="text-muted small text-uppercase">Upcharges</div>
+        <div class="fw-semibold">{{fmtMoney .Submission.UpchargeTotal}}</div>
+      </div>
+      <div class="col">
+        <div class="text-muted small text-uppercase">Grand Total</div>
+        <div class="fw-semibold">{{fmtMoney .Submission.GrandTotal}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+
+{{if not .Submission.Items}}
+<div class="card mb-3">
+  <div class="card-body text-muted">No items attached.</div>
+</div>
+{{else}}
+
+{{if eq .Submission.Status "IN_TRANSIT"}}
+<div class="card mb-3">
   <div class="card-header">Record Grades</div>
-  {{if not .Submission.Items}}
-  <div class="card-body text-muted">No items in this submission.</div>
-  {{else}}
   <form method="POST" action="/grading/{{.Submission.ID}}/return">
     {{range .Submission.Items}}
     <input type="hidden" name="item_ids" value="{{.ID}}">
@@ -179,11 +69,9 @@
     <table class="table table-sm mb-0">
       <thead class="table-light">
         <tr>
-          <th>Name</th>
-          <th>Set</th>
-          <th>Card #</th>
-          <th>Grade</th>
-          <th>Upcharge ($)</th>
+          <th style="width:100%">Card</th>
+          <th class="text-nowrap ps-4">Grade</th>
+          <th class="text-nowrap ps-4">Upcharge ($)</th>
         </tr>
       </thead>
       <tbody>
@@ -192,44 +80,45 @@
           <td>
             <div class="d-flex align-items-center gap-2">
               {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm" data-card-img="{{.PokemonCard.ImageURL}}">
               {{end}}{{end}}
-              <span>
-                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-                {{else if .PokemonCard}}{{.PokemonCard.Name}}
-                {{else}}Unnamed{{end}}
-              </span>
+              <div>
+                <span class="fw-medium sub-row-name">
+                  {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                  {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                  {{else}}Unnamed{{end}}
+                </span>
+                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}</div>{{end}}
+              </div>
             </div>
           </td>
-          <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
-          <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
-          <td><input type="text" name="grade_{{.ID}}" class="form-control form-control-sm" placeholder="e.g. 9" style="width:90px"></td>
-          <td><input type="number" name="upcharge_{{.ID}}" step="0.01" min="0" value="0" class="form-control form-control-sm" style="width:100px"></td>
+          <td class="align-middle ps-4"><input type="text" name="grade_{{.ID}}" class="form-control form-control-sm" placeholder="e.g. 9" style="width:80px"></td>
+          <td class="align-middle ps-4"><input type="number" name="upcharge_{{.ID}}" step="0.01" min="0" value="0" class="form-control form-control-sm" style="width:90px"></td>
         </tr>
         {{end}}
       </tbody>
     </table>
     <div class="card-footer d-flex justify-content-end">
-      <button type="submit" class="btn btn-success">Record Return</button>
+      <button type="submit" class="btn btn-success btn-sm">Record Return</button>
     </div>
   </form>
-  {{end}}
 </div>
 
 {{else}}
-<div class="card">
-  <div class="card-header">Items</div>
-  {{if not .Submission.Items}}
-  <div class="card-body text-muted">No items.</div>
-  {{else}}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Items</span>
+    <span class="badge bg-secondary">{{len .Submission.Items}}</span>
+  </div>
   <table class="table table-sm mb-0">
     <thead class="table-light">
       <tr>
-        <th>Name</th>
-        <th>Set</th>
-        <th>Card #</th>
-        <th>Grade</th>
-        <th class="text-end">Upcharge</th>
+        <th style="width:100%">Card</th>
+        <th class="text-end text-nowrap ps-4">Cost Basis</th>
+        {{if eq $.Submission.Status "RETURNED"}}
+        <th class="text-center text-nowrap ps-4">Grade</th>
+        <th class="text-end text-nowrap ps-4">Upcharge</th>
+        {{end}}
       </tr>
     </thead>
     <tbody>
@@ -238,36 +127,45 @@
         <td>
           <div class="d-flex align-items-center gap-2">
             {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-            <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+            <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm" data-card-img="{{.PokemonCard.ImageURL}}">
             {{end}}{{end}}
-            <span>
-              {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-              {{else if .PokemonCard}}{{.PokemonCard.Name}}
-              {{else}}Unnamed{{end}}
-            </span>
+            <div>
+              <span class="fw-medium sub-row-name">
+                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                {{else}}Unnamed{{end}}
+              </span>
+              {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}</div>{{end}}
+            </div>
           </div>
         </td>
-        <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.SetName}}{{end}}</td>
-        <td class="text-muted small">{{if .PokemonCard}}{{.PokemonCard.CardNumber}}{{end}}</td>
-        <td>
+        <td class="text-end align-middle text-nowrap ps-4 sub-row-num">{{fmtMoney .CostBasis}}</td>
+        {{if eq $.Submission.Status "RETURNED"}}
+        <td class="text-center align-middle ps-4">
           {{if .GradedDetails}}{{if .GradedDetails.Grade}}
-          <span class="badge bg-info">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
-          {{else}}—{{end}}{{else}}—{{end}}
+          <span class="badge {{gradeClass .GradedDetails.GradingCompany}}">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+          {{else}}&mdash;{{end}}{{else}}&mdash;{{end}}
         </td>
-        <td class="text-end">
-          {{if .GradedDetails}}{{if .GradedDetails.GradingUpcharge}}{{fmtMoney .GradedDetails.GradingUpcharge}}{{else}}—{{end}}{{else}}—{{end}}
+        <td class="text-end align-middle text-nowrap ps-4 sub-row-num">
+          {{if .GradedDetails}}{{if .GradedDetails.GradingUpcharge}}{{fmtMoney .GradedDetails.GradingUpcharge}}{{else}}&mdash;{{end}}{{else}}&mdash;{{end}}
         </td>
+        {{end}}
       </tr>
       {{end}}
     </tbody>
   </table>
-  {{end}}
 </div>
 {{end}}
 {{end}}
 
-<script>
-function toggleSection(master, cls) {
-    document.querySelectorAll('.' + cls).forEach(cb => cb.checked = master.checked);
-}
-</script>
+{{if eq .Submission.Status "PREPPING"}}
+<div class="d-flex justify-content-end">
+  {{if .Submission.Items}}
+  <form method="POST" action="/grading/{{.Submission.ID}}/advance">
+    <input type="hidden" name="new_status" value="IN_TRANSIT">
+    <button type="submit" class="btn btn-secondary btn-sm">Mark Sent</button>
+  </form>
+  {{end}}
+</div>
+{{end}}
+{{end}}

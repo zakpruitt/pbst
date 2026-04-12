@@ -2,11 +2,17 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/zakpruitt/pbst/internal/models"
 	"github.com/zakpruitt/pbst/internal/repository"
+)
+
+const (
+	DefaultCostPerCard = 20.0
+	MissouriTaxRate    = 0.04225
 )
 
 type GradingService struct {
@@ -24,10 +30,23 @@ type ItemGrade struct {
 	Upcharge float64
 }
 
-func (s *GradingService) CreateWithItems(ctx context.Context, company, method string, itemIDs []uint) (*models.GradingSubmission, error) {
+func CalculateSubmissionCost(numItems int, costPerCard, taxRate float64) float64 {
+	return float64(numItems) * costPerCard * (1 + taxRate)
+}
+
+func normalizeCostPerCard(cost float64) float64 {
+	if cost <= 0 {
+		return DefaultCostPerCard
+	}
+	return cost
+}
+
+func (s *GradingService) CreateWithItems(ctx context.Context, company, method string, costPerCard float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error) {
+	costPerCard = normalizeCostPerCard(costPerCard)
+
 	count, err := s.gradingRepo.CountByCompany(ctx, company)
 	if err != nil {
-		return nil, fmt.Errorf("CreateWithItems: %w", err)
+		return nil, fmt.Errorf("count submissions: %w", err)
 	}
 
 	submission := &models.GradingSubmission{
@@ -35,48 +54,67 @@ func (s *GradingService) CreateWithItems(ctx context.Context, company, method st
 		Company:          company,
 		SubmissionMethod: method,
 		Status:           "PREPPING",
+		CostPerCard:      costPerCard,
+		TaxRate:          MissouriTaxRate,
+		SubmissionCost:   CalculateSubmissionCost(len(itemIDs), costPerCard, MissouriTaxRate),
+		Notes:            notes,
 	}
-	err = s.gradingRepo.CreateSubmission(ctx, submission)
-	if err != nil {
-		return nil, fmt.Errorf("CreateWithItems: %w", err)
+	if err = s.gradingRepo.CreateSubmission(ctx, submission); err != nil {
+		return nil, fmt.Errorf("create submission: %w", err)
 	}
 
 	if len(itemIDs) > 0 {
-		err = s.itemRepo.AttachToSubmission(ctx, itemIDs, submission.ID)
-		if err != nil {
-			return nil, fmt.Errorf("CreateWithItems: attach: %w", err)
+		if err = s.itemRepo.AttachToSubmission(ctx, itemIDs, submission.ID); err != nil {
+			return nil, fmt.Errorf("attach items: %w", err)
 		}
-		err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, submission.ID, "IN_GRADING")
-		if err != nil {
-			return nil, fmt.Errorf("CreateWithItems: set IN_GRADING: %w", err)
+		if err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, submission.ID, "IN_GRADING"); err != nil {
+			return nil, fmt.Errorf("set items in grading: %w", err)
 		}
 	}
 
 	return submission, nil
 }
 
-func (s *GradingService) AdvanceStatus(ctx context.Context, id uint, newStatus string) error {
-	err := s.gradingRepo.UpdateSubmissionStatus(ctx, id, newStatus)
+func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company, method string, costPerCard float64, notes sql.NullString, itemIDs []uint) error {
+	submission, err := s.gradingRepo.GetSubmissionByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("AdvanceStatus: %w", err)
+		return fmt.Errorf("load submission: %w", err)
+	}
+
+	if err = s.itemRepo.DetachFromSubmission(ctx, id); err != nil {
+		return fmt.Errorf("detach items: %w", err)
+	}
+
+	if len(itemIDs) > 0 {
+		if err = s.itemRepo.AttachToSubmission(ctx, itemIDs, id); err != nil {
+			return fmt.Errorf("attach items: %w", err)
+		}
+		if err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, id, "IN_GRADING"); err != nil {
+			return fmt.Errorf("set items in grading: %w", err)
+		}
+	}
+
+	submission.Company = company
+	submission.SubmissionMethod = method
+	submission.CostPerCard = normalizeCostPerCard(costPerCard)
+	submission.TaxRate = MissouriTaxRate
+	submission.SubmissionCost = CalculateSubmissionCost(len(itemIDs), submission.CostPerCard, MissouriTaxRate)
+	submission.Notes = notes
+
+	if err = s.gradingRepo.UpdateSubmission(ctx, submission); err != nil {
+		return fmt.Errorf("save submission: %w", err)
 	}
 	return nil
 }
 
-func (s *GradingService) AttachItems(ctx context.Context, submissionID uint, itemIDs []uint) error {
-	submission, err := s.gradingRepo.GetSubmissionByID(ctx, submissionID)
-	if err != nil {
-		return fmt.Errorf("AttachItems: %w", err)
+func (s *GradingService) AdvanceStatus(ctx context.Context, id uint, newStatus string) error {
+	if err := s.gradingRepo.UpdateSubmissionStatus(ctx, id, newStatus); err != nil {
+		return fmt.Errorf("update status: %w", err)
 	}
-	if submission.Status != "PREPPING" {
-		return fmt.Errorf("AttachItems: submission is not in PREPPING status")
-	}
-	err = s.itemRepo.AttachToSubmission(ctx, itemIDs, submissionID)
-	if err != nil {
-		return fmt.Errorf("AttachItems: %w", err)
-	}
-	if err = s.itemRepo.UpdateItemsStatusBySubmission(ctx, submissionID, "IN_GRADING"); err != nil {
-		return fmt.Errorf("AttachItems: set IN_GRADING: %w", err)
+	if newStatus == "IN_TRANSIT" {
+		if err := s.gradingRepo.SetSendDate(ctx, id, time.Now()); err != nil {
+			return fmt.Errorf("set send date: %w", err)
+		}
 	}
 	return nil
 }
@@ -84,7 +122,7 @@ func (s *GradingService) AttachItems(ctx context.Context, submissionID uint, ite
 func (s *GradingService) RecordReturn(ctx context.Context, submissionID uint, grades []ItemGrade) error {
 	submission, err := s.gradingRepo.GetSubmissionByID(ctx, submissionID)
 	if err != nil {
-		return fmt.Errorf("RecordReturn: %w", err)
+		return fmt.Errorf("load submission: %w", err)
 	}
 
 	var totalUpcharge float64
@@ -94,20 +132,17 @@ func (s *GradingService) RecordReturn(ctx context.Context, submissionID uint, gr
 			Grade:           g.Grade,
 			GradingUpcharge: g.Upcharge,
 		}
-		err = s.itemRepo.UpdateGradedDetails(ctx, g.ItemID, details)
-		if err != nil {
-			return fmt.Errorf("RecordReturn: item %d: %w", g.ItemID, err)
+		if err = s.itemRepo.UpdateGradedDetails(ctx, g.ItemID, details); err != nil {
+			return fmt.Errorf("update item %d grade: %w", g.ItemID, err)
 		}
 		totalUpcharge += g.Upcharge
 	}
 
-	err = s.gradingRepo.UpdateReturnDetails(ctx, submissionID, totalUpcharge, time.Now())
-	if err != nil {
-		return fmt.Errorf("RecordReturn: %w", err)
+	if err = s.gradingRepo.UpdateReturnDetails(ctx, submissionID, totalUpcharge, time.Now()); err != nil {
+		return fmt.Errorf("update return details: %w", err)
 	}
-	err = s.gradingRepo.UpdateSubmissionStatus(ctx, submissionID, "RETURNED")
-	if err != nil {
-		return fmt.Errorf("RecordReturn: %w", err)
+	if err = s.gradingRepo.UpdateSubmissionStatus(ctx, submissionID, "RETURNED"); err != nil {
+		return fmt.Errorf("set returned status: %w", err)
 	}
 	return nil
 }

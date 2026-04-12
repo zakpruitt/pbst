@@ -1,8 +1,8 @@
 {{define "content"}}
-<a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">← Grading</a>
-<h4 class="mb-4">New Submission</h4>
+<a href="/grading/{{.Submission.ID}}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; {{.Submission.SubmissionName}}</a>
+<h4 class="mb-4">Edit Submission</h4>
 
-<form method="POST" action="/grading">
+<form method="POST" action="/grading/{{.Submission.ID}}">
   <div class="card mb-3">
     <div class="card-body">
       <h6 class="card-title mb-3">Submission Details</h6>
@@ -10,24 +10,24 @@
         <div class="col-sm-4">
           <label class="form-label small text-muted mb-1">Grading Company</label>
           <select name="company" class="form-select form-select-sm" required>
-            <option value="PSA">PSA</option>
-            <option value="BGS">BGS</option>
-            <option value="CGC">CGC</option>
-            <option value="TAG">TAG</option>
+            <option value="PSA" {{if eq .Submission.Company "PSA"}}selected{{end}}>PSA</option>
+            <option value="BGS" {{if eq .Submission.Company "BGS"}}selected{{end}}>BGS</option>
+            <option value="CGC" {{if eq .Submission.Company "CGC"}}selected{{end}}>CGC</option>
+            <option value="TAG" {{if eq .Submission.Company "TAG"}}selected{{end}}>TAG</option>
           </select>
         </div>
         <div class="col-sm-4">
           <label class="form-label small text-muted mb-1">Submission Method</label>
-          <input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular">
+          <input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular" value="{{.Submission.SubmissionMethod}}">
         </div>
         <div class="col-sm-4">
           <label class="form-label small text-muted mb-1">Cost Per Card ($)</label>
-          <input name="cost_per_card" type="number" step="0.01" min="0" value="20.00" class="form-control form-control-sm">
+          <input name="cost_per_card" type="number" step="0.01" min="0" value="{{printf "%.2f" .Submission.CostPerCard}}" class="form-control form-control-sm">
         </div>
       </div>
       <div class="mt-2">
         <label class="form-label small text-muted mb-1">Notes</label>
-        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes about this submission"></textarea>
+        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes about this submission">{{if .Submission.Notes.Valid}}{{.Submission.Notes.String}}{{end}}</textarea>
       </div>
     </div>
   </div>
@@ -59,7 +59,7 @@
       <tbody>
         {{range .RawItems}}
         <tr>
-          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb item-cb"></td>
+          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb item-cb" {{if index $.AttachedIDs .ID}}checked{{end}}></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
@@ -71,13 +71,13 @@
                   {{else if .PokemonCard}}{{.PokemonCard.Name}}
                   {{else}}Unnamed{{end}}
                 </span>
-                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}} · {{.PokemonCard.Rarity}}</div>{{end}}
+                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}} &middot; {{.PokemonCard.Rarity}}</div>{{end}}
               </div>
             </div>
           </td>
           <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
           <td class="text-end align-middle text-muted sub-row-num">
-            {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+            {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney .PokemonCard.MarketPrice}}{{else}}&mdash;{{end}}{{else}}&mdash;{{end}}
           </td>
         </tr>
         {{end}}
@@ -90,7 +90,7 @@
   <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span>Previously Graded</span>
-      <small class="text-muted fw-normal">{{len .GradedItems}} item{{if gt (len .GradedItems) 1}}s{{end}} · eligible for resubmission</small>
+      <small class="text-muted fw-normal">{{len .GradedItems}} item{{if gt (len .GradedItems) 1}}s{{end}} &middot; eligible for resubmission</small>
     </div>
     <table class="table table-sm table-hover mb-0">
       <thead class="table-light">
@@ -104,7 +104,7 @@
       <tbody>
         {{range .GradedItems}}
         <tr>
-          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb item-cb"></td>
+          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb item-cb" {{if index $.AttachedIDs .ID}}checked{{end}}></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
@@ -116,14 +116,14 @@
                   {{else if .PokemonCard}}{{.PokemonCard.Name}}
                   {{else}}Unnamed{{end}}
                 </span>
-                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}</div>{{end}}
+                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}</div>{{end}}
               </div>
             </div>
           </td>
           <td class="text-center align-middle">
             {{if .GradedDetails}}
             <span class="badge {{gradeClass .GradedDetails.GradingCompany}} sub-row-num">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
-            {{else}}—{{end}}
+            {{else}}&mdash;{{end}}
           </td>
           <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
         </tr>
@@ -135,10 +135,8 @@
 
   {{end}}
 
-  <div class="d-flex justify-content-between align-items-center">
-    <span class="text-muted small">Submission name is auto-generated (e.g. PSA Submission #1)</span>
-    <button type="submit" class="btn btn-success">Create Submission</button>
+  <div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-success">Save</button>
   </div>
 </form>
-
 {{end}}

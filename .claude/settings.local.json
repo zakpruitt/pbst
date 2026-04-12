@@ -10,7 +10,10 @@
       "Bash(go get:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:developer.ebay.com)"
     ]
   }
 }

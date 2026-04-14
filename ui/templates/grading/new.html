@@ -3,142 +3,151 @@
 <h4 class="mb-4">New Submission</h4>
 
 <form method="POST" action="/grading">
-  <div class="card mb-3">
-    <div class="card-body">
-      <h6 class="card-title mb-3">Submission Details</h6>
-      <div class="row g-2">
-        <div class="col-sm-4">
-          <label class="form-label small text-muted mb-1">Grading Company</label>
-          <select name="company" class="form-select form-select-sm" required>
-            <option value="PSA">PSA</option>
-            <option value="BGS">BGS</option>
-            <option value="CGC">CGC</option>
-            <option value="TAG">TAG</option>
-          </select>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Submission Details</h6>
+            <div class="row g-2">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Grading Company</label>
+                    <select name="company" class="form-select form-select-sm" required>
+                        <option value="PSA">PSA</option>
+                        <option value="BGS">BGS</option>
+                        <option value="CGC">CGC</option>
+                        <option value="TAG">TAG</option>
+                    </select>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Submission Method</label>
+                    <input name="submission_method" class="form-control form-control-sm"
+                           placeholder="e.g. Bulk, Regular">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Total Cost ($)</label>
+                    <input name="submission_cost" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           placeholder="Leave blank if unknown">
+                </div>
+            </div>
+            <div class="mt-2">
+                <label class="form-label small text-muted mb-1">Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="2"
+                          placeholder="Optional notes about this submission"></textarea>
+            </div>
         </div>
-        <div class="col-sm-4">
-          <label class="form-label small text-muted mb-1">Submission Method</label>
-          <input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular">
-        </div>
-        <div class="col-sm-4">
-          <label class="form-label small text-muted mb-1">Cost Per Card ($)</label>
-          <input name="cost_per_card" type="number" step="0.01" min="0" value="20.00" class="form-control form-control-sm">
-        </div>
-      </div>
-      <div class="mt-2">
-        <label class="form-label small text-muted mb-1">Notes</label>
-        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes about this submission"></textarea>
-      </div>
     </div>
-  </div>
 
-  {{if and (not .RawItems) (not .GradedItems)}}
-  <div class="card mb-3">
-    <div class="card-body text-muted">
-      No items in your inventory yet.
-      <a href="/lots/new">Add a lot</a> and mark cards as tracked.
+    {{if and (not .RawItems) (not .GradedItems)}}
+    <div class="card mb-3">
+        <div class="card-body text-muted">
+            No items in your inventory yet.
+            <a href="/lots/new">Add a lot</a> and mark cards as tracked.
+        </div>
     </div>
-  </div>
-  {{else}}
+    {{else}}
 
-  {{if .RawItems}}
-  <div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Raw Cards</span>
-      <small class="text-muted fw-normal">{{len .RawItems}} item{{if gt (len .RawItems) 1}}s{{end}}</small>
-    </div>
-    <table class="table table-sm table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th style="width:2rem"></th>
-          <th>Card</th>
-          <th class="text-end">Cost Basis</th>
-          <th class="text-end">Market</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .RawItems}}
-        <tr>
-          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb item-cb"></td>
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm" data-card-img="{{.PokemonCard.ImageURL}}">
-              {{end}}{{end}}
-              <div>
+    {{if .RawItems}}
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Raw Cards</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width:2rem"></th>
+                <th>Card</th>
+                <th class="text-end">Cost Basis</th>
+                <th class="text-end">Market</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .RawItems}}
+            <tr>
+                <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input raw-cb item-cb"></td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                        <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
+                             data-card-img="{{.PokemonCard.ImageURL}}">
+                        {{end}}{{end}}
+                        <div>
                 <span class="fw-medium sub-row-name">
                   {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
                   {{else if .PokemonCard}}{{.PokemonCard.Name}}
                   {{else}}Unnamed{{end}}
                 </span>
-                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}} · {{.PokemonCard.Rarity}}</div>{{end}}
-              </div>
-            </div>
-          </td>
-          <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
-          <td class="text-end align-middle text-muted sub-row-num">
-            {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
-          </td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
-  </div>
-  {{end}}
-
-  {{if .GradedItems}}
-  <div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>Previously Graded</span>
-      <small class="text-muted fw-normal">{{len .GradedItems}} item{{if gt (len .GradedItems) 1}}s{{end}} · eligible for resubmission</small>
+                            {{if .PokemonCard}}
+                            <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
+                                · {{.PokemonCard.Rarity}}
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
+                <td class="text-end align-middle text-muted sub-row-num">
+                    {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney
+                    .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
     </div>
-    <table class="table table-sm table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th style="width:2rem"></th>
-          <th>Card</th>
-          <th class="text-center">Grade</th>
-          <th class="text-end">Cost Basis</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .GradedItems}}
-        <tr>
-          <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb item-cb"></td>
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-              <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm" data-card-img="{{.PokemonCard.ImageURL}}">
-              {{end}}{{end}}
-              <div>
+    {{end}}
+
+    {{if .GradedItems}}
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Previously Graded</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width:2rem"></th>
+                <th>Card</th>
+                <th class="text-center">Grade</th>
+                <th class="text-end">Cost Basis</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .GradedItems}}
+            <tr>
+                <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input graded-cb item-cb">
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                        <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
+                             data-card-img="{{.PokemonCard.ImageURL}}">
+                        {{end}}{{end}}
+                        <div>
                 <span class="fw-medium sub-row-name">
                   {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
                   {{else if .PokemonCard}}{{.PokemonCard.Name}}
                   {{else}}Unnamed{{end}}
                 </span>
-                {{if .PokemonCard}}<div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}</div>{{end}}
-              </div>
-            </div>
-          </td>
-          <td class="text-center align-middle">
-            {{if .GradedDetails}}
-            <span class="badge {{gradeClass .GradedDetails.GradingCompany}} sub-row-num">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
-            {{else}}—{{end}}
-          </td>
-          <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
-  </div>
-  {{end}}
+                            {{if .PokemonCard}}
+                            <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} ·
+                                #{{.PokemonCard.CardNumber}}
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center align-middle">
+                    {{if .GradedDetails}}
+                    <span class="badge {{gradeClass .GradedDetails.GradingCompany}} sub-row-num">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+                    {{else}}—{{end}}
+                </td>
+                <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
 
-  {{end}}
+    {{end}}
 
-  <div class="d-flex justify-content-between align-items-center">
-    <span class="text-muted small">Submission name is auto-generated (e.g. PSA Submission #1)</span>
-    <button type="submit" class="btn btn-success">Create Submission</button>
-  </div>
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="text-muted small">Submission name is auto-generated (e.g. PSA Submission #1)</span>
+        <button type="submit" class="btn btn-success">Create Submission</button>
+    </div>
 </form>
 
 {{end}}

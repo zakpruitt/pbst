@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/zakpruitt/pbst/internal/models"
 	"github.com/zakpruitt/pbst/internal/repository"
@@ -57,7 +58,7 @@ func (h *GradingViewHandler) CreateGrading(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	costPerCard := parseFormFloat(r, "cost_per_card")
+	submissionCost := parseFormFloat(r, "submission_cost")
 	itemIDs := parseFormIDs(r.Form, "item_ids")
 	notes := nullString(r.FormValue("notes"))
 
@@ -65,7 +66,7 @@ func (h *GradingViewHandler) CreateGrading(w http.ResponseWriter, r *http.Reques
 		r.Context(),
 		r.FormValue("company"),
 		r.FormValue("submission_method"),
-		costPerCard,
+		submissionCost,
 		notes,
 		itemIDs,
 	)
@@ -84,20 +85,31 @@ func (h *GradingViewHandler) Grading(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var active, returned []models.GradingSubmission
-	for _, s := range submissions {
-		if s.Status == "RETURNED" {
-			returned = append(returned, s)
-		} else {
-			active = append(active, s)
-		}
-	}
-
 	execTemplate(w, h.grading, "layout", map[string]any{
-		"Page":     "grading",
-		"Active":   active,
-		"Returned": returned,
+		"Page":   "grading",
+		"Groups": groupSubmissionsByMonth(submissions),
 	})
+}
+
+type SubmissionMonthGroup struct {
+	Label       string
+	FirstDay    time.Time
+	Submissions []models.GradingSubmission
+}
+
+func groupSubmissionsByMonth(submissions []models.GradingSubmission) []SubmissionMonthGroup {
+	var groups []SubmissionMonthGroup
+	var current string
+	for _, s := range submissions {
+		label := s.CreatedAt.Format("January 2006")
+		if label != current {
+			groups = append(groups, SubmissionMonthGroup{Label: label, FirstDay: s.CreatedAt})
+			current = label
+		}
+		i := len(groups) - 1
+		groups[i].Submissions = append(groups[i].Submissions, s)
+	}
+	return groups
 }
 
 func (h *GradingViewHandler) GradingDetail(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +175,7 @@ func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	costPerCard := parseFormFloat(r, "cost_per_card")
+	submissionCost := parseFormFloat(r, "submission_cost")
 	itemIDs := parseFormIDs(r.Form, "item_ids")
 	notes := nullString(r.FormValue("notes"))
 
@@ -172,7 +184,7 @@ func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Reques
 		id,
 		r.FormValue("company"),
 		r.FormValue("submission_method"),
-		costPerCard,
+		submissionCost,
 		notes,
 		itemIDs,
 	)
@@ -182,6 +194,18 @@ func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Reques
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/grading/%d", id), http.StatusSeeOther)
+}
+
+func (h *GradingViewHandler) DeleteGrading(w http.ResponseWriter, r *http.Request) {
+	id, ok := requirePathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.gradingSvc.DeleteSubmission(r.Context(), id); err != nil {
+		serverError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/grading", http.StatusSeeOther)
 }
 
 func (h *GradingViewHandler) AdvanceGradingStatus(w http.ResponseWriter, r *http.Request) {

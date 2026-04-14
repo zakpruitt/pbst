@@ -10,11 +10,6 @@ import (
 	"github.com/zakpruitt/pbst/internal/repository"
 )
 
-const (
-	DefaultCostPerCard = 20.0
-	MissouriTaxRate    = 0.04225
-)
-
 type GradingService struct {
 	gradingRepo *repository.GradingRepository
 	itemRepo    *repository.TrackedItemRepository
@@ -30,20 +25,14 @@ type ItemGrade struct {
 	Upcharge float64
 }
 
-func CalculateSubmissionCost(numItems int, costPerCard, taxRate float64) float64 {
-	return float64(numItems) * costPerCard * (1 + taxRate)
-}
-
-func normalizeCostPerCard(cost float64) float64 {
-	if cost <= 0 {
-		return DefaultCostPerCard
+func derivedCostPerCard(submissionCost float64, numItems int) float64 {
+	if numItems <= 0 {
+		return 0
 	}
-	return cost
+	return submissionCost / float64(numItems)
 }
 
-func (s *GradingService) CreateWithItems(ctx context.Context, company, method string, costPerCard float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error) {
-	costPerCard = normalizeCostPerCard(costPerCard)
-
+func (s *GradingService) CreateWithItems(ctx context.Context, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error) {
 	count, err := s.gradingRepo.CountByCompany(ctx, company)
 	if err != nil {
 		return nil, fmt.Errorf("count submissions: %w", err)
@@ -54,9 +43,9 @@ func (s *GradingService) CreateWithItems(ctx context.Context, company, method st
 		Company:          company,
 		SubmissionMethod: method,
 		Status:           "PREPPING",
-		CostPerCard:      costPerCard,
-		TaxRate:          MissouriTaxRate,
-		SubmissionCost:   CalculateSubmissionCost(len(itemIDs), costPerCard, MissouriTaxRate),
+		CostPerCard:      derivedCostPerCard(submissionCost, len(itemIDs)),
+		TaxRate:          0,
+		SubmissionCost:   submissionCost,
 		Notes:            notes,
 	}
 	if err = s.gradingRepo.CreateSubmission(ctx, submission); err != nil {
@@ -75,7 +64,7 @@ func (s *GradingService) CreateWithItems(ctx context.Context, company, method st
 	return submission, nil
 }
 
-func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company, method string, costPerCard float64, notes sql.NullString, itemIDs []uint) error {
+func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) error {
 	submission, err := s.gradingRepo.GetSubmissionByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("load submission: %w", err)
@@ -96,13 +85,25 @@ func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company,
 
 	submission.Company = company
 	submission.SubmissionMethod = method
-	submission.CostPerCard = normalizeCostPerCard(costPerCard)
-	submission.TaxRate = MissouriTaxRate
-	submission.SubmissionCost = CalculateSubmissionCost(len(itemIDs), submission.CostPerCard, MissouriTaxRate)
+	submission.SubmissionCost = submissionCost
+	submission.CostPerCard = derivedCostPerCard(submissionCost, len(itemIDs))
+	submission.TaxRate = 0
 	submission.Notes = notes
 
 	if err = s.gradingRepo.UpdateSubmission(ctx, submission); err != nil {
 		return fmt.Errorf("save submission: %w", err)
+	}
+	return nil
+}
+
+// DeleteSubmission releases any attached items back to inventory and then
+// deletes the submission.
+func (s *GradingService) DeleteSubmission(ctx context.Context, id uint) error {
+	if err := s.itemRepo.DetachFromSubmission(ctx, id); err != nil {
+		return fmt.Errorf("detach items: %w", err)
+	}
+	if err := s.gradingRepo.DeleteSubmission(ctx, id); err != nil {
+		return fmt.Errorf("delete submission: %w", err)
 	}
 	return nil
 }

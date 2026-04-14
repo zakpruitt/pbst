@@ -1,0 +1,111 @@
+{{define "content"}}
+<a href="/inventory?purpose={{.Item.Purpose}}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr;
+    Inventory</a>
+<h4 class="mb-4">Edit Item</h4>
+
+<form method="POST" action="/inventory/{{.Item.ID}}">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Item</h6>
+
+            <div class="row g-2">
+                <div class="col-sm-8">
+                    <label class="form-label small text-muted mb-1">Name</label>
+                    {{if .Item.PokemonCard}}
+                    <input class="form-control form-control-sm" value="{{.Item.PokemonCard.Name}}" disabled>
+                    <div class="form-text small">Linked to {{.Item.PokemonCard.SetName}} ·
+                        #{{.Item.PokemonCard.CardNumber}}
+                    </div>
+                    {{else if .Item.SealedProduct}}
+                    <input class="form-control form-control-sm" value="{{.Item.SealedProduct.Name}}" disabled>
+                    <div class="form-text small">Linked to {{.Item.SealedProduct.SetName}}</div>
+                    {{else}}
+                    <input name="name" class="form-control form-control-sm" value="{{.Item.ManualNameOverride.String}}"
+                           required>
+                    {{end}}
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Type</label>
+                    <input class="form-control form-control-sm" value="{{itemTypeLabel .Item.ItemType}}" disabled>
+                </div>
+            </div>
+
+            {{if eq .Item.ItemType "GRADED_CARD"}}
+            <div class="row g-2 mt-0">
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Grading Company</label>
+                    <select name="grading_company" class="form-select form-select-sm">
+                        {{$c := ""}}{{if .Item.GradedDetails}}{{$c = .Item.GradedDetails.GradingCompany}}{{end}}
+                        <option value="PSA" {{if eq $c
+                        "PSA"}}selected{{end}}>PSA</option>
+                        <option value="BGS" {{if eq $c
+                        "BGS"}}selected{{end}}>BGS</option>
+                        <option value="CGC" {{if eq $c
+                        "CGC"}}selected{{end}}>CGC</option>
+                        <option value="TAG" {{if eq $c
+                        "TAG"}}selected{{end}}>TAG</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Grade</label>
+                    <input name="grade" class="form-control form-control-sm"
+                           value="{{if .Item.GradedDetails}}{{.Item.GradedDetails.Grade}}{{end}}">
+                </div>
+            </div>
+            {{end}}
+
+            <div class="row g-2 mt-0">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Cost Basis ($)</label>
+                    <input name="cost_basis" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           value="{{printf " %.2f" .Item.CostBasis}}">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Market Value ($)</label>
+                    <input name="market_value" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           value="{{if .Item.MarketValueAtPurchase}}{{printf " %.2f"
+                    .Item.MarketValueAtPurchase}}{{end}}">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Acquisition Date</label>
+                    <input name="acquisition_date" type="date" class="form-control form-control-sm"
+                           value="{{fmtDateInput .Item.AcquisitionDate}}">
+                </div>
+            </div>
+
+            <div class="row g-2 mt-0">
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Purpose</label>
+                    <select name="purpose" class="form-select form-select-sm">
+                        <option value="INVENTORY" {{if eq .Item.Purpose
+                        "INVENTORY"}}selected{{end}}>Inventory</option>
+                        <option value="PERSONAL_COLLECTION" {{if eq .Item.Purpose
+                        "PERSONAL_COLLECTION"}}selected{{end}}>Personal Collection</option>
+                        {{if eq .Item.Purpose "IN_GRADING"}}
+                        <option value="IN_GRADING" selected>In Grading</option>
+                        {{end}}
+                        {{if eq .Item.Purpose "SOLD"}}
+                        <option value="SOLD" selected>Sold</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-2">
+                <label class="form-label small text-muted mb-1">Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="2">{{if .Item.Notes.Valid}}{{.Item.Notes.String}}{{end}}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <button type="submit"
+                formaction="/inventory/{{.Item.ID}}/delete"
+                formnovalidate
+                class="btn btn-outline-danger btn-sm"
+                onclick="return confirm('Delete this item?')">Delete
+        </button>
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+{{end}}

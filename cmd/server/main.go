@@ -42,6 +42,7 @@ func main() {
 	// Services
 	lotSvc := services.NewLotService(lotRepo, itemRepo)
 	gradingSvc := services.NewGradingService(gradingRepo, itemRepo)
+	saleSvc := services.NewSaleService(saleRepo, itemRepo)
 
 	// Background jobs
 	backgroundJobs := []jobs.Job{
@@ -64,7 +65,7 @@ func main() {
 
 	// Handlers
 	lots := handlers.NewLotViewHandler(lotRepo, lotSvc, cardRepo)
-	sales := handlers.NewSaleViewHandler(saleRepo)
+	sales := handlers.NewSaleViewHandler(saleRepo, itemRepo, saleSvc)
 	grading := handlers.NewGradingViewHandler(gradingRepo, itemRepo, gradingSvc)
 
 	// Auth
@@ -86,13 +87,28 @@ func main() {
 	mux.Handle("GET /lots/partials/row", viewMiddleware(lots.RowPartial))
 	mux.Handle("POST /lots/{id}", viewMiddleware(lots.UpdateLot))
 	mux.Handle("POST /lots/{id}/status", viewMiddleware(lots.UpdateLotStatus))
+	mux.Handle("POST /lots/{id}/delete", viewMiddleware(lots.DeleteLot))
 
 	// Sales
 	mux.Handle("GET /sales", viewMiddleware(sales.Sales))
+	mux.Handle("GET /sales/new", viewMiddleware(sales.SaleNew))
+	mux.Handle("GET /sales/staging", viewMiddleware(sales.SalesStaging))
 	mux.Handle("POST /sales", viewMiddleware(sales.CreateSale))
+	mux.Handle("GET /sales/{id}", viewMiddleware(sales.SaleDetail))
+	mux.Handle("GET /sales/{id}/confirm", viewMiddleware(sales.SaleConfirmForm))
+	mux.Handle("POST /sales/{id}/confirm", viewMiddleware(sales.ConfirmSale))
+	mux.Handle("POST /sales/{id}/ignore", viewMiddleware(sales.IgnoreSale))
+	mux.Handle("POST /sales/{id}/unstage", viewMiddleware(sales.UnstageSale))
+	mux.Handle("POST /sales/{id}/delete", viewMiddleware(sales.DeleteSale))
 
 	// Inventory
-	mux.Handle("GET /inventory", viewMiddleware(handlers.NewInventoryHandler(itemRepo)))
+	inventory := handlers.NewInventoryViewHandler(itemRepo)
+	mux.Handle("GET /inventory", viewMiddleware(inventory.Inventory))
+	mux.Handle("GET /inventory/new", viewMiddleware(inventory.InventoryNew))
+	mux.Handle("POST /inventory", viewMiddleware(inventory.CreateInventoryItem))
+	mux.Handle("GET /inventory/{id}/edit", viewMiddleware(inventory.InventoryEditForm))
+	mux.Handle("POST /inventory/{id}", viewMiddleware(inventory.UpdateInventoryItem))
+	mux.Handle("POST /inventory/{id}/delete", viewMiddleware(inventory.DeleteInventoryItem))
 
 	// Grading
 	mux.Handle("GET /grading", viewMiddleware(grading.Grading))
@@ -103,6 +119,7 @@ func main() {
 	mux.Handle("POST /grading/{id}", viewMiddleware(grading.UpdateGrading))
 	mux.Handle("POST /grading/{id}/advance", viewMiddleware(grading.AdvanceGradingStatus))
 	mux.Handle("POST /grading/{id}/return", viewMiddleware(grading.RecordReturn))
+	mux.Handle("POST /grading/{id}/delete", viewMiddleware(grading.DeleteGrading))
 
 	// Static
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))

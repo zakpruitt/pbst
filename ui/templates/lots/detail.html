@@ -3,118 +3,137 @@
 <a href="/lots" class="text-muted text-decoration-none small d-inline-block mb-3">← Lots</a>
 
 <div class="d-flex justify-content-between align-items-start mb-4">
-  <div>
-    <div class="d-flex align-items-center gap-2 mb-1">
-      <h4 class="mb-0">{{.Lot.SellerName}}</h4>
-      <span class="badge {{statusClass .Lot.Status}}">{{.Lot.Status}}</span>
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1">{{.Lot.SellerName}}</h4>
+        <small class="text-muted">
+            {{fmtDate .Lot.PurchaseDate}}
+            {{if .Lot.Description}} &middot; {{.Lot.Description}}{{end}}
+        </small>
     </div>
-    <small class="text-muted">
-      {{fmtDate .Lot.PurchaseDate}} · Cost: <strong>{{fmtMoney .Lot.TotalCost}}</strong>
-      {{if .Lot.EstimatedMarketValue}} · EMV: <strong>{{fmtMoney .Lot.EstimatedMarketValue}}</strong>{{end}}
-    </small>
-    {{if .Lot.Description}}<br><small class="text-muted">{{.Lot.Description}}</small>{{end}}
-  </div>
-  <div class="d-flex gap-2">
-    {{if eq .Lot.Status "PENDING"}}
-    <form method="POST" action="/lots/{{.Lot.ID}}/status" class="d-inline">
-      <input type="hidden" name="action" value="accept">
-      <button type="submit" class="btn btn-success btn-sm">Accept</button>
-    </form>
-    <form method="POST" action="/lots/{{.Lot.ID}}/status" class="d-inline">
-      <input type="hidden" name="action" value="reject">
-      <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
-    </form>
-    {{end}}
-    <a href="/lots/{{.Lot.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
-  </div>
+    <div class="d-flex gap-2 flex-shrink-0">
+        {{if eq .Lot.Status "PENDING"}}
+        <form method="POST" action="/lots/{{.Lot.ID}}/status" class="d-inline">
+            <input type="hidden" name="action" value="accept">
+            <button type="submit" class="btn btn-success btn-sm">Accept</button>
+        </form>
+        <form method="POST" action="/lots/{{.Lot.ID}}/status" class="d-inline">
+            <input type="hidden" name="action" value="reject">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+        </form>
+        {{end}}
+        <a href="/lots/{{.Lot.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
+        <form method="POST" action="/lots/{{.Lot.ID}}/delete" class="d-inline"
+              onsubmit="return confirm('Delete this lot and all its tracked items? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+        </form>
+    </div>
 </div>
 
-<h6 class="text-muted mb-3">Lot Contents</h6>
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <div class="text-muted small text-uppercase">Cost</div>
+                <div class="fw-semibold">{{fmtMoney .Lot.TotalCost}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">EMV</div>
+                <div class="fw-semibold">{{if .Lot.EstimatedMarketValue}}{{fmtMoney .Lot.EstimatedMarketValue}}{{else}}&mdash;{{end}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Items</div>
+                <div class="fw-semibold">{{len .Lot.TrackedItems}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Status</div>
+                <div><span class="badge {{statusClass .Lot.Status}}">{{.Lot.Status}}</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<span class="month-pill section-pill d-inline-block mb-2">Lot Contents</span>
 {{if not .SnapshotItems}}
 <p class="text-muted small">No items recorded. <a href="/lots/{{.Lot.ID}}/edit">Edit lot</a> to add items.</p>
 {{else}}
 <table class="table table-hover bg-white mb-4">
-  <thead class="table-light">
+    <thead class="table-light">
     <tr>
-      <th>Item</th>
-      <th>Set</th>
-      <th class="text-end">Qty</th>
-      <th class="text-end">Market</th>
-      <th class="text-end">%</th>
-      <th class="text-end">Offered</th>
-      <th class="text-center">Type</th>
-      <th class="text-center">Tracked</th>
+        <th style="width:100%">Item</th>
+        <th class="text-center text-nowrap ps-4">Type</th>
+        <th class="text-end text-nowrap ps-4">Qty</th>
+        <th class="text-end text-nowrap ps-4">Spent</th>
+        <th class="text-center text-nowrap ps-4">Tracked</th>
     </tr>
-  </thead>
-  <tbody>
+    </thead>
+    <tbody>
     {{range .SnapshotItems}}
     <tr>
-      <td>
-        <div class="d-flex align-items-center gap-2">
-          {{if .ImageURL}}<img src="{{.ImageURL}}" class="card-thumb" data-card-img="{{.ImageURL}}">{{end}}
-          <div>
-            <span class="fw-medium">{{.Name}}</span>
-            {{if .Rarity}}<br><small class="text-muted">{{.Rarity}}</small>{{end}}
-          </div>
-        </div>
-      </td>
-      <td class="text-muted small">
-        {{if .SetName}}{{.SetName}}{{else}}—{{end}}
-        {{if .CardNumber}}<br>#{{.CardNumber}}{{end}}
-      </td>
-      <td class="text-end">{{.Qty}}</td>
-      <td class="text-end">{{fmtMoney .MarketPrice}}</td>
-      <td class="text-end text-muted">{{printf "%.0f" .Percentage}}%</td>
-      <td class="text-end fw-medium">{{fmtMoney .Offered}}</td>
-      <td class="text-center"><small class="text-muted">{{itemTypeLabel .ItemType}}</small></td>
-      <td class="text-center">
-        {{if .IsTracked}}<span class="text-success">✓</span>{{else}}—{{end}}
-      </td>
+        <td>
+            <div class="d-flex align-items-center gap-2">
+                {{if .ImageURL}}<img src="{{.ImageURL}}" class="card-thumb" data-card-img="{{.ImageURL}}">{{end}}
+                <div>
+                    <span class="fw-medium">{{.Name}}</span>
+                    {{if .SetName}}
+                    <div class="text-muted inv-subtext">{{.SetName}}{{if .CardNumber}} &middot;
+                        #{{.CardNumber}}{{end}}
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </td>
+        <td class="text-center align-middle text-nowrap ps-4"><small class="text-muted">{{itemTypeLabel
+            .ItemType}}</small></td>
+        <td class="text-end align-middle text-nowrap ps-4">{{.Qty}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .Offered}}</td>
+        <td class="text-center align-middle text-nowrap ps-4">
+            {{if .IsTracked}}<span class="badge bg-success">TRACKED</span>{{else}}<span class="badge bg-secondary">NOT TRACKED</span>{{end}}
+        </td>
     </tr>
     {{end}}
-  </tbody>
+    </tbody>
 </table>
 {{end}}
 
 {{if .Lot.TrackedItems}}
-<h6 class="text-muted mb-3">Tracked Items</h6>
+<span class="month-pill section-pill d-inline-block mb-2">Tracked Items</span>
 <table class="table table-hover bg-white">
-  <thead class="table-light">
+    <thead class="table-light">
     <tr>
-      <th>Item</th>
-      <th class="text-end">Cost Basis</th>
-      <th class="text-end">Market</th>
-      <th class="text-center">Purpose</th>
+        <th>Item</th>
+        <th class="text-end">Cost Basis</th>
+        <th class="text-end">Market</th>
+        <th class="text-center">Purpose</th>
     </tr>
-  </thead>
-  <tbody>
+    </thead>
+    <tbody>
     {{range .Lot.TrackedItems}}
     <tr>
-      <td>
-        <div class="d-flex align-items-center gap-2">
-          {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-          <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
-          {{end}}{{end}}
-          <div>
-            {{if .ManualNameOverride.Valid}}
-            <span class="fw-medium">{{.ManualNameOverride.String}}</span>
-            {{else if .PokemonCard}}
-            <span class="fw-medium">{{.PokemonCard.Name}}</span>
-            <br><small class="text-muted">{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}</small>
-            {{else}}
-            <span class="text-muted fst-italic">Unnamed</span>
-            {{end}}
-          </div>
-        </div>
-      </td>
-      <td class="text-end">{{fmtMoney .CostBasis}}</td>
-      <td class="text-end text-muted">
-        {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
-      </td>
-      <td class="text-center"><small class="text-muted">{{purposeLabel .Purpose}}</small></td>
+        <td>
+            <div class="d-flex align-items-center gap-2">
+                {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+                {{end}}{{end}}
+                <div>
+                    {{if .ManualNameOverride.Valid}}
+                    <span class="fw-medium">{{.ManualNameOverride.String}}</span>
+                    {{else if .PokemonCard}}
+                    <span class="fw-medium">{{.PokemonCard.Name}}</span>
+                    <br><small class="text-muted">{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}</small>
+                    {{else}}
+                    <span class="text-muted fst-italic">Unnamed</span>
+                    {{end}}
+                </div>
+            </div>
+        </td>
+        <td class="text-end">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end text-muted">
+            {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
+        </td>
+        <td class="text-center"><small class="text-muted">{{purposeLabel .Purpose}}</small></td>
     </tr>
     {{end}}
-  </tbody>
+    </tbody>
 </table>
 {{end}}
 

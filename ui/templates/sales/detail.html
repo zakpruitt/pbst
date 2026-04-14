@@ -1,0 +1,130 @@
+{{define "content"}}
+<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">← Sales</a>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1">{{.Sale.Title}}</h4>
+        <small class="text-muted">
+            {{fmtDate .Sale.SaleDate}}
+            {{if .Sale.BuyerUsername}} · {{.Sale.BuyerUsername}}{{end}}
+            {{$url := ebayOrderURL .Sale.EbayOrderID .Sale.Origin}}
+            {{if $url}} · <a href="{{$url}}" target="_blank" rel="noopener" class="text-muted">View on eBay ↗</a>{{end}}
+        </small>
+    </div>
+    <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
+        <div class="d-flex gap-2">
+            {{if eq .Sale.Status "STAGED"}}
+            <a href="/sales/{{.Sale.ID}}/confirm" class="btn btn-outline-secondary btn-sm">Edit</a>
+            <form method="POST" action="/sales/{{.Sale.ID}}/ignore" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+            </form>
+            {{else if eq .Sale.Status "CONFIRMED"}}
+            <a href="/sales/{{.Sale.ID}}/confirm" class="btn btn-outline-secondary btn-sm">Edit</a>
+            <form method="POST" action="/sales/{{.Sale.ID}}/unstage" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Unstage</button>
+            </form>
+            {{else if eq .Sale.Status "IGNORED"}}
+            <form method="POST" action="/sales/{{.Sale.ID}}/unstage" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Restore</button>
+            </form>
+            {{end}}
+            <form method="POST" action="/sales/{{.Sale.ID}}/delete" class="d-inline"
+                  onsubmit="return confirm('Delete this sale? Attached items will return to inventory.')">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <div class="text-muted small text-uppercase">Sold For</div>
+                <div class="fw-semibold">{{fmtMoney .Sale.GrossAmount}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Fees</div>
+                <div class="fw-semibold">{{fmtMoney .Sale.EbayFees}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Earnings</div>
+                <div class="fw-semibold text-success">{{fmtMoney .Sale.NetAmount}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Status</div>
+                <div><span class="badge {{saleStatusClass .Sale.Status}}">{{saleStatusLabel .Sale.Status}}</span></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Method of Sale</div>
+                <div><span class="badge {{originClass .Sale.Origin}}">{{originLabel .Sale.Origin}}</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if .Sale.Notes.Valid}}
+<div class="alert alert-light border mb-3 py-2 px-3 small text-muted">{{.Sale.Notes.String}}</div>
+{{end}}
+
+<div class="mb-4">
+    <span class="month-pill section-pill d-inline-block mb-2">Attached Items</span>
+    {{if not .Sale.Items}}
+    <p class="text-muted small mb-0">
+        {{if eq .Sale.Status "CONFIRMED"}}
+        No items attached. <a href="/sales/{{.Sale.ID}}/confirm">Attach from inventory</a>.
+        {{else if eq .Sale.Status "STAGED"}}
+        Confirm this sale to attach inventory items.
+        {{else}}
+        No items attached.
+        {{end}}
+    </p>
+    {{else}}
+    <table class="table table-sm table-hover bg-white mb-0">
+        <thead class="table-light">
+        <tr>
+            <th style="width:100%">Card</th>
+            <th class="text-end text-nowrap ps-4">Cost Basis</th>
+            <th class="text-end text-nowrap ps-4">Market</th>
+            <th class="text-center text-nowrap ps-4">Grade</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Sale.Items}}
+        <tr>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                    <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
+                         data-card-img="{{.PokemonCard.ImageURL}}">
+                    {{end}}{{end}}
+                    <div>
+              <span class="fw-medium sub-row-name">
+                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                {{else}}Unnamed{{end}}
+              </span>
+                        {{if .PokemonCard}}
+                        <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </td>
+            <td class="text-end align-middle text-nowrap ps-4 sub-row-num">{{fmtMoney .CostBasis}}</td>
+            <td class="text-end align-middle text-nowrap ps-4 sub-row-num text-muted">
+                {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney
+                .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+            </td>
+            <td class="text-center align-middle ps-4">
+                {{if .GradedDetails}}{{if .GradedDetails.Grade}}
+                <span class="badge {{gradeClass .GradedDetails.GradingCompany}}">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+                {{else}}&mdash;{{end}}{{else}}&mdash;{{end}}
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+    {{end}}
+</div>
+{{end}}

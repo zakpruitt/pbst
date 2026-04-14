@@ -22,8 +22,8 @@ const (
 	ebayAPIBase     = "https://api.ebay.com"
 	ebayFinanceBase = "https://apiz.ebay.com"
 	ebayTokenURL    = "https://api.ebay.com/identity/v1/oauth2/token"
-	ebaySyncDays    = 730
-	ebayWindowDays  = 90 // Fulfillment API caps creationdate filter at ~90 days per query
+	ebaySyncDays    = 720 // eBay rejects start dates >= 2 years ago; stay safely under
+	ebayWindowDays  = 90  // Fulfillment API caps creationdate filter at ~90 days per query
 )
 
 type ebayAmount struct {
@@ -200,11 +200,29 @@ func (j *EbaySalesSync) fetchOrdersWindow(ctx context.Context, from, to time.Tim
 
 // fetchFees sums all selling costs per orderId: transaction fees from SALE
 // transactions plus shipping labels and ad fees from SHIPPING_LABEL /
-// NON_SALE_CHARGE transactions.
+// NON_SALE_CHARGE transactions. Chunked in 90-day windows since the Finance
+// API's transactionDate filter rejects or 204s on wider ranges.
 func (j *EbaySalesSync) fetchFees(ctx context.Context, since time.Time) (map[string]float64, error) {
 	fees := make(map[string]float64)
+	now := time.Now().UTC()
+	for start := since; start.Before(now); start = start.AddDate(0, 0, ebayWindowDays) {
+		end := start.AddDate(0, 0, ebayWindowDays)
+		if end.After(now) {
+			end = now
+		}
+		if err := j.fetchFeesWindow(ctx, start, end, fees); err != nil {
+			return nil, err
+		}
+	}
+	slog.Info("ebay fees collected", "orders_with_fees", len(fees))
+	return fees, nil
+}
+
+func (j *EbaySalesSync) fetchFeesWindow(ctx context.Context, from, to time.Time, fees map[string]float64) error {
 	offset, limit := 0, 200
-	filter := fmt.Sprintf("transactionDate:[%s..]", since.Format("2006-01-02T15:04:05.000Z"))
+	filter := fmt.Sprintf("transactionDate:[%s..%s]",
+		from.Format("2006-01-02T15:04:05.000Z"),
+		to.Format("2006-01-02T15:04:05.000Z"))
 
 	for {
 		u, _ := url.Parse(ebayFinanceBase + "/sell/finances/v1/transaction")
@@ -217,10 +235,10 @@ func (j *EbaySalesSync) fetchFees(ctx context.Context, since time.Time) (map[str
 		var result ebayTransactionsResponse
 		empty, err := j.getJSON(ctx, u.String(), &result)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if empty {
-			break
+			return nil
 		}
 
 		for _, t := range result.Transactions {
@@ -241,11 +259,10 @@ func (j *EbaySalesSync) fetchFees(ctx context.Context, since time.Time) (map[str
 		}
 
 		if len(result.Transactions) < limit {
-			break
+			return nil
 		}
 		offset += limit
 	}
-	return fees, nil
 }
 
 // getJSON performs an authenticated GET and decodes the JSON body into out.
@@ -355,5 +372,6 @@ func toSaleModel(o ebayOrder, fees map[string]float64) (models.Sale, error) {
 		ShippingCost:  shipping,
 		NetAmount:     net,
 		OrderStatus:   o.OrderFulfillmentStatus,
+		Origin:        "EBAY",
 	}, nil
 }

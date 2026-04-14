@@ -82,3 +82,11 @@ func (r *LotRepository) UpdateStatus(ctx context.Context, id uint, status string
 	}
 	return nil
 }
+
+func (r *LotRepository) Delete(ctx context.Context, id uint) error {
+	err := r.db.WithContext(ctx).Delete(&models.LotPurchase{}, id).Error
+	if err != nil {
+		return fmt.Errorf("delete lot: %w", err)
+	}
+	return nil
+}

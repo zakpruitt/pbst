@@ -30,9 +30,10 @@ func (r *TrackedItemRepository) GetItemsByPurpose(ctx context.Context, purpose s
 		Preload("PokemonCard").
 		Preload("SealedProduct").
 		Preload("LotPurchase").
+		Preload("GradingSubmission").
 		Where("tracked_items.purpose = ?", purpose).
-		Joins("JOIN lot_purchases ON lot_purchases.id = tracked_items.lot_purchase_id").
-		Where("lot_purchases.status = ?", "ACCEPTED").
+		Where("tracked_items.lot_purchase_id IS NULL OR tracked_items.lot_purchase_id IN (?)",
+			r.db.Table("lot_purchases").Select("id").Where("status = ?", "ACCEPTED")).
 		Find(&items).Error
 	if err != nil {
 		return nil, fmt.Errorf("get items by purpose: %w", err)
@@ -40,11 +41,42 @@ func (r *TrackedItemRepository) GetItemsByPurpose(ctx context.Context, purpose s
 	return items, nil
 }
 
+func (r *TrackedItemRepository) GetByID(ctx context.Context, id uint) (*models.TrackedItem, error) {
+	var item models.TrackedItem
+	err := r.db.WithContext(ctx).
+		Preload("PokemonCard").
+		Preload("SealedProduct").
+		Preload("LotPurchase").
+		Preload("GradingSubmission").
+		First(&item, id).Error
+	if err != nil {
+		return nil, fmt.Errorf("get tracked item: %w", err)
+	}
+	return &item, nil
+}
+
+func (r *TrackedItemRepository) Update(ctx context.Context, item *models.TrackedItem) error {
+	err := r.db.WithContext(ctx).Save(item).Error
+	if err != nil {
+		return fmt.Errorf("update tracked item: %w", err)
+	}
+	return nil
+}
+
+func (r *TrackedItemRepository) Delete(ctx context.Context, id uint) error {
+	err := r.db.WithContext(ctx).Delete(&models.TrackedItem{}, id).Error
+	if err != nil {
+		return fmt.Errorf("delete tracked item: %w", err)
+	}
+	return nil
+}
+
 func (r *TrackedItemRepository) GetInventoryItems(ctx context.Context) ([]models.TrackedItem, error) {
 	var items []models.TrackedItem
 	err := r.db.WithContext(ctx).
 		Preload("PokemonCard").
 		Where("purpose = ?", "INVENTORY").
+		Where("sale_id IS NULL").
 		Find(&items).Error
 	if err != nil {
 		return nil, fmt.Errorf("get inventory items: %w", err)
@@ -98,6 +130,47 @@ func (r *TrackedItemRepository) UpdateItemsStatusBySubmission(ctx context.Contex
 		Update("purpose", newPurpose).Error
 	if err != nil {
 		return fmt.Errorf("update items status: %w", err)
+	}
+	return nil
+}
+
+func (r *TrackedItemRepository) AttachToSale(ctx context.Context, itemIDs []uint, saleID uint) error {
+	if len(itemIDs) == 0 {
+		return nil
+	}
+	err := r.db.WithContext(ctx).
+		Model(&models.TrackedItem{}).
+		Where("id IN ?", itemIDs).
+		Updates(map[string]any{
+			"sale_id": saleID,
+			"purpose": "SOLD",
+		}).Error
+	if err != nil {
+		return fmt.Errorf("attach to sale: %w", err)
+	}
+	return nil
+}
+
+func (r *TrackedItemRepository) DetachFromSale(ctx context.Context, saleID uint) error {
+	err := r.db.WithContext(ctx).
+		Model(&models.TrackedItem{}).
+		Where("sale_id = ?", saleID).
+		Updates(map[string]any{
+			"sale_id": nil,
+			"purpose": "INVENTORY",
+		}).Error
+	if err != nil {
+		return fmt.Errorf("detach from sale: %w", err)
+	}
+	return nil
+}
+
+func (r *TrackedItemRepository) DeleteByLotID(ctx context.Context, lotID uint) error {
+	err := r.db.WithContext(ctx).
+		Where("lot_purchase_id = ?", lotID).
+		Delete(&models.TrackedItem{}).Error
+	if err != nil {
+		return fmt.Errorf("delete items by lot: %w", err)
 	}
 	return nil
 }

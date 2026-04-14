@@ -1,0 +1,61 @@
+{{define "content"}}
+<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">← Sales</a>
+<h4 class="mb-4">New Sale</h4>
+
+<form method="POST" action="/sales">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Sale Details</h6>
+            <div class="row g-2">
+                <div class="col-12">
+                    <input name="title" class="form-control form-control-sm" placeholder="Item name / title" required>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Sale date</label>
+                    <input name="sale_date" type="date" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Origin</label>
+                    <select name="origin" class="form-select form-select-sm">
+                        <option value="EBAY">eBay</option>
+                        <option value="FACEBOOK">Facebook</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <input name="buyer_username" class="form-control form-control-sm"
+                           placeholder="Buyer username (optional)">
+                </div>
+                <div class="col-sm-6">
+                    <input name="ebay_order_id" class="form-control form-control-sm" placeholder="Order ID (optional)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Amounts</h6>
+            <div class="row g-2">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Sold for</label>
+                    <input name="gross_amount" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           required>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Fees</label>
+                    <input name="ebay_fees" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           value="0">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Shipping</label>
+                    <input name="shipping_cost" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           value="0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success btn-sm">Save Sale</button>
+</form>
+{{end}}

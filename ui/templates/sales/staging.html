@@ -1,0 +1,59 @@
+{{define "content"}}
+<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">← Sales</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Sale Stager</h4>
+        <small class="text-muted">Triage eBay orders. Confirm yours, ignore the rest.</small>
+    </div>
+    <span class="badge bg-warning text-dark fs-6">{{len .Sales}} staged</span>
+</div>
+
+{{if not .Sales}}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <div>Nothing to triage. New eBay orders will land here automatically.</div>
+    </div>
+</div>
+{{else}}
+<table class="table table-hover bg-white">
+    <thead class="table-light">
+    <tr>
+        <th style="width:100%">Item</th>
+        <th class="text-center text-nowrap ps-4">Origin</th>
+        <th class="text-end text-nowrap ps-4">Amount</th>
+        <th class="text-end text-nowrap ps-4">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Sales}}
+    <tr>
+        <td>
+            <a href="/sales/{{.ID}}" class="sale-title text-body text-decoration-none fw-medium">{{.Title}}</a>
+            <div class="text-muted inv-subtext mt-1">
+                {{fmtDate .SaleDate}}
+                {{if .BuyerUsername}} · {{.BuyerUsername}}{{end}}
+                {{$url := ebayOrderURL .EbayOrderID .Origin}}
+                {{if $url}} · <a href="{{$url}}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>{{end}}
+            </div>
+        </td>
+        <td class="text-center align-middle text-nowrap ps-4">
+            <span class="badge {{originClass .Origin}}" style="font-size:.65rem">{{originLabel .Origin}}</span>
+        </td>
+        <td class="text-end align-middle text-nowrap ps-4">
+            <div class="small text-muted">Sold: {{fmtMoney .GrossAmount}}</div>
+            <div class="fw-semibold text-success">Net: {{fmtMoney .NetAmount}}</div>
+        </td>
+        <td class="text-end align-middle text-nowrap ps-4">
+            <div class="d-flex justify-content-end gap-2">
+                <a href="/sales/{{.ID}}/confirm" class="btn btn-success btn-sm">Confirm</a>
+                <form method="POST" action="/sales/{{.ID}}/ignore" class="d-inline">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+                </form>
+            </div>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+{{end}}

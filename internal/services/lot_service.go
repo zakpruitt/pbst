@@ -45,6 +45,18 @@ func (s *LotService) RejectLot(ctx context.Context, id uint) error {
 	return s.lotRepo.UpdateStatus(ctx, id, "REJECTED")
 }
 
+// DeleteLot removes a lot and all of its tracked items. Use with care — this
+// wipes the inventory that originated from the lot, not just the lot record.
+func (s *LotService) DeleteLot(ctx context.Context, id uint) error {
+	if err := s.itemRepo.DeleteByLotID(ctx, id); err != nil {
+		return fmt.Errorf("delete tracked items: %w", err)
+	}
+	if err := s.lotRepo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("delete lot: %w", err)
+	}
+	return nil
+}
+
 // snapshotToTrackedItem builds a TrackedItem from a lot and one of its snapshot entries.
 func snapshotToTrackedItem(lot *models.LotPurchase, item models.SnapshotItem) *models.TrackedItem {
 	qty := item.Qty
@@ -57,12 +69,18 @@ func snapshotToTrackedItem(lot *models.LotPurchase, item models.SnapshotItem) *m
 		purpose = "INVENTORY"
 	}
 
+	itemType := item.ItemType
+	if itemType == "" {
+		itemType = "RAW_CARD"
+	}
+
 	ti := &models.TrackedItem{
-		LotPurchaseID:         lot.ID,
+		LotPurchaseID:         sql.NullInt64{Int64: int64(lot.ID), Valid: true},
 		AcquisitionDate:       lot.PurchaseDate,
 		CostBasis:             item.Offered / float64(qty),
 		MarketValueAtPurchase: item.MarketPrice,
 		Purpose:               purpose,
+		ItemType:              itemType,
 	}
 
 	if item.PokemonCardID != "" {

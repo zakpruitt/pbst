@@ -1,74 +1,130 @@
 {{define "content"}}
-<h4 class="mb-4">Sales</h4>
-
-<div class="card mb-4">
-  <div class="card-body">
-    <h6 class="card-title mb-3">Record Sale</h6>
-    <form hx-post="/sales" hx-target="#sales-list" hx-swap="outerHTML"
-          hx-on::after-request="if(event.detail.successful) this.reset()">
-      <div class="row g-2">
-        <div class="col-12">
-          <input name="title" class="form-control form-control-sm" placeholder="Item name / title" required>
-        </div>
-        <div class="col-sm-6">
-          <input name="sale_date" type="date" class="form-control form-control-sm" required>
-        </div>
-        <div class="col-sm-6">
-          <input name="ebay_order_id" class="form-control form-control-sm" placeholder="eBay order ID (optional)">
-        </div>
-        <div class="col-sm-4">
-          <input name="gross_amount" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Gross" required>
-        </div>
-        <div class="col-sm-4">
-          <input name="ebay_fees" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Fees" value="0">
-        </div>
-        <div class="col-sm-4">
-          <input name="shipping_cost" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Shipping" value="0">
-        </div>
-        <div class="col-sm-6">
-          <input name="buyer_username" class="form-control form-control-sm" placeholder="Buyer username (optional)">
-        </div>
-        <div class="col-sm-6 d-flex align-items-end">
-          <button type="submit" class="btn btn-success btn-sm">Record Sale</button>
-        </div>
-      </div>
-    </form>
-  </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Sales</h4>
+    <div class="d-flex align-items-center gap-2">
+        {{if .IncludeIgnored}}
+        <a href="/sales" class="btn btn-outline-secondary btn-sm">Hide ignored</a>
+        {{else}}
+        <a href="/sales?ignored=1" class="btn btn-outline-secondary btn-sm">Show ignored</a>
+        {{end}}
+        <a href="/sales/new" class="btn btn-success btn-sm">+ New Sale</a>
+    </div>
 </div>
 
-{{template "sales-list" .}}
+{{if gt .StagedCount 0}}
+<a href="/sales/staging" class="d-block text-decoration-none mb-3">
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0 py-2 px-3">
+    <span>
+      <strong>{{.StagedCount}}</strong>
+      sale{{if ne .StagedCount 1}}s{{end}} awaiting triage
+    </span>
+        <span class="small fw-semibold">Review &rarr;</span>
+    </div>
+</a>
 {{end}}
 
-{{define "sales-list"}}
-<div id="sales-list">
-  {{if not .Sales}}
-  <p class="text-muted">No sales yet.</p>
-  {{else}}
-  <table class="table table-hover bg-white">
-    <thead class="table-light">
-      <tr>
-        <th>Item</th>
-        <th>Date</th>
-        <th class="text-end">Gross</th>
-        <th class="text-end">Fees</th>
-        <th class="text-end">Net</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Sales}}
-      <tr>
-        <td>
-          <span class="fw-medium">{{.Title}}</span>
-          {{if .BuyerUsername}}<br><small class="text-muted">{{.BuyerUsername}}</small>{{end}}
-        </td>
-        <td class="text-muted">{{fmtDate .SaleDate}}</td>
-        <td class="text-end">{{fmtMoney .GrossAmount}}</td>
-        <td class="text-end text-muted">{{if .EbayFees}}{{fmtMoney .EbayFees}}{{else}}—{{end}}</td>
-        <td class="text-end fw-semibold text-success">{{fmtMoney .NetAmount}}</td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-  {{end}}
+{{if not .Groups}}
+<p class="text-muted">No sales yet.</p>
+{{else}}
+<div class="card mb-3" x-data="saleFilter()">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            <div class="col-sm">
+                <input type="search" class="form-control form-control-sm"
+                       placeholder="Filter by title or buyer…"
+                       x-model="query" @input="apply()">
+            </div>
+            <div class="col-sm-auto">
+                <select class="form-select form-select-sm" x-model="origin" @change="apply()">
+                    <option value="">All origins</option>
+                    <option value="EBAY">eBay</option>
+                    <option value="FACEBOOK">Facebook</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <div class="col-sm-auto text-muted small" x-text="summary"></div>
+        </div>
+    </div>
 </div>
+
+<div id="sales-list">
+    {{range .Groups}}
+    <div class="sale-month-group mb-4">
+        <span class="month-label month-pill {{monthClass .FirstDay}}">{{.Label}}</span>
+        <table class="table table-hover bg-white mb-0 mt-2">
+            <thead class="table-light">
+            <tr>
+                <th style="width:100%">Item</th>
+                <th class="text-center text-nowrap ps-4">Origin</th>
+                <th class="text-end text-nowrap ps-4">Amounts</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Sales}}
+            <tr class="sale-row {{if eq .Status " IGNORED
+            "}}sale-row-ignored{{end}}"
+            data-title="{{.Title}}"
+            data-buyer="{{.BuyerUsername}}"
+            data-origin="{{.Origin}}">
+            <td>
+                <div class="d-flex align-items-start gap-2">
+                    <div class="min-w-0 flex-grow-1">
+                        <a href="/sales/{{.ID}}"
+                           class="sale-title text-body text-decoration-none fw-medium">{{.Title}}</a>
+                        <div class="text-muted inv-subtext mt-1">
+                            {{fmtDate .SaleDate}}
+                            {{if .BuyerUsername}} · {{.BuyerUsername}}{{end}}
+                            {{if eq .Status "IGNORED"}} · <span class="text-secondary">ignored</span>{{end}}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="text-center align-middle text-nowrap ps-4">
+                <span class="badge {{originClass .Origin}}" style="font-size:.65rem">{{originLabel .Origin}}</span>
+            </td>
+            <td class="text-end align-middle text-nowrap ps-4">
+                <div class="small text-muted">Sold: {{fmtMoney .GrossAmount}}</div>
+                <div class="fw-semibold text-success">Earnings: {{fmtMoney .NetAmount}}</div>
+            </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+
+<script>
+    function saleFilter() {
+        return {
+            query: "",
+            origin: "",
+            summary: "",
+            apply() {
+                const q = this.query.trim().toLowerCase();
+                const origin = this.origin;
+                let shown = 0;
+                document.querySelectorAll(".sale-month-group").forEach(group => {
+                    let groupShown = 0;
+                    group.querySelectorAll(".sale-row").forEach(row => {
+                        const title = (row.dataset.title || "").toLowerCase();
+                        const buyer = (row.dataset.buyer || "").toLowerCase();
+                        const rowOrigin = row.dataset.origin || "";
+                        const matchText = !q || title.includes(q) || buyer.includes(q);
+                        const matchOrigin = !origin || rowOrigin === origin;
+                        const visible = matchText && matchOrigin;
+                        row.style.display = visible ? "" : "none";
+                        if (visible) {
+                            groupShown++;
+                            shown++;
+                        }
+                    });
+                    group.style.display = groupShown === 0 ? "none" : "";
+                });
+                this.summary = (q || origin) ? `${shown} match${shown === 1 ? "" : "es"}` : "";
+            },
+        };
+    }
+</script>
+{{end}}
 {{end}}

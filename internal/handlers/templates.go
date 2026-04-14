@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,8 @@ var viewFuncs = template.FuncMap{
 	"fmtPercent": func(f float64) string {
 		return fmt.Sprintf("%.3f%%", f*100)
 	},
+	"add": func(a, b float64) float64 { return a + b },
+	"mul": func(a, b float64) float64 { return a * b },
 	"gradeClass": func(company string) string {
 		switch company {
 		case "PSA":
@@ -75,6 +78,61 @@ var viewFuncs = template.FuncMap{
 			return "Sealed"
 		default:
 			return t
+		}
+	},
+	"originLabel": func(o string) string {
+		switch o {
+		case "EBAY":
+			return "eBay"
+		case "FACEBOOK":
+			return "Facebook"
+		case "OTHER":
+			return "Other"
+		default:
+			return o
+		}
+	},
+	"originClass": func(o string) string {
+		switch o {
+		case "EBAY":
+			return "bg-primary"
+		case "FACEBOOK":
+			return "bg-info text-dark"
+		default:
+			return "bg-secondary"
+		}
+	},
+	"ebayOrderURL": func(orderID, origin string) string {
+		if origin != "EBAY" || orderID == "" {
+			return ""
+		}
+		return fmt.Sprintf("https://www.ebay.com/sh/ord/details?orderid=%s", orderID)
+	},
+	"monthClass": func(t time.Time) string {
+		return "month-" + strings.ToLower(t.Month().String())
+	},
+	"saleStatusClass": func(s string) string {
+		switch s {
+		case "CONFIRMED":
+			return "bg-success"
+		case "STAGED":
+			return "bg-warning text-dark"
+		case "IGNORED":
+			return "bg-secondary"
+		default:
+			return "bg-secondary"
+		}
+	},
+	"saleStatusLabel": func(s string) string {
+		switch s {
+		case "CONFIRMED":
+			return "Confirmed"
+		case "STAGED":
+			return "Staged"
+		case "IGNORED":
+			return "Ignored"
+		default:
+			return s
 		}
 	},
 }

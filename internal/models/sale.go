@@ -19,7 +19,10 @@ type Sale struct {
 	NetAmount     float64        `gorm:"column:net_amount" json:"net_amount"`
 	ImageURL      string         `gorm:"column:image_url" json:"image_url"`
 	OrderStatus   string         `gorm:"column:order_status" json:"order_status"`
+	Origin        string         `gorm:"column:origin;default:EBAY" json:"origin"`
+	Status        string         `gorm:"column:status;default:STAGED" json:"status"`
 	Notes         sql.NullString `gorm:"type:text" json:"notes"`
+	Items         []TrackedItem  `gorm:"foreignKey:SaleID" json:"items,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`

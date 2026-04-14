@@ -27,6 +27,7 @@ func (r *GradingRepository) GetAllSubmissions(ctx context.Context) ([]models.Gra
 	var submissions []models.GradingSubmission
 	err := r.db.WithContext(ctx).
 		Preload("Items").
+		Order("created_at DESC").
 		Find(&submissions).Error
 	if err != nil {
 		return nil, fmt.Errorf("get all submissions: %w", err)
@@ -39,6 +40,7 @@ func (r *GradingRepository) GetSubmissionByID(ctx context.Context, id uint) (*mo
 	err := r.db.WithContext(ctx).
 		Preload("Items").
 		Preload("Items.PokemonCard").
+		Preload("Items.LotPurchase").
 		First(&submission, id).Error
 	if err != nil {
 		return nil, fmt.Errorf("get submission by id: %w", err)
@@ -86,6 +88,14 @@ func (r *GradingRepository) SetSendDate(ctx context.Context, id uint, date time.
 		Update("send_date", date).Error
 	if err != nil {
 		return fmt.Errorf("set send date: %w", err)
+	}
+	return nil
+}
+
+func (r *GradingRepository) DeleteSubmission(ctx context.Context, id uint) error {
+	err := r.db.WithContext(ctx).Delete(&models.GradingSubmission{}, id).Error
+	if err != nil {
+		return fmt.Errorf("delete submission: %w", err)
 	}
 	return nil
 }

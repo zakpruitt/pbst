@@ -179,6 +179,18 @@ func (h *LotViewHandler) UpdateLot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/lots/%d", lot.ID), http.StatusSeeOther)
 }
 
+func (h *LotViewHandler) DeleteLot(w http.ResponseWriter, r *http.Request) {
+	id, ok := requirePathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.lotSvc.DeleteLot(r.Context(), id); err != nil {
+		serverError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/lots", http.StatusSeeOther)
+}
+
 func (h *LotViewHandler) UpdateLotStatus(w http.ResponseWriter, r *http.Request) {
 	id, ok := requirePathID(w, r)
 	if !ok {

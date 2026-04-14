@@ -1,0 +1,131 @@
+{{define "content"}}
+<a href="/sales/{{.Sale.ID}}" class="text-muted text-decoration-none small d-inline-block mb-3">← Sale</a>
+
+<div class="mb-4">
+    <h4 class="mb-1">
+        {{if eq .Sale.Status "CONFIRMED"}}Edit Attached Items{{else}}Confirm Sale{{end}}
+    </h4>
+    <small class="text-muted">
+        {{.Sale.Title}} · {{fmtDate .Sale.SaleDate}} · {{fmtMoney .Sale.GrossAmount}}
+    </small>
+</div>
+
+<form method="POST" action="/sales/{{.Sale.ID}}/confirm">
+    {{if and (not .RawItems) (not .GradedItems)}}
+    <div class="card mb-3">
+        <div class="card-body text-muted">
+            No items available in your inventory. You can still confirm this sale
+            without attaching items.
+        </div>
+    </div>
+    {{else}}
+
+    {{if .RawItems}}
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Raw Cards</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width:2rem"></th>
+                <th>Card</th>
+                <th class="text-end">Cost Basis</th>
+                <th class="text-end">Market</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .RawItems}}
+            <tr>
+                <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input item-cb"
+                           {{if index $.AttachedIDs .ID}}checked{{end}}></td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                        <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
+                             data-card-img="{{.PokemonCard.ImageURL}}">
+                        {{end}}{{end}}
+                        <div>
+                <span class="fw-medium sub-row-name">
+                  {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                  {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                  {{else}}Unnamed{{end}}
+                </span>
+                            {{if .PokemonCard}}
+                            <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
+                                · {{.PokemonCard.Rarity}}
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
+                <td class="text-end align-middle text-muted sub-row-num">
+                    {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney
+                    .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+
+    {{if .GradedItems}}
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Graded</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width:2rem"></th>
+                <th>Card</th>
+                <th class="text-center">Grade</th>
+                <th class="text-end">Cost Basis</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .GradedItems}}
+            <tr>
+                <td><input type="checkbox" name="item_ids" value="{{.ID}}" class="form-check-input item-cb"
+                           {{if index $.AttachedIDs .ID}}checked{{end}}></td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+                        <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
+                             data-card-img="{{.PokemonCard.ImageURL}}">
+                        {{end}}{{end}}
+                        <div>
+                <span class="fw-medium sub-row-name">
+                  {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
+                  {{else if .PokemonCard}}{{.PokemonCard.Name}}
+                  {{else}}Unnamed{{end}}
+                </span>
+                            {{if .PokemonCard}}
+                            <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} ·
+                                #{{.PokemonCard.CardNumber}}
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center align-middle">
+                    {{if .GradedDetails}}
+                    <span class="badge {{gradeClass .GradedDetails.GradingCompany}} sub-row-num">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
+                    {{else}}—{{end}}
+                </td>
+                <td class="text-end align-middle sub-row-num">{{fmtMoney .CostBasis}}</td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+
+    {{end}}
+
+    <div class="d-flex justify-content-between align-items-center">
+        <a href="/sales/{{.Sale.ID}}" class="text-muted text-decoration-none small">Cancel</a>
+        <button type="submit" class="btn btn-success">
+            {{if eq .Sale.Status "CONFIRMED"}}Save Items{{else}}Confirm Sale{{end}}
+        </button>
+    </div>
+</form>
+{{end}}

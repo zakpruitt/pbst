@@ -61,11 +61,10 @@
             </thead>
             <tbody>
             {{range .Sales}}
-            <tr class="sale-row {{if eq .Status " IGNORED
-            "}}sale-row-ignored{{end}}"
-            data-title="{{.Title}}"
-            data-buyer="{{.BuyerUsername}}"
-            data-origin="{{.Origin}}">
+            <tr class="sale-row {{if eq .Status "IGNORED"}}sale-row-ignored{{end}}"
+                data-title="{{.Title}}"
+                data-buyer="{{.BuyerUsername}}"
+                data-origin="{{.Origin}}">
             <td>
                 <div class="d-flex align-items-start gap-2">
                     <div class="min-w-0 flex-grow-1">

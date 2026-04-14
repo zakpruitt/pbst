@@ -6,28 +6,28 @@
 
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link {{if eq .Purpose " INVENTORY"}}active{{end}}"
-        href="/inventory?purpose=INVENTORY"
-        hx-get="/inventory?purpose=INVENTORY"
-        hx-target="#inventory-list"
-        hx-swap="outerHTML"
-        hx-push-url="true">Inventory</a>
+        <a class="nav-link {{if eq .Purpose "INVENTORY"}}active{{end}}"
+           href="/inventory?purpose=INVENTORY"
+           hx-get="/inventory?purpose=INVENTORY"
+           hx-target="#inventory-list"
+           hx-swap="outerHTML"
+           hx-push-url="true">Inventory</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{if eq .Purpose " IN_GRADING"}}active{{end}}"
-        href="/inventory?purpose=IN_GRADING"
-        hx-get="/inventory?purpose=IN_GRADING"
-        hx-target="#inventory-list"
-        hx-swap="outerHTML"
-        hx-push-url="true">In Grading</a>
+        <a class="nav-link {{if eq .Purpose "IN_GRADING"}}active{{end}}"
+           href="/inventory?purpose=IN_GRADING"
+           hx-get="/inventory?purpose=IN_GRADING"
+           hx-target="#inventory-list"
+           hx-swap="outerHTML"
+           hx-push-url="true">In Grading</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{if eq .Purpose " PERSONAL_COLLECTION"}}active{{end}}"
-        href="/inventory?purpose=PERSONAL_COLLECTION"
-        hx-get="/inventory?purpose=PERSONAL_COLLECTION"
-        hx-target="#inventory-list"
-        hx-swap="outerHTML"
-        hx-push-url="true">Personal Collection</a>
+        <a class="nav-link {{if eq .Purpose "PERSONAL_COLLECTION"}}active{{end}}"
+           href="/inventory?purpose=PERSONAL_COLLECTION"
+           hx-get="/inventory?purpose=PERSONAL_COLLECTION"
+           hx-target="#inventory-list"
+           hx-swap="outerHTML"
+           hx-push-url="true">Personal Collection</a>
     </li>
 </ul>
 

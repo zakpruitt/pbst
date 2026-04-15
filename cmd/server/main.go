@@ -38,6 +38,7 @@ func main() {
 	itemRepo := repository.NewTrackedItemRepository(database)
 	gradingRepo := repository.NewGradingRepository(database)
 	cardRepo := repository.NewPokemonCardRepository(database)
+	sealedRepo := repository.NewSealedProductRepository(database)
 
 	// Services
 	lotSvc := services.NewLotService(lotRepo, itemRepo)
@@ -74,9 +75,10 @@ func main() {
 
 	// API
 	mux.Handle("GET /api/v1/cards/search", apiMiddleware(handlers.HandleSearchCards(cardRepo)))
+	mux.Handle("GET /api/v1/sealed/search", apiMiddleware(handlers.HandleSearchSealed(sealedRepo)))
 
 	// Dashboard
-	mux.Handle("GET /", viewMiddleware(handlers.NewDashboardHandler(lotRepo, saleRepo, itemRepo)))
+	mux.Handle("GET /", viewMiddleware(handlers.NewDashboardHandler(lotRepo, saleRepo, itemRepo, gradingRepo)))
 
 	// Lots
 	mux.Handle("GET /lots", viewMiddleware(lots.Lots))
@@ -105,6 +107,7 @@ func main() {
 	inventory := handlers.NewInventoryViewHandler(itemRepo)
 	mux.Handle("GET /inventory", viewMiddleware(inventory.Inventory))
 	mux.Handle("GET /inventory/new", viewMiddleware(inventory.InventoryNew))
+	mux.Handle("GET /inventory/partials/row", viewMiddleware(inventory.RowPartial))
 	mux.Handle("POST /inventory", viewMiddleware(inventory.CreateInventoryItem))
 	mux.Handle("GET /inventory/{id}/edit", viewMiddleware(inventory.InventoryEditForm))
 	mux.Handle("POST /inventory/{id}", viewMiddleware(inventory.UpdateInventoryItem))

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -37,6 +38,18 @@ var viewFuncs = template.FuncMap{
 			return p
 		}
 	},
+	"purposeClass": func(p string) string {
+		switch p {
+		case "INVENTORY":
+			return "bg-primary"
+		case "IN_GRADING":
+			return "bg-warning text-dark"
+		case "PENDING_GRADE":
+			return "bg-info text-dark"
+		default:
+			return "bg-secondary"
+		}
+	},
 	"statusClass": func(s string) string {
 		switch s {
 		case "ACCEPTED", "RETURNED":
@@ -54,6 +67,20 @@ var viewFuncs = template.FuncMap{
 	},
 	"add": func(a, b float64) float64 { return a + b },
 	"mul": func(a, b float64) float64 { return a * b },
+	"toJSON": func(v any) template.JS {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return template.JS("null")
+		}
+		return template.JS(b)
+	},
+	"truncate": func(s string, n int) string {
+		runes := []rune(s)
+		if len(runes) <= n {
+			return s
+		}
+		return strings.TrimRight(string(runes[:n]), " ") + "…"
+	},
 	"gradeClass": func(company string) string {
 		switch company {
 		case "PSA":

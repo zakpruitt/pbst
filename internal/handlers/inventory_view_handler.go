@@ -1,28 +1,57 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"github.com/zakpruitt/pbst/internal/models"
 	"github.com/zakpruitt/pbst/internal/repository"
 )
 
 type InventoryViewHandler struct {
-	index    *template.Template
-	new      *template.Template
-	edit     *template.Template
-	itemRepo *repository.TrackedItemRepository
+	index      *template.Template
+	new        *template.Template
+	edit       *template.Template
+	rowPartial *template.Template
+	itemRepo   *repository.TrackedItemRepository
 }
 
 func NewInventoryViewHandler(itemRepo *repository.TrackedItemRepository) *InventoryViewHandler {
 	return &InventoryViewHandler{
-		index:    parseTemplate("inventory/index"),
-		new:      parseTemplate("inventory/new"),
-		edit:     parseTemplate("inventory/edit"),
-		itemRepo: itemRepo,
+		index:      parseTemplate("inventory/index"),
+		new:        parseTemplate("inventory/new"),
+		edit:       parseTemplate("inventory/edit"),
+		rowPartial: parsePartialTemplate("inventory/partials/row"),
+		itemRepo:   itemRepo,
 	}
+}
+
+type inventoryRowPreset struct {
+	Name            string
+	ItemType        string
+	CostBasis       float64
+	MarketPrice     float64
+	PokemonCardID   string
+	SealedProductID string
+	SetName         string
+	CardNumber      string
+	ImageURL        string
+	GradingCompany  string
+	Grade           string
+}
+
+type inventoryRowInput struct {
+	Name            string  `json:"name"`
+	ItemType        string  `json:"item_type"`
+	CostBasis       float64 `json:"cost_basis"`
+	MarketValue     float64 `json:"market_value"`
+	PokemonCardID   string  `json:"pokemon_card_id"`
+	SealedProductID string  `json:"sealed_product_id"`
+	GradingCompany  string  `json:"grading_company"`
+	Grade           string  `json:"grade"`
 }
 
 func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +75,7 @@ func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request)
 		"Purpose":     purpose,
 	}
 	if r.Header.Get("HX-Request") != "" {
-		execTemplate(w, h.index, "inventory-list", data)
+		execTemplate(w, h.index, "inventory-page", data)
 		return
 	}
 	execTemplate(w, h.index, "layout", data)
@@ -63,32 +92,70 @@ func (h *InventoryViewHandler) CreateInventoryItem(w http.ResponseWriter, r *htt
 		serverError(w, err)
 		return
 	}
-	item := &models.TrackedItem{
-		ManualNameOverride:    nullString(r.FormValue("name")),
-		CostBasis:             parseFormFloat(r, "cost_basis"),
-		MarketValueAtPurchase: parseFormFloat(r, "market_value"),
-		AcquisitionDate:       parseFormDate(r, "acquisition_date"),
-		Notes:                 nullString(r.FormValue("notes")),
-		Purpose:               r.FormValue("purpose"),
-		ItemType:              r.FormValue("item_type"),
+
+	purpose := r.FormValue("purpose")
+	if purpose == "" {
+		purpose = "INVENTORY"
 	}
-	if item.Purpose == "" {
-		item.Purpose = "INVENTORY"
-	}
-	if item.ItemType == "" {
-		item.ItemType = "OTHER"
-	}
-	if item.ItemType == "GRADED_CARD" {
-		item.GradedDetails = &models.GradedDetails{
-			GradingCompany: r.FormValue("grading_company"),
-			Grade:          r.FormValue("grade"),
+	acquisitionDate := parseFormDate(r, "acquisition_date")
+
+	var rows []inventoryRowInput
+	if snap := r.FormValue("items_snapshot"); snap != "" {
+		if err := json.Unmarshal([]byte(snap), &rows); err != nil {
+			serverError(w, err)
+			return
 		}
 	}
-	if err := h.itemRepo.AddTrackedItem(r.Context(), item); err != nil {
-		serverError(w, err)
-		return
+
+	for _, row := range rows {
+		if row.ItemType == "" {
+			row.ItemType = "OTHER"
+		}
+		item := &models.TrackedItem{
+			CostBasis:             row.CostBasis,
+			MarketValueAtPurchase: row.MarketValue,
+			AcquisitionDate:       acquisitionDate,
+			Purpose:               purpose,
+			ItemType:              row.ItemType,
+			PokemonCardID:         nullString(row.PokemonCardID),
+			SealedProductID:       nullString(row.SealedProductID),
+		}
+		if row.PokemonCardID == "" && row.SealedProductID == "" {
+			item.ManualNameOverride = nullString(row.Name)
+		}
+		if row.ItemType == "GRADED_CARD" {
+			item.GradedDetails = &models.GradedDetails{
+				GradingCompany: row.GradingCompany,
+				Grade:          row.Grade,
+			}
+		}
+		if err := h.itemRepo.AddTrackedItem(r.Context(), item); err != nil {
+			serverError(w, err)
+			return
+		}
 	}
-	http.Redirect(w, r, "/inventory?purpose="+item.Purpose, http.StatusSeeOther)
+
+	http.Redirect(w, r, "/inventory?purpose="+purpose, http.StatusSeeOther)
+}
+
+func (h *InventoryViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	itemType := q.Get("type")
+	if itemType == "" {
+		itemType = "OTHER"
+	}
+	market, _ := strconv.ParseFloat(q.Get("market"), 64)
+	preset := inventoryRowPreset{
+		Name:            q.Get("name"),
+		ItemType:        itemType,
+		MarketPrice:     market,
+		PokemonCardID:   q.Get("card_id"),
+		SealedProductID: q.Get("sealed_id"),
+		SetName:         q.Get("set"),
+		CardNumber:      q.Get("card"),
+		ImageURL:        q.Get("img"),
+	}
+	execTemplate(w, h.rowPartial, "inventory-row", preset)
 }
 
 func (h *InventoryViewHandler) InventoryEditForm(w http.ResponseWriter, r *http.Request) {

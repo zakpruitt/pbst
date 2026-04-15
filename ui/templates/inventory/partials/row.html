@@ -1,0 +1,92 @@
+{{define "inventory-row"}}
+<div class="item-row card mb-2"
+     x-data="{
+       name: '{{js .Name}}',
+       costBasis: {{if .CostBasis}}{{printf "%.2f" .CostBasis}}{{else}}0{{end}},
+       market: {{printf "%.2f" .MarketPrice}},
+       type: '{{.ItemType}}',
+       gradingCompany: '{{if .GradingCompany}}{{.GradingCompany}}{{else}}PSA{{end}}',
+       grade: '{{js .Grade}}',
+       cardId: '{{.PokemonCardID}}',
+       sealedId: '{{.SealedProductID}}',
+       imageUrl: '{{js .ImageURL}}',
+       setName: '{{js .SetName}}',
+       cardNumber: '{{js .CardNumber}}',
+       get isGraded(){ return this.type === 'GRADED_CARD' },
+       get borderColor(){
+         if(this.type==='GRADED_CARD') return '#f0b429';
+         if(this.type==='SEALED_PRODUCT') return '#0d6efd';
+         if(this.type==='OTHER') return '#888';
+         return 'transparent';
+       }
+     }"
+     :style="'border-left:3px solid '+borderColor">
+
+    <div class="d-flex gap-3 p-2 align-items-center">
+
+        <template x-if="imageUrl">
+            <div class="lot-img-wrap">
+                <img :src="imageUrl" :data-card-img="imageUrl"
+                     class="img-fluid rounded shadow-sm"
+                     style="object-fit: contain;">
+            </div>
+        </template>
+
+        <div class="flex-grow-1 d-flex flex-column lot-row-content">
+
+            <div class="d-flex gap-2 align-items-center w-100">
+                <input class="form-control form-control-sm flex-grow-1"
+                       x-model="name" placeholder="Name" style="min-width: 0;">
+
+                <div class="d-flex gap-2 ms-auto" style="flex-shrink: 0;">
+                    <select class="form-select form-select-sm" style="width: 210px;" x-model="type">
+                        <option value="OTHER">Other</option>
+                        <option value="RAW_CARD">Raw Card</option>
+                        <option value="GRADED_CARD">Graded Card</option>
+                        <option value="SEALED_PRODUCT">Sealed</option>
+                    </select>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger p-0 lot-btn-sq"
+                            @click="$el.closest('.item-row').remove(); $dispatch('inv:changed')">&#10005;
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-start w-100 lot-row-middle">
+                <div class="text-muted text-truncate flex-grow-1 lot-row-meta">
+                    {{if or .SetName .CardNumber}}
+                    {{.SetName}}{{if .CardNumber}} #{{.CardNumber}}{{end}}
+                    {{end}}
+                </div>
+
+                <template x-if="isGraded">
+                    <div class="d-flex gap-2 ms-auto" style="flex-shrink: 0;">
+                        <div class="input-group input-group-sm" style="width: 210px;">
+                            <select class="form-select shadow-none" style="width: 110px; flex: none;"
+                                    x-model="gradingCompany">
+                                <option value="PSA">PSA</option>
+                                <option value="BGS">BGS</option>
+                                <option value="CGC">CGC</option>
+                                <option value="TAG">TAG</option>
+                            </select>
+                            <input type="text" class="form-control shadow-none text-center px-2"
+                                   style="flex-grow: 1;" placeholder="Grade" x-model="grade">
+                        </div>
+                        <div style="width: 31px;"></div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mt-1 lot-row-pricing">
+                <span class="text-muted">Cost $</span>
+                <input type="number" class="form-control form-control-sm text-end"
+                       style="width:90px" step="0.01" min="0" x-model.number="costBasis">
+                <span class="text-muted">Mkt $</span>
+                <input type="number" class="form-control form-control-sm text-end"
+                       style="width:90px" step="0.01" min="0" x-model.number="market">
+            </div>
+
+        </div>
+    </div>
+</div>
+{{end}}

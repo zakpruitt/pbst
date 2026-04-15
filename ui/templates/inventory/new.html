@@ -1,63 +1,19 @@
 {{define "content"}}
 <a href="/inventory" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Inventory</a>
-<h4 class="mb-4">Add Item</h4>
+<h4 class="mb-4">Add Items</h4>
 
-<form method="POST" action="/inventory" x-data="{type: 'OTHER'}">
+<form id="inventory-form" method="POST" action="/inventory">
+    <input type="hidden" id="items-snapshot-input" name="items_snapshot" value="[]">
+
     <div class="card mb-3">
         <div class="card-body">
-            <h6 class="card-title mb-3">Item</h6>
+            <h6 class="card-title mb-3">Acquisition</h6>
             <div class="row g-2">
-                <div class="col-sm-8">
-                    <label class="form-label small text-muted mb-1">Name</label>
-                    <input name="name" class="form-control form-control-sm" required
-                           placeholder="e.g. Charizard Statue">
-                </div>
-                <div class="col-sm-4">
-                    <label class="form-label small text-muted mb-1">Type</label>
-                    <select name="item_type" class="form-select form-select-sm" x-model="type" required>
-                        <option value="OTHER">Other</option>
-                        <option value="RAW_CARD">Raw Card</option>
-                        <option value="GRADED_CARD">Graded Card</option>
-                        <option value="SEALED_PRODUCT">Sealed Product</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="row g-2 mt-0" x-show="type === 'GRADED_CARD'" x-cloak>
-                <div class="col-sm-6">
-                    <label class="form-label small text-muted mb-1">Grading Company</label>
-                    <select name="grading_company" class="form-select form-select-sm">
-                        <option value="PSA">PSA</option>
-                        <option value="BGS">BGS</option>
-                        <option value="CGC">CGC</option>
-                        <option value="TAG">TAG</option>
-                    </select>
-                </div>
-                <div class="col-sm-6">
-                    <label class="form-label small text-muted mb-1">Grade</label>
-                    <input name="grade" class="form-control form-control-sm" placeholder="e.g. 10">
-                </div>
-            </div>
-
-            <div class="row g-2 mt-0">
-                <div class="col-sm-4">
-                    <label class="form-label small text-muted mb-1">Cost Basis ($)</label>
-                    <input name="cost_basis" type="number" step="0.01" min="0" class="form-control form-control-sm"
-                           value="0">
-                </div>
-                <div class="col-sm-4">
-                    <label class="form-label small text-muted mb-1">Market Value ($)</label>
-                    <input name="market_value" type="number" step="0.01" min="0" class="form-control form-control-sm"
-                           placeholder="Optional">
-                </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Acquisition Date</label>
                     <input name="acquisition_date" type="date" class="form-control form-control-sm">
                 </div>
-            </div>
-
-            <div class="row g-2 mt-0">
-                <div class="col-sm-6">
+                <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Purpose</label>
                     <select name="purpose" class="form-select form-select-sm">
                         <option value="INVENTORY">Inventory</option>
@@ -65,16 +21,80 @@
                     </select>
                 </div>
             </div>
-
-            <div class="mt-2">
-                <label class="form-label small text-muted mb-1">Notes</label>
-                <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional"></textarea>
-            </div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-end">
-        <button type="submit" class="btn btn-success">Save</button>
+    <div x-data="inventoryTotals()" @input.window="recalc()" @change.window="recalc()"
+         @inv:changed.window="recalc()">
+
+        <div id="items-list"></div>
+
+        <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
+            Search for a card or sealed product below, or add a row manually.
+        </div>
+
+        {{/* Add Items — below the list so new items appear above it */}}
+        <div class="card mb-3" x-data="inventoryItemSearch()">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Add Items</h6>
+
+                <div class="btn-group btn-group-sm mb-2" role="group">
+                    <button type="button" class="btn btn-outline-secondary"
+                            :class="mode === 'cards' ? 'active' : ''" @click="setMode('cards')">Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary"
+                            :class="mode === 'sealed' ? 'active' : ''" @click="setMode('sealed')">Sealed
+                    </button>
+                </div>
+
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control form-control-sm" autocomplete="off"
+                           :placeholder="mode === 'sealed' ? 'Search sealed products by name or set…' : 'Search cards by name or set…'"
+                           x-model="query" @input.debounce.300ms="search()" @keydown.escape="clear()">
+                    <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                         style="z-index:100;max-height:280px;overflow-y:auto" x-show="results.length > 0"
+                         @click.outside="clear()">
+                        <template x-for="c in results" :key="c.id">
+                            <button type="button"
+                                    class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                                    @click="pick(c)">
+                                <template x-if="c.image_url">
+                                    <img :src="c.image_url"
+                                         style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
+                                </template>
+                                <template x-if="!c.image_url">
+                                    <div style="width:34px"></div>
+                                </template>
+                                <span>
+                                    <strong class="d-block" x-text="c.name"></strong>
+                                    <span class="text-muted small"
+                                          x-text="c.set_name + (c.card_number ? ' #' + c.card_number : '')"></span><br>
+                                    <span class="text-success small"
+                                          x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span>
+                                </span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" hx-get="/inventory/partials/row"
+                        hx-target="#items-list" hx-swap="beforeend">
+                    + Add row manually
+                </button>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-3">
+            <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+                <span>Items <strong class="text-body" x-text="count"></strong></span>
+                <span>Total Cost <strong class="text-body" x-text="'$' + totalCost.toFixed(2)"></strong></span>
+                <span>Total Market <strong class="text-body" x-text="'$' + totalMarket.toFixed(2)"></strong></span>
+                <button type="submit" class="btn btn-success btn-sm ms-auto">Save Items</button>
+            </div>
+        </div>
+
     </div>
 </form>
+
+<script src="/static/js/inventory-form.js"></script>
 {{end}}

@@ -1,15 +1,20 @@
 {{define "content"}}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">Sales</h4>
-    <div class="d-flex align-items-center gap-2">
-        {{if .IncludeIgnored}}
-        <a href="/sales" class="btn btn-outline-secondary btn-sm">Hide ignored</a>
-        {{else}}
-        <a href="/sales?ignored=1" class="btn btn-outline-secondary btn-sm">Show ignored</a>
-        {{end}}
-        <a href="/sales/new" class="btn btn-success btn-sm">+ New Sale</a>
-    </div>
+    <a href="/sales/new" class="btn btn-success btn-sm">+ New Sale</a>
 </div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {{if eq .View "mine"}}active{{end}}" href="/sales">Mine</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{if eq .View "ignored"}}active{{end}}" href="/sales?view=ignored">Ignored</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{if eq .View "vince"}}active{{end}}" href="/sales?view=vince">Vince</a>
+    </li>
+</ul>
 
 {{if gt .StagedCount 0}}
 <a href="/sales/staging" class="d-block text-decoration-none mb-3">
@@ -24,7 +29,11 @@
 {{end}}
 
 {{if not .Groups}}
-<p class="text-muted">No sales yet.</p>
+<p class="text-muted">
+    {{if eq .View "vince"}}No sales attributed to Vince yet.
+    {{else if eq .View "ignored"}}No ignored sales.
+    {{else}}No sales yet.{{end}}
+</p>
 {{else}}
 <div class="card mb-3" x-data="saleFilter()">
     <div class="card-body py-2">
@@ -74,7 +83,8 @@
                         <div class="text-muted inv-subtext mt-1">
                             {{fmtDate .SaleDate}}
                             {{if .BuyerUsername}} · {{.BuyerUsername}}{{end}}
-                            {{if eq .Status "IGNORED"}} · <span class="text-secondary">ignored</span>{{end}}
+                            {{if eq .AttributedTo "vince"}} · <span class="text-info">Vince</span>
+                            {{else if eq .Status "IGNORED"}} · <span class="text-secondary">ignored</span>{{end}}
                         </div>
                     </div>
                 </div>

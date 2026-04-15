@@ -3,7 +3,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1">Sale Stager</h4>
-        <small class="text-muted">Triage eBay orders. Confirm yours, ignore the rest.</small>
+        <small class="text-muted">Triage eBay orders. Confirm yours, send Vince's to him, ignore the rest.</small>
     </div>
     <span class="badge bg-warning text-dark fs-6">{{len .Sales}} staged</span>
 </div>
@@ -46,6 +46,9 @@
         <td class="text-end align-middle text-nowrap ps-4">
             <div class="d-flex justify-content-end gap-2">
                 <a href="/sales/{{.ID}}/confirm" class="btn btn-success btn-sm">Confirm</a>
+                <form method="POST" action="/sales/{{.ID}}/vince" class="d-inline">
+                    <button type="submit" class="btn btn-outline-info btn-sm">Vince</button>
+                </form>
                 <form method="POST" action="/sales/{{.ID}}/ignore" class="d-inline">
                     <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
                 </form>

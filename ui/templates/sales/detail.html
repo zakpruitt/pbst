@@ -15,15 +15,28 @@
         <div class="d-flex gap-2">
             {{if eq .Sale.Status "STAGED"}}
             <a href="/sales/{{.Sale.ID}}/confirm" class="btn btn-outline-secondary btn-sm">Edit</a>
+            <form method="POST" action="/sales/{{.Sale.ID}}/vince" class="d-inline">
+                <button type="submit" class="btn btn-outline-info btn-sm">Vince</button>
+            </form>
             <form method="POST" action="/sales/{{.Sale.ID}}/ignore" class="d-inline">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
             </form>
             {{else if eq .Sale.Status "CONFIRMED"}}
             <a href="/sales/{{.Sale.ID}}/confirm" class="btn btn-outline-secondary btn-sm">Edit</a>
+            <form method="POST" action="/sales/{{.Sale.ID}}/vince" class="d-inline">
+                <input type="hidden" name="from" value="detail">
+                <button type="submit" class="btn btn-outline-info btn-sm">Send to Vince</button>
+            </form>
             <form method="POST" action="/sales/{{.Sale.ID}}/unstage" class="d-inline">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">Unstage</button>
             </form>
             {{else if eq .Sale.Status "IGNORED"}}
+            {{if ne .Sale.AttributedTo "vince"}}
+            <form method="POST" action="/sales/{{.Sale.ID}}/vince" class="d-inline">
+                <input type="hidden" name="from" value="detail">
+                <button type="submit" class="btn btn-outline-info btn-sm">Send to Vince</button>
+            </form>
+            {{end}}
             <form method="POST" action="/sales/{{.Sale.ID}}/unstage" class="d-inline">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">Restore</button>
             </form>
@@ -53,7 +66,13 @@
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Status</div>
-                <div><span class="badge {{saleStatusClass .Sale.Status}}">{{saleStatusLabel .Sale.Status}}</span></div>
+                <div>
+                    {{if eq .Sale.AttributedTo "vince"}}
+                    <span class="badge bg-info text-dark">Vince</span>
+                    {{else}}
+                    <span class="badge {{saleStatusClass .Sale.Status}}">{{saleStatusLabel .Sale.Status}}</span>
+                    {{end}}
+                </div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Method of Sale</div>

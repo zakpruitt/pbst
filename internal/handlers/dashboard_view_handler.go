@@ -122,6 +122,11 @@ func NewDashboardHandler(
 			slog.Error("dashboard: 7d totals", "error", err)
 		}
 
+		vinceTotals, err := saleRepo.VinceTotals(ctx)
+		if err != nil {
+			slog.Error("dashboard: vince totals", "error", err)
+		}
+
 		execTemplate(w, tmpl, "layout", map[string]any{
 			"Page":              "dashboard",
 			"TotalSpent":        totalSpent,
@@ -148,6 +153,7 @@ func NewDashboardHandler(
 			"TopSales":          topSales,
 			"RecentSales":       recentSales,
 			"RecentLots":        recentLots,
+			"VinceTotals":       vinceTotals,
 		})
 	}
 }

@@ -194,6 +194,35 @@
     </div>
 </div>
 
+{{/* ── Vince side ledger ─────────────────────────────────────────────── */}}
+{{if gt .VinceTotals.Count 0}}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h6 class="mb-1">Vince</h6>
+                <small class="text-muted">Tracked separately — not part of your P&amp;L</small>
+            </div>
+            <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View sales &rarr;</a>
+        </div>
+        <div class="row text-center">
+            <div class="col">
+                <div class="text-muted small text-uppercase">Sales</div>
+                <div class="fw-semibold">{{.VinceTotals.Count}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Gross</div>
+                <div class="fw-semibold">{{fmtMoney .VinceTotals.Gross}}</div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Net Owed</div>
+                <div class="fw-semibold text-info">{{fmtMoney .VinceTotals.Net}}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 (function () {

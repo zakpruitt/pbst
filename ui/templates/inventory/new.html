@@ -30,7 +30,7 @@
         <div id="items-list"></div>
 
         <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
-            Search for a card or sealed product below, or add a row manually.
+            Search for a card or sealed product below, or add an Other item.
         </div>
 
         {{/* Add Items — below the list so new items appear above it */}}
@@ -38,23 +38,15 @@
             <div class="card-body">
                 <h6 class="card-title mb-3">Add Items</h6>
 
-                <div class="btn-group btn-group-sm mb-2" role="group">
-                    <button type="button" class="btn btn-outline-secondary"
-                            :class="mode === 'cards' ? 'active' : ''" @click="setMode('cards')">Cards
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary"
-                            :class="mode === 'sealed' ? 'active' : ''" @click="setMode('sealed')">Sealed
-                    </button>
-                </div>
-
                 <div class="position-relative mb-2">
                     <input type="text" class="form-control form-control-sm" autocomplete="off"
-                           :placeholder="mode === 'sealed' ? 'Search sealed products by name or set…' : 'Search cards by name or set…'"
-                           x-model="query" @input.debounce.300ms="search()" @keydown.escape="clear()">
+                           placeholder="Search cards or sealed products by name or set…"
+                           x-model="query" @input.debounce.300ms="search()"
+                           @keydown.enter.prevent="onEnter()" @keydown.escape="clear()">
                     <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
                          style="z-index:100;max-height:280px;overflow-y:auto" x-show="results.length > 0"
                          @click.outside="clear()">
-                        <template x-for="c in results" :key="c.id">
+                        <template x-for="c in results" :key="c._kind + ':' + c.id">
                             <button type="button"
                                     class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
                                     @click="pick(c)">
@@ -65,21 +57,23 @@
                                 <template x-if="!c.image_url">
                                     <div style="width:34px"></div>
                                 </template>
-                                <span>
+                                <span class="flex-grow-1">
                                     <strong class="d-block" x-text="c.name"></strong>
                                     <span class="text-muted small"
                                           x-text="c.set_name + (c.card_number ? ' #' + c.card_number : '')"></span><br>
                                     <span class="text-success small"
                                           x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span>
                                 </span>
+                                <span class="badge bg-light text-muted border text-uppercase"
+                                      style="font-size:.62rem;letter-spacing:.06em"
+                                      x-text="c._kind === 'sealed' ? 'Sealed' : 'Card'"></span>
                             </button>
                         </template>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-sm btn-outline-secondary" hx-get="/inventory/partials/row"
-                        hx-target="#items-list" hx-swap="beforeend">
-                    + Add row manually
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="addOther()">
+                    + Add Other
                 </button>
             </div>
         </div>

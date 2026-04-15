@@ -13,7 +13,9 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "WebSearch",
-      "WebFetch(domain:developer.ebay.com)"
+      "WebFetch(domain:developer.ebay.com)",
+      "Bash(git diff:*)",
+      "Bash(echo \"---EXIT:$?---\")"
     ]
   }
 }

@@ -2,23 +2,21 @@ function inventoryItemSearch() {
     return {
         query: '',
         results: [],
-        mode: 'cards',
-        setMode(m) {
-            this.mode = m;
-            this.clear();
-        },
         async search() {
             const q = this.query.trim();
             if (!q) { this.results = []; return; }
-            const url = this.mode === 'sealed'
-                ? '/api/v1/sealed/search'
-                : '/api/v1/cards/search';
-            const res = await fetch(url + '?q=' + encodeURIComponent(q));
-            this.results = await res.json() || [];
+            const qs = '?q=' + encodeURIComponent(q);
+            const [cards, sealed] = await Promise.all([
+                fetch('/api/v1/cards/search' + qs).then(r => r.json()).catch(() => []),
+                fetch('/api/v1/sealed/search' + qs).then(r => r.json()).catch(() => []),
+            ]);
+            const cardRows = (cards || []).map(c => ({ ...c, _kind: 'card' }));
+            const sealedRows = (sealed || []).map(s => ({ ...s, _kind: 'sealed' }));
+            this.results = [...cardRows, ...sealedRows];
         },
         clear() { this.query = ''; this.results = []; },
         async pick(c) {
-            const sealed = this.mode === 'sealed';
+            const sealed = c._kind === 'sealed';
             this.clear();
             const params = new URLSearchParams({
                 type: sealed ? 'SEALED_PRODUCT' : 'RAW_CARD',
@@ -33,9 +31,23 @@ function inventoryItemSearch() {
             } else {
                 params.set('card_id', c.id || '');
             }
+            await this.appendRow(params);
+        },
+        async addOther(name) {
+            const params = new URLSearchParams({ type: 'OTHER', name: (name || this.query || '').trim() });
+            this.clear();
+            await this.appendRow(params);
+        },
+        async appendRow(params) {
             const html = await fetch('/inventory/partials/row?' + params).then(r => r.text());
             document.getElementById('items-list').insertAdjacentHTML('beforeend', html);
             document.dispatchEvent(new CustomEvent('inv:changed'));
+        },
+        onEnter() {
+            // If nothing matched, Enter promotes the query to an Other row.
+            if (this.results.length === 0 && this.query.trim()) {
+                this.addOther(this.query);
+            }
         },
     };
 }

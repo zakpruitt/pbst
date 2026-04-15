@@ -4,16 +4,20 @@
     --accent: #27ae60;
 }
 
+html {
+    height: 100%;
+}
+
 body {
     background: #f7f9f9;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100%;
 }
 
 main {
-    flex: 1;
+    flex: 1 0 auto;
 }
 
 [x-cloak] {

@@ -90,3 +90,57 @@ func (r *LotRepository) Delete(ctx context.Context, id uint) error {
 	}
 	return nil
 }
+
+type MonthlySpend struct {
+	Month string
+	Spend float64
+	Count int64
+}
+
+func (r *LotRepository) MonthlySpend(ctx context.Context, months int) ([]MonthlySpend, error) {
+	var rows []MonthlySpend
+	err := r.db.WithContext(ctx).
+		Model(&models.LotPurchase{}).
+		Select("TO_CHAR(DATE_TRUNC('month', purchase_date), 'YYYY-MM') AS month, "+
+			"COALESCE(SUM(total_cost), 0) AS spend, "+
+			"COUNT(*) AS count").
+		Where("status != ?", "REJECTED").
+		Where("purchase_date >= NOW() - (? || ' months')::interval", months).
+		Group("month").
+		Order("month").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("monthly spend: %w", err)
+	}
+	return rows, nil
+}
+
+type LotStatusCount struct {
+	Status string
+	Count  int64
+}
+
+func (r *LotRepository) CountByStatus(ctx context.Context) ([]LotStatusCount, error) {
+	var rows []LotStatusCount
+	err := r.db.WithContext(ctx).
+		Model(&models.LotPurchase{}).
+		Select("status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("count lots by status: %w", err)
+	}
+	return rows, nil
+}
+
+func (r *LotRepository) GetRecent(ctx context.Context, limit int) ([]models.LotPurchase, error) {
+	var lots []models.LotPurchase
+	err := r.db.WithContext(ctx).
+		Order("purchase_date DESC").
+		Limit(limit).
+		Find(&lots).Error
+	if err != nil {
+		return nil, fmt.Errorf("get recent lots: %w", err)
+	}
+	return lots, nil
+}

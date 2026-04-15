@@ -175,6 +175,51 @@ func (r *TrackedItemRepository) DeleteByLotID(ctx context.Context, lotID uint) e
 	return nil
 }
 
+type ItemTypeCount struct {
+	ItemType string
+	Count    int64
+	Market   float64
+	Cost     float64
+}
+
+// CountByItemType groups live inventory (purpose=INVENTORY, unsold) by item_type,
+// returning counts plus market/cost totals so the dashboard can show a single
+// breakdown chart that doubles as a value summary.
+func (r *TrackedItemRepository) CountByItemType(ctx context.Context) ([]ItemTypeCount, error) {
+	var rows []ItemTypeCount
+	err := r.db.WithContext(ctx).
+		Model(&models.TrackedItem{}).
+		Select("item_type, COUNT(*) AS count, "+
+			"COALESCE(SUM(market_value_at_purchase), 0) AS market, "+
+			"COALESCE(SUM(cost_basis), 0) AS cost").
+		Where("purpose = ?", "INVENTORY").
+		Where("sale_id IS NULL").
+		Group("item_type").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("count by item type: %w", err)
+	}
+	return rows, nil
+}
+
+func (r *TrackedItemRepository) InventoryTotals(ctx context.Context) (cost, market float64, err error) {
+	var row struct {
+		Cost   float64
+		Market float64
+	}
+	err = r.db.WithContext(ctx).
+		Model(&models.TrackedItem{}).
+		Select("COALESCE(SUM(cost_basis), 0) AS cost, "+
+			"COALESCE(SUM(market_value_at_purchase), 0) AS market").
+		Where("purpose = ?", "INVENTORY").
+		Where("sale_id IS NULL").
+		Scan(&row).Error
+	if err != nil {
+		return 0, 0, fmt.Errorf("inventory totals: %w", err)
+	}
+	return row.Cost, row.Market, nil
+}
+
 func (r *TrackedItemRepository) UpdateGradedDetails(ctx context.Context, itemID uint, details models.GradedDetails) error {
 	err := r.db.WithContext(ctx).
 		Model(&models.TrackedItem{}).

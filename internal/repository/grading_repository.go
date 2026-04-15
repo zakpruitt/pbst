@@ -100,6 +100,24 @@ func (r *GradingRepository) DeleteSubmission(ctx context.Context, id uint) error
 	return nil
 }
 
+type GradingStatusCount struct {
+	Status string
+	Count  int64
+}
+
+func (r *GradingRepository) CountByStatus(ctx context.Context) ([]GradingStatusCount, error) {
+	var rows []GradingStatusCount
+	err := r.db.WithContext(ctx).
+		Model(&models.GradingSubmission{}).
+		Select("status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("count grading by status: %w", err)
+	}
+	return rows, nil
+}
+
 func (r *GradingRepository) UpdateReturnDetails(ctx context.Context, id uint, upchargeTotal float64, returnDate time.Time) error {
 	err := r.db.WithContext(ctx).
 		Model(&models.GradingSubmission{}).

@@ -1,55 +1,194 @@
 {{define "content"}}
-<h4 class="mb-4">Dashboard</h4>
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h4 class="mb-0">Dashboard</h4>
+    <span class="text-muted small">Lifetime P&amp;L across lots and sales</span>
+</div>
 
-<div class="row g-3 mb-4">
+{{/* ── KPI row 1: lifetime money ─────────────────────────────────────── */}}
+<div class="row g-3 mb-3">
     <div class="col-sm-6 col-lg-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <p class="text-muted small mb-1">Total Spent</p>
-                <h5 class="mb-0">{{fmtMoney .TotalSpent}}</h5>
+                <h5 class="mb-0 text-danger">{{fmtMoney .TotalSpent}}</h5>
+                <p class="text-muted small mb-0 mt-1">on lot purchases</p>
             </div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
-                <p class="text-muted small mb-1">Total Gross</p>
+                <p class="text-muted small mb-1">Gross Revenue</p>
                 <h5 class="mb-0">{{fmtMoney .TotalGross}}</h5>
+                <p class="text-muted small mb-0 mt-1">before fees &amp; shipping</p>
             </div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
-                <p class="text-muted small mb-1">Total Net</p>
+                <p class="text-muted small mb-1">Net Revenue</p>
                 <h5 class="mb-0">{{fmtMoney .TotalNet}}</h5>
+                <p class="text-muted small mb-0 mt-1">{{fmtMoney .TotalFees}} in fees</p>
             </div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <p class="text-muted small mb-1">Margin</p>
                 <h5 class="mb-0 {{if lt .Margin 0.0}}text-danger{{else}}text-success{{end}}">{{fmtMoney .Margin}}</h5>
+                <p class="text-muted small mb-0 mt-1">net &minus; spent</p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-7">
+{{/* ── KPI row 2: operational counters ───────────────────────────────── */}}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
         <div class="card h-100">
-            <div class="card-header">Financials</div>
-            <div class="card-body d-flex align-items-center">
-                <canvas id="financialChart"></canvas>
+            <div class="card-body">
+                <p class="text-muted small mb-1">Confirmed Sales</p>
+                <h5 class="mb-0">{{.SalesCount}}</h5>
+                <p class="text-muted small mb-0 mt-1">avg {{fmtMoney .AvgSale}}</p>
             </div>
         </div>
     </div>
-    <div class="col-md-5">
+    <div class="col-sm-6 col-lg-3">
         <div class="card h-100">
-            <div class="card-header">Inventory</div>
-            <div class="card-body d-flex align-items-center justify-content-center">
-                <canvas id="inventoryChart" style="max-height:220px"></canvas>
+            <div class="card-body">
+                <p class="text-muted small mb-1">Inventory</p>
+                <h5 class="mb-0">{{.InventoryCount}} items</h5>
+                <p class="text-muted small mb-0 mt-1">{{fmtMoney .InventoryMarket}} market</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <p class="text-muted small mb-1">In Grading</p>
+                <h5 class="mb-0">{{.GradingCount}} items</h5>
+                <p class="text-muted small mb-0 mt-1">awaiting return</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <p class="text-muted small mb-1">Last 30 Days</p>
+                <h5 class="mb-0">{{fmtMoney .Totals30.Net}}</h5>
+                <p class="text-muted small mb-0 mt-1">{{.Totals30.Count}} sales · 7d: {{fmtMoney .Totals7.Net}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{/* ── Main chart: monthly P&L ───────────────────────────────────────── */}}
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Monthly P&amp;L — last 12 months</span>
+                <span class="text-muted small">Lot spend vs. sale gross &amp; net</span>
+            </div>
+            <div class="card-body" style="height:320px">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{/* ── Breakdown doughnuts ───────────────────────────────────────────── */}}
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Inventory by Type</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="itemTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Sales by Origin</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="originChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Grading by Status</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="gradingChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{/* ── Lists: top sales, recent activity ─────────────────────────────── */}}
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Top 5 Sales by Net</span>
+                <a href="/sales" class="text-muted small text-decoration-none">View all &rarr;</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {{range .TopSales}}
+                    <a href="/sales/{{.ID}}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="me-2" style="min-width:0">
+                                <div class="text-truncate fw-medium" title="{{.Title}}">{{truncate .Title 50}}</div>
+                                <div class="text-muted small">{{fmtDate .SaleDate}} · {{originLabel .Origin}}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-medium">{{fmtMoney .NetAmount}}</div>
+                                <div class="text-muted small">{{fmtMoney .GrossAmount}} gross</div>
+                            </div>
+                        </div>
+                    </a>
+                {{else}}
+                    <div class="list-group-item text-muted small">No sales yet.</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Activity</span>
+                <span class="text-muted small">Latest sales &amp; lots</span>
+            </div>
+            <div class="list-group list-group-flush">
+                {{range .RecentSales}}
+                    <a href="/sales/{{.ID}}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="me-2" style="min-width:0">
+                                <span class="badge bg-success-subtle text-success me-1">Sale</span>
+                                <span class="fw-medium" title="{{.Title}}">{{truncate .Title 40}}</span>
+                                <div class="text-muted small">{{fmtDate .SaleDate}}</div>
+                            </div>
+                            <div class="text-end text-success">+{{fmtMoney .NetAmount}}</div>
+                        </div>
+                    </a>
+                {{end}}
+                {{range .RecentLots}}
+                    <a href="/lots/{{.ID}}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="me-2" style="min-width:0">
+                                <span class="badge bg-danger-subtle text-danger me-1">Lot</span>
+                                <span class="fw-medium">{{if .SellerName}}{{.SellerName}}{{else}}Lot #{{.ID}}{{end}}</span>
+                                <div class="text-muted small">{{fmtDate .PurchaseDate}} · {{.Status}}</div>
+                            </div>
+                            <div class="text-end text-danger">&minus;{{fmtMoney .TotalCost}}</div>
+                        </div>
+                    </a>
+                {{end}}
+                {{if and (not .RecentSales) (not .RecentLots)}}
+                    <div class="list-group-item text-muted small">No activity yet.</div>
+                {{end}}
             </div>
         </div>
     </div>
@@ -62,86 +201,125 @@
     const muted  = '#536471';
     const danger = '#dc3545';
     const blue   = '#0d6efd';
+    const amber  = '#ffc107';
+    const purple = '#6f42c1';
+    const teal   = '#20c997';
     const border = '#e1e8ed';
+    const palette = [blue, accent, amber, danger, purple, teal, '#fd7e14', '#0dcaf0'];
 
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     Chart.defaults.font.size   = 12;
     Chart.defaults.color       = muted;
 
-    // ── Financial bar chart ───────────────────────────────────────────────────
-    new Chart(document.getElementById('financialChart'), {
-        type: 'bar',
+    const money = v => '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
+    // ── Monthly P&L line ──────────────────────────────────────────────────────
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
         data: {
-            labels: ['Spent', 'Gross', 'Net'],
-            datasets: [{
-                data: [{{.TotalSpent}}, {{.TotalGross}}, {{.TotalNet}}],
-                backgroundColor: [
-                    'rgba(220,53,69,0.75)',
-                    'rgba(13,110,253,0.75)',
-                    'rgba(29,185,84,0.75)',
-                ],
-                borderColor:  [danger, blue, accent],
-                borderWidth:  1.5,
-                borderRadius: 6,
-            }]
+            labels: {{toJSON .MonthLabels}},
+            datasets: [
+                {
+                    label: 'Spent',
+                    data: {{toJSON .MonthlySpend}},
+                    borderColor: danger,
+                    backgroundColor: 'rgba(220,53,69,0.08)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                },
+                {
+                    label: 'Gross',
+                    data: {{toJSON .MonthlyGross}},
+                    borderColor: blue,
+                    backgroundColor: 'rgba(13,110,253,0.08)',
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 3,
+                },
+                {
+                    label: 'Net',
+                    data: {{toJSON .MonthlyNet}},
+                    borderColor: accent,
+                    backgroundColor: 'rgba(39,174,96,0.12)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                },
+            ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => ' $' + ctx.parsed.y.toFixed(2)
-                    }
-                }
+                legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } },
+                tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + money(ctx.parsed.y) } }
             },
             scales: {
                 x: { grid: { color: border } },
-                y: {
-                    grid: { color: border },
-                    ticks: { callback: v => '$' + v.toFixed(0) }
-                }
+                y: { grid: { color: border }, ticks: { callback: money } }
             }
         }
     });
 
-    // ── Inventory doughnut ────────────────────────────────────────────────────
-    const gradingCount = {{.GradingCount}};
-    const invCount     = {{.InventoryCount}};
-    const total        = gradingCount + invCount;
-
-    new Chart(document.getElementById('inventoryChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['In Grading', 'Inventory'],
-            datasets: [{
-                data: [gradingCount, invCount],
-                backgroundColor: [
-                    'rgba(39,174,96,0.8)',
-                    'rgba(255,193,7,0.8)',
-                    'rgba(13,110,253,0.8)',
-                ],
-                borderColor: ['#fff', '#fff', '#fff'],
-                borderWidth: 2,
-                hoverOffset: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '65%',
-            plugins: {
-                legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                            return ` ${ctx.parsed} items (${pct}%)`;
+    function doughnut(canvasId, labels, data, colors) {
+        if (!labels.length) {
+            const ctx = document.getElementById(canvasId);
+            if (ctx) ctx.parentElement.innerHTML = '<span class="text-muted small">No data yet.</span>';
+            return;
+        }
+        const total = data.reduce((a, b) => a + b, 0);
+        new Chart(document.getElementById(canvasId), {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2, hoverOffset: 6 }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                return ` ${ctx.parsed} (${pct}%)`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
+
+    // ── Inventory by item type ────────────────────────────────────────────────
+    const itemTypeRows = {{toJSON .ItemTypeCounts}} || [];
+    const itemTypeLabelMap = { RAW_CARD: 'Raw', GRADED_CARD: 'Graded', SEALED_PRODUCT: 'Sealed', OTHER: 'Other' };
+    doughnut(
+        'itemTypeChart',
+        itemTypeRows.map(r => itemTypeLabelMap[r.ItemType] || r.ItemType),
+        itemTypeRows.map(r => r.Count),
+        palette
+    );
+
+    // ── Sales by origin ───────────────────────────────────────────────────────
+    const originRows = {{toJSON .OriginCounts}} || [];
+    const originLabelMap = { EBAY: 'eBay', FACEBOOK: 'Facebook', OTHER: 'Other' };
+    doughnut(
+        'originChart',
+        originRows.map(r => originLabelMap[r.Origin] || r.Origin || 'Unknown'),
+        originRows.map(r => r.Count),
+        palette
+    );
+
+    // ── Grading by status ─────────────────────────────────────────────────────
+    const gradingRows = {{toJSON .GradingStatuses}} || [];
+    doughnut(
+        'gradingChart',
+        gradingRows.map(r => r.Status),
+        gradingRows.map(r => r.Count),
+        palette
+    );
 })();
 </script>
 {{end}}

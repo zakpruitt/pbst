@@ -122,7 +122,10 @@
     {{range .}}
     <tr>
         {{template "inventory-item-cell" .}}
-        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium"
+            {{if .GradingFee}}title="Lot {{fmtMoney .CostBasis}} + Grading {{fmtMoney .GradingFee}}"{{end}}>
+            {{fmtMoney .TotalCostBasis}}
+        </td>
         <td class="text-end align-middle text-nowrap ps-4 text-muted">
             {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
         </td>
@@ -150,7 +153,10 @@
     {{range .}}
     <tr>
         {{template "inventory-item-cell" .}}
-        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium"
+            {{if .GradingFee}}title="Lot {{fmtMoney .CostBasis}} + Grading {{fmtMoney .GradingFee}}"{{end}}>
+            {{fmtMoney .TotalCostBasis}}
+        </td>
         <td class="text-end align-middle text-nowrap ps-4 text-muted">
             {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
         </td>

@@ -36,3 +36,23 @@ type GradedDetails struct {
 	Grade           string  `gorm:"column:grade" json:"grade"`
 	GradingUpcharge float64 `gorm:"column:grading_upcharge" json:"grading_upcharge"`
 }
+
+// GradingFee returns the per-card submission fee plus any upcharge that was
+// recorded when the grade came back. Requires the linked GradingSubmission to
+// be preloaded — if it isn't, only the upcharge portion is counted.
+func (t *TrackedItem) GradingFee() float64 {
+	var fee float64
+	if t.GradingSubmission != nil {
+		fee += t.GradingSubmission.CostPerCard
+	}
+	if t.GradedDetails != nil {
+		fee += t.GradedDetails.GradingUpcharge
+	}
+	return fee
+}
+
+// TotalCostBasis rolls the lot allocation cost together with any grading fees
+// so inventory displays the all-in cost for each item.
+func (t *TrackedItem) TotalCostBasis() float64 {
+	return t.CostBasis + t.GradingFee()
+}

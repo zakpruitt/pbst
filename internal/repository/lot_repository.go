@@ -108,7 +108,7 @@ func (r *LotRepository) MonthlySpend(ctx context.Context, months int) ([]Monthly
 			"COALESCE(SUM(total_cost), 0) AS spend, "+
 			"COUNT(*) AS count").
 		Where("status != ?", "REJECTED").
-		Where("purchase_date >= NOW() - (? || ' months')::interval", months).
+		Where("purchase_date >= NOW() - make_interval(months => ?)", months).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error

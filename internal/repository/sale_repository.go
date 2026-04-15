@@ -50,21 +50,44 @@ func (r *SaleRepository) Upsert(ctx context.Context, sales []models.Sale) error 
 	return nil
 }
 
-// GetAllSales returns CONFIRMED sales ordered newest first. When includeIgnored
-// is true, IGNORED sales are also included. STAGED sales are never shown here
-// — they belong to the staging page.
-func (r *SaleRepository) GetAllSales(ctx context.Context, includeIgnored bool) ([]models.Sale, error) {
+// Sale list views. STAGED sales are never shown here — they belong to the
+// staging page. Vince's sales live under IGNORED with attributed_to='vince'
+// and are hidden from the Ignored view so each tab is a disjoint set.
+const (
+	SaleViewMine    = "mine"    // CONFIRMED only
+	SaleViewIgnored = "ignored" // IGNORED with no Vince attribution
+	SaleViewVince   = "vince"   // IGNORED where attributed_to='vince'
+)
+
+func (r *SaleRepository) GetAllSales(ctx context.Context, view string) ([]models.Sale, error) {
 	var sales []models.Sale
 	q := r.db.WithContext(ctx).Order("sale_date DESC")
-	if includeIgnored {
-		q = q.Where("status IN ?", []string{"CONFIRMED", "IGNORED"})
-	} else {
+	switch view {
+	case SaleViewVince:
+		q = q.Where("status = ? AND attributed_to = ?", "IGNORED", "vince")
+	case SaleViewIgnored:
+		q = q.Where("status = ? AND attributed_to != ?", "IGNORED", "vince")
+	default:
 		q = q.Where("status = ?", "CONFIRMED")
 	}
 	if err := q.Find(&sales).Error; err != nil {
 		return nil, fmt.Errorf("get all sales: %w", err)
 	}
 	return sales, nil
+}
+
+// VinceTotals aggregates Vince's sales for the dashboard footer card.
+func (r *SaleRepository) VinceTotals(ctx context.Context) (RangeTotals, error) {
+	var totals RangeTotals
+	err := r.db.WithContext(ctx).
+		Model(&models.Sale{}).
+		Select("COUNT(*) AS count, COALESCE(SUM(gross_amount), 0) AS gross, COALESCE(SUM(net_amount), 0) AS net").
+		Where("attributed_to = ?", "vince").
+		Scan(&totals).Error
+	if err != nil {
+		return totals, fmt.Errorf("vince totals: %w", err)
+	}
+	return totals, nil
 }
 
 func (r *SaleRepository) GetByID(ctx context.Context, id uint) (*models.Sale, error) {
@@ -101,6 +124,19 @@ func (r *SaleRepository) UpdateStatus(ctx context.Context, id uint, status strin
 		Update("status", status).Error
 	if err != nil {
 		return fmt.Errorf("update sale status: %w", err)
+	}
+	return nil
+}
+
+// UpdateStatusAndAttribution sets both fields in one write so a sale can be
+// moved to IGNORED and assigned to Vince (or cleared) atomically.
+func (r *SaleRepository) UpdateStatusAndAttribution(ctx context.Context, id uint, status, attributedTo string) error {
+	err := r.db.WithContext(ctx).
+		Model(&models.Sale{}).
+		Where("id = ?", id).
+		Updates(map[string]any{"status": status, "attributed_to": attributedTo}).Error
+	if err != nil {
+		return fmt.Errorf("update sale status/attribution: %w", err)
 	}
 	return nil
 }
@@ -182,7 +218,7 @@ func (r *SaleRepository) MonthlyRevenue(ctx context.Context, months int) ([]Mont
 			"COALESCE(SUM(net_amount), 0) AS net, " +
 			"COUNT(*) AS count").
 		Where("status = ?", "CONFIRMED").
-		Where("sale_date >= NOW() - (? || ' months')::interval", months).
+		Where("sale_date >= NOW() - make_interval(months => ?)", months).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error

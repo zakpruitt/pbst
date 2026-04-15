@@ -21,6 +21,7 @@ type Sale struct {
 	OrderStatus   string         `gorm:"column:order_status" json:"order_status"`
 	Origin        string         `gorm:"column:origin;default:EBAY" json:"origin"`
 	Status        string         `gorm:"column:status;default:STAGED" json:"status"`
+	AttributedTo  string         `gorm:"column:attributed_to" json:"attributed_to"`
 	Notes         sql.NullString `gorm:"type:text" json:"notes"`
 	Items         []TrackedItem  `gorm:"foreignKey:SaleID" json:"items,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`

@@ -32,23 +32,38 @@ func (s *SaleService) ConfirmWithItems(ctx context.Context, saleID uint, itemIDs
 }
 
 // Ignore marks a sale as not-mine. Any attached items are released back to
-// inventory so an accidental confirm can be undone cleanly.
+// inventory and any prior attribution (e.g. Vince) is cleared so an accidental
+// confirm can be undone cleanly.
 func (s *SaleService) Ignore(ctx context.Context, saleID uint) error {
 	if err := s.itemRepo.DetachFromSale(ctx, saleID); err != nil {
 		return fmt.Errorf("detach items: %w", err)
 	}
-	if err := s.saleRepo.UpdateStatus(ctx, saleID, "IGNORED"); err != nil {
+	if err := s.saleRepo.UpdateStatusAndAttribution(ctx, saleID, "IGNORED", ""); err != nil {
 		return fmt.Errorf("ignore sale: %w", err)
 	}
 	return nil
 }
 
-// Unstage returns a sale to the triage pool and releases its items.
+// MarkAsVince tags a sale as belonging to Vince. Stored as IGNORED so every
+// KPI query (which filters on CONFIRMED) already excludes it, plus the
+// attributed_to flag lets us surface his sales on a dedicated tab.
+func (s *SaleService) MarkAsVince(ctx context.Context, saleID uint) error {
+	if err := s.itemRepo.DetachFromSale(ctx, saleID); err != nil {
+		return fmt.Errorf("detach items: %w", err)
+	}
+	if err := s.saleRepo.UpdateStatusAndAttribution(ctx, saleID, "IGNORED", "vince"); err != nil {
+		return fmt.Errorf("mark sale as vince: %w", err)
+	}
+	return nil
+}
+
+// Unstage returns a sale to the triage pool, releases its items, and clears
+// any prior attribution.
 func (s *SaleService) Unstage(ctx context.Context, saleID uint) error {
 	if err := s.itemRepo.DetachFromSale(ctx, saleID); err != nil {
 		return fmt.Errorf("detach items: %w", err)
 	}
-	if err := s.saleRepo.UpdateStatus(ctx, saleID, "STAGED"); err != nil {
+	if err := s.saleRepo.UpdateStatusAndAttribution(ctx, saleID, "STAGED", ""); err != nil {
 		return fmt.Errorf("unstage sale: %w", err)
 	}
 	return nil

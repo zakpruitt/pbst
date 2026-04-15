@@ -27,9 +27,7 @@
       <tr style="cursor:pointer" onclick="window.location='/lots/{{.ID}}'">
         <td class="align-middle">
           <span class="fw-medium">{{.SellerName}}</span>
-          <div class="text-muted inv-subtext">
-            {{fmtDate .PurchaseDate}}{{if .Description}} &middot; {{.Description}}{{end}}
-          </div>
+          <div class="text-muted inv-subtext">{{fmtDate .PurchaseDate}}</div>
         </td>
         <td class="text-center align-middle text-nowrap ps-4">{{len .TrackedItems}}</td>
         <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .TotalCost}}</td>

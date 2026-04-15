@@ -4,12 +4,17 @@
     <a href="/inventory/new" class="btn btn-success btn-sm">Add Item</a>
 </div>
 
+{{template "inventory-page" .}}
+{{end}}
+
+{{define "inventory-page"}}
+<div id="inventory-page">
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
         <a class="nav-link {{if eq .Purpose "INVENTORY"}}active{{end}}"
            href="/inventory?purpose=INVENTORY"
            hx-get="/inventory?purpose=INVENTORY"
-           hx-target="#inventory-list"
+           hx-target="#inventory-page"
            hx-swap="outerHTML"
            hx-push-url="true">Inventory</a>
     </li>
@@ -17,7 +22,7 @@
         <a class="nav-link {{if eq .Purpose "IN_GRADING"}}active{{end}}"
            href="/inventory?purpose=IN_GRADING"
            hx-get="/inventory?purpose=IN_GRADING"
-           hx-target="#inventory-list"
+           hx-target="#inventory-page"
            hx-swap="outerHTML"
            hx-push-url="true">In Grading</a>
     </li>
@@ -25,13 +30,14 @@
         <a class="nav-link {{if eq .Purpose "PERSONAL_COLLECTION"}}active{{end}}"
            href="/inventory?purpose=PERSONAL_COLLECTION"
            hx-get="/inventory?purpose=PERSONAL_COLLECTION"
-           hx-target="#inventory-list"
+           hx-target="#inventory-page"
            hx-swap="outerHTML"
            hx-push-url="true">Personal Collection</a>
     </li>
 </ul>
 
 {{template "inventory-list" .}}
+</div>
 {{end}}
 
 {{define "inventory-list"}}
@@ -50,7 +56,7 @@
     {{if .GradedItems}}
     <div class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Graded</span>
-        {{template "inventory-table" .GradedItems}}
+        {{template "inventory-table-graded" .GradedItems}}
     </div>
     {{end}}
 
@@ -72,7 +78,64 @@
 </div>
 {{end}}
 
+{{define "inventory-item-cell"}}
+<td>
+    <div class="d-flex align-items-center gap-2">
+        {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
+        <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
+        {{end}}{{end}}
+        <div>
+            {{if .ManualNameOverride.Valid}}
+            <span class="fw-medium">{{.ManualNameOverride.String}}</span>
+            {{else if .PokemonCard}}
+            <span class="fw-medium">{{.PokemonCard.Name}}</span>
+            {{else if .SealedProduct}}
+            <span class="fw-medium">{{.SealedProduct.Name}}</span>
+            {{else}}
+            <span class="text-muted fst-italic">Unnamed</span>
+            {{end}}
+            <div class="text-muted inv-subtext">
+                {{if .PokemonCard}}{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}
+                {{else if .SealedProduct}}{{.SealedProduct.SetName}}{{end}}
+            </div>
+            <div class="text-muted inv-subtext">
+                {{fmtDate .AcquisitionDate}}{{if .LotPurchase}} &middot; <a href="/lots/{{.LotPurchaseID.Int64}}"
+                                                                     class="text-muted">{{.LotPurchase.SellerName}}</a>{{end}}{{if
+                .GradingSubmission}} &middot; <a href="/grading/{{.GradingSubmissionID.Int64}}" class="text-muted">{{.GradingSubmission.SubmissionName}}</a>{{end}}
+            </div>
+        </div>
+    </div>
+</td>
+{{end}}
+
 {{define "inventory-table"}}
+<table class="table table-hover bg-white mb-0">
+    <thead class="table-light">
+    <tr>
+        <th style="width:100%">Item</th>
+        <th class="text-end text-nowrap ps-4">Cost Basis</th>
+        <th class="text-end text-nowrap ps-4">Market</th>
+        <th class="text-end text-nowrap ps-4"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .}}
+    <tr>
+        {{template "inventory-item-cell" .}}
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 text-muted">
+            {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
+        </td>
+        <td class="text-end align-middle text-nowrap ps-4">
+            <a href="/inventory/{{.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{define "inventory-table-graded"}}
 <table class="table table-hover bg-white mb-0">
     <thead class="table-light">
     <tr>
@@ -86,34 +149,8 @@
     <tbody>
     {{range .}}
     <tr>
-        <td>
-            <div class="d-flex align-items-center gap-2">
-                {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-                <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
-                {{end}}{{end}}
-                <div>
-                    {{if .ManualNameOverride.Valid}}
-                    <span class="fw-medium">{{.ManualNameOverride.String}}</span>
-                    {{else if .PokemonCard}}
-                    <span class="fw-medium">{{.PokemonCard.Name}}</span>
-                    {{else if .SealedProduct}}
-                    <span class="fw-medium">{{.SealedProduct.Name}}</span>
-                    {{else}}
-                    <span class="text-muted fst-italic">Unnamed</span>
-                    {{end}}
-                    <div class="text-muted inv-subtext">
-                        {{if .PokemonCard}}{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
-                        {{else if .SealedProduct}}{{.SealedProduct.SetName}}{{end}}
-                    </div>
-                    <div class="text-muted inv-subtext">
-                        {{fmtDate .AcquisitionDate}}{{if .LotPurchase}} · <a href="/lots/{{.LotPurchaseID.Int64}}"
-                                                                             class="text-muted">{{.LotPurchase.SellerName}}</a>{{end}}{{if
-                        .GradingSubmission}} · <a href="/grading/{{.GradingSubmissionID.Int64}}" class="text-muted">{{.GradingSubmission.SubmissionName}}</a>{{end}}
-                    </div>
-                </div>
-            </div>
-        </td>
-        <td class="text-end align-middle text-nowrap ps-4">{{fmtMoney .CostBasis}}</td>
+        {{template "inventory-item-cell" .}}
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
         <td class="text-end align-middle text-nowrap ps-4 text-muted">
             {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
         </td>

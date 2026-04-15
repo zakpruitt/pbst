@@ -28,7 +28,7 @@
     {{range .Sales}}
     <tr>
         <td>
-            <a href="/sales/{{.ID}}" class="sale-title text-body text-decoration-none fw-medium">{{.Title}}</a>
+            <a href="/sales/{{.ID}}" class="sale-title text-body text-decoration-none fw-medium" title="{{.Title}}">{{truncate .Title 45}}</a>
             <div class="text-muted inv-subtext mt-1">
                 {{fmtDate .SaleDate}}
                 {{if .BuyerUsername}} · {{.BuyerUsername}}{{end}}

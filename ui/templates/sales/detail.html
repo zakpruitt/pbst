@@ -80,10 +80,10 @@
         {{end}}
     </p>
     {{else}}
-    <table class="table table-sm table-hover bg-white mb-0">
+    <table class="table table-hover bg-white mb-0">
         <thead class="table-light">
         <tr>
-            <th style="width:100%">Card</th>
+            <th style="width:100%">Item</th>
             <th class="text-end text-nowrap ps-4">Cost Basis</th>
             <th class="text-end text-nowrap ps-4">Market</th>
             <th class="text-center text-nowrap ps-4">Grade</th>
@@ -95,28 +95,30 @@
             <td>
                 <div class="d-flex align-items-center gap-2">
                     {{if .PokemonCard}}{{if .PokemonCard.ImageURL}}
-                    <img src="{{.PokemonCard.ImageURL}}" class="card-thumb-sm"
-                         data-card-img="{{.PokemonCard.ImageURL}}">
+                    <img src="{{.PokemonCard.ImageURL}}" class="card-thumb" data-card-img="{{.PokemonCard.ImageURL}}">
                     {{end}}{{end}}
                     <div>
-              <span class="fw-medium sub-row-name">
-                {{if .ManualNameOverride.Valid}}{{.ManualNameOverride.String}}
-                {{else if .PokemonCard}}{{.PokemonCard.Name}}
-                {{else}}Unnamed{{end}}
-              </span>
-                        {{if .PokemonCard}}
-                        <div class="text-muted sub-row-set">{{.PokemonCard.SetName}} · #{{.PokemonCard.CardNumber}}
-                        </div>
+                        {{if .ManualNameOverride.Valid}}
+                        <span class="fw-medium">{{.ManualNameOverride.String}}</span>
+                        {{else if .PokemonCard}}
+                        <span class="fw-medium">{{.PokemonCard.Name}}</span>
+                        {{else if .SealedProduct}}
+                        <span class="fw-medium">{{.SealedProduct.Name}}</span>
+                        {{else}}
+                        <span class="text-muted fst-italic">Unnamed</span>
                         {{end}}
+                        <div class="text-muted inv-subtext">
+                            {{if .PokemonCard}}{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}
+                            {{else if .SealedProduct}}{{.SealedProduct.SetName}}{{end}}
+                        </div>
                     </div>
                 </div>
             </td>
-            <td class="text-end align-middle text-nowrap ps-4 sub-row-num">{{fmtMoney .CostBasis}}</td>
-            <td class="text-end align-middle text-nowrap ps-4 sub-row-num text-muted">
-                {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney
-                .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
+            <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
+            <td class="text-end align-middle text-nowrap ps-4 text-muted">
+                {{if .PokemonCard}}{{if .PokemonCard.MarketPrice}}{{fmtMoney .PokemonCard.MarketPrice}}{{else}}—{{end}}{{else}}—{{end}}
             </td>
-            <td class="text-center align-middle ps-4">
+            <td class="text-center align-middle text-nowrap ps-4">
                 {{if .GradedDetails}}{{if .GradedDetails.Grade}}
                 <span class="badge {{gradeClass .GradedDetails.GradingCompany}}">{{.GradedDetails.GradingCompany}} {{.GradedDetails.Grade}}</span>
                 {{else}}&mdash;{{end}}{{else}}&mdash;{{end}}

@@ -69,7 +69,8 @@
                 <div class="d-flex align-items-start gap-2">
                     <div class="min-w-0 flex-grow-1">
                         <a href="/sales/{{.ID}}"
-                           class="sale-title text-body text-decoration-none fw-medium">{{.Title}}</a>
+                           class="sale-title text-body text-decoration-none fw-medium"
+                           title="{{.Title}}">{{truncate .Title 45}}</a>
                         <div class="text-muted inv-subtext mt-1">
                             {{fmtDate .SaleDate}}
                             {{if .BuyerUsername}} · {{.BuyerUsername}}{{end}}

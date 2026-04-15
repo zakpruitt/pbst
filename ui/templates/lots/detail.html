@@ -100,10 +100,10 @@
 <table class="table table-hover bg-white">
     <thead class="table-light">
     <tr>
-        <th>Item</th>
-        <th class="text-end">Cost Basis</th>
-        <th class="text-end">Market</th>
-        <th class="text-center">Purpose</th>
+        <th style="width:100%">Item</th>
+        <th class="text-end text-nowrap ps-4">Cost Basis</th>
+        <th class="text-end text-nowrap ps-4">Market</th>
+        <th class="text-center text-nowrap ps-4">Purpose</th>
     </tr>
     </thead>
     <tbody>
@@ -119,18 +119,18 @@
                     <span class="fw-medium">{{.ManualNameOverride.String}}</span>
                     {{else if .PokemonCard}}
                     <span class="fw-medium">{{.PokemonCard.Name}}</span>
-                    <br><small class="text-muted">{{.PokemonCard.SetName}} #{{.PokemonCard.CardNumber}}</small>
+                    <div class="text-muted inv-subtext">{{.PokemonCard.SetName}} &middot; #{{.PokemonCard.CardNumber}}</div>
                     {{else}}
                     <span class="text-muted fst-italic">Unnamed</span>
                     {{end}}
                 </div>
             </div>
         </td>
-        <td class="text-end">{{fmtMoney .CostBasis}}</td>
-        <td class="text-end text-muted">
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .CostBasis}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 text-muted">
             {{if .MarketValueAtPurchase}}{{fmtMoney .MarketValueAtPurchase}}{{else}}—{{end}}
         </td>
-        <td class="text-center"><small class="text-muted">{{purposeLabel .Purpose}}</small></td>
+        <td class="text-center align-middle text-nowrap ps-4"><span class="badge {{purposeClass .Purpose}}">{{purposeLabel .Purpose}}</span></td>
     </tr>
     {{end}}
     </tbody>

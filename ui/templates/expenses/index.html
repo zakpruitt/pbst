@@ -54,7 +54,10 @@
             {{range .Expenses}}
             <tr>
                 <td class="align-middle">
-                    <span class="fw-medium">{{.Name}}</span>
+                    <span class="fw-medium expense-name"
+                          data-full="{{.Name}}"
+                          title="Click to copy: {{.Name}}"
+                          onclick="copyExpenseName(this)">{{truncate .Name 45}}</span>
                     <div class="text-muted inv-subtext">{{fmtDate .ExpenseDate}}</div>
                 </td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .Cost}}</td>
@@ -73,4 +76,19 @@
     {{end}}
 </div>
 {{end}}
+
+<script>
+    function copyExpenseName(el) {
+        const text = el.dataset.full || el.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const original = el.textContent;
+            el.textContent = "Copied!";
+            el.classList.add("text-success");
+            setTimeout(() => {
+                el.textContent = original;
+                el.classList.remove("text-success");
+            }, 900);
+        });
+    }
+</script>
 {{end}}

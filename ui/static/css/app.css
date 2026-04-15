@@ -343,3 +343,16 @@ a.sale-title:hover {
 .sale-row-ignored td {
     opacity: .55;
 }
+
+.expense-name {
+    cursor: pointer;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.expense-name:hover {
+    color: #0d6efd;
+}

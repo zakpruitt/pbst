@@ -30,7 +30,7 @@
             <tr>
                 <th style="width:100%">Submission</th>
                 <th class="text-center text-nowrap ps-4">Items</th>
-                <th class="text-end text-nowrap ps-4">Cost</th>
+                <th class="text-end text-nowrap ps-4">Total</th>
                 <th class="text-center text-nowrap ps-4">Status</th>
             </tr>
             </thead>
@@ -42,15 +42,11 @@
                 onclick="window.location='/grading/{{.ID}}'" style="cursor:pointer">
                 <td>
                     <span class="fw-medium">{{.SubmissionName}}</span>
-                    <div class="text-muted inv-subtext">
-                        {{.Company}}{{if .SubmissionMethod}} &middot; {{.SubmissionMethod}}{{end}}
-                        {{if .SendDate.Valid}} &middot; Sent {{fmtDate .SendDate.Time}}{{end}}
-                        {{if .ReturnDate.Valid}} &middot; Returned {{fmtDate .ReturnDate.Time}}{{end}}
-                    </div>
+                    {{if .SubmissionMethod}}<div class="text-muted inv-subtext">{{.SubmissionMethod}}</div>{{end}}
                 </td>
                 <td class="text-center align-middle text-nowrap ps-4">{{len .Items}}</td>
-                <td class="text-end align-middle text-nowrap ps-4">
-                    {{if .SubmissionCost}}{{fmtMoney .SubmissionCost}}{{else}}&mdash;{{end}}
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium">
+                    {{$total := .GrandTotal}}{{if $total}}{{fmtMoney $total}}{{else}}&mdash;{{end}}
                 </td>
                 <td class="text-center align-middle text-nowrap ps-4">
                     <span class="badge {{statusClass .Status}}">{{.Status}}</span>

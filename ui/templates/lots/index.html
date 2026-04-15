@@ -15,26 +15,28 @@
   <table class="table table-hover bg-white">
     <thead class="table-light">
       <tr>
-        <th>Seller</th>
-        <th>Date</th>
-        <th class="text-end">Cost</th>
-        <th class="text-end">EMV</th>
-        <th class="text-center">Status</th>
+        <th style="width:100%">Seller</th>
+        <th class="text-center text-nowrap ps-4">Items</th>
+        <th class="text-end text-nowrap ps-4">Cost</th>
+        <th class="text-end text-nowrap ps-4">EMV</th>
+        <th class="text-center text-nowrap ps-4">Status</th>
       </tr>
     </thead>
     <tbody>
       {{range .Lots}}
       <tr style="cursor:pointer" onclick="window.location='/lots/{{.ID}}'">
-        <td>
+        <td class="align-middle">
           <span class="fw-medium">{{.SellerName}}</span>
-          {{if .Description}}<br><small class="text-muted">{{.Description}}</small>{{end}}
+          <div class="text-muted inv-subtext">
+            {{fmtDate .PurchaseDate}}{{if .Description}} &middot; {{.Description}}{{end}}
+          </div>
         </td>
-        <td class="text-muted">{{fmtDate .PurchaseDate}}</td>
-        <td class="text-end">{{fmtMoney .TotalCost}}</td>
-        <td class="text-end text-muted">
-          {{if .EstimatedMarketValue}}{{fmtMoney .EstimatedMarketValue}}{{else}}—{{end}}
+        <td class="text-center align-middle text-nowrap ps-4">{{len .TrackedItems}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney .TotalCost}}</td>
+        <td class="text-end align-middle text-nowrap ps-4 text-muted">
+          {{if .EstimatedMarketValue}}{{fmtMoney .EstimatedMarketValue}}{{else}}&mdash;{{end}}
         </td>
-        <td class="text-center">
+        <td class="text-center align-middle text-nowrap ps-4">
           <span class="badge {{statusClass .Status}}">{{.Status}}</span>
         </td>
       </tr>

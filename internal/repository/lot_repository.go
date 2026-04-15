@@ -24,7 +24,10 @@ func (r *LotRepository) CreateLot(ctx context.Context, lot *models.LotPurchase) 
 }
 func (r *LotRepository) GetAllLots(ctx context.Context) ([]models.LotPurchase, error) {
 	var lots []models.LotPurchase
-	err := r.db.WithContext(ctx).Find(&lots).Error
+	err := r.db.WithContext(ctx).
+		Preload("TrackedItems").
+		Order("purchase_date DESC").
+		Find(&lots).Error
 	if err != nil {
 		return nil, fmt.Errorf("get all lots: %w", err)
 	}

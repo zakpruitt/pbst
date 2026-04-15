@@ -65,6 +65,7 @@ var viewFuncs = template.FuncMap{
 	"fmtPercent": func(f float64) string {
 		return fmt.Sprintf("%.3f%%", f*100)
 	},
+	"currentYear": func() int { return time.Now().Year() },
 	"add": func(a, b float64) float64 { return a + b },
 	"mul": func(a, b float64) float64 { return a * b },
 	"toJSON": func(v any) template.JS {

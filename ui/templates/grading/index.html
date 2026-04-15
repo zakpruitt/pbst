@@ -42,7 +42,12 @@
                 onclick="window.location='/grading/{{.ID}}'" style="cursor:pointer">
                 <td>
                     <span class="fw-medium">{{.SubmissionName}}</span>
-                    {{if .SubmissionMethod}}<div class="text-muted inv-subtext">{{.SubmissionMethod}}</div>{{end}}
+                    {{if .SendDate.Valid}}
+                    <div class="text-muted inv-subtext">
+                        {{fmtDate .SendDate.Time}} &mdash;
+                        {{if .ReturnDate.Valid}}{{fmtDate .ReturnDate.Time}}{{else}}???{{end}}
+                    </div>
+                    {{end}}
                 </td>
                 <td class="text-center align-middle text-nowrap ps-4">{{len .Items}}</td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium">

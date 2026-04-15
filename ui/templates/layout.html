@@ -22,6 +22,7 @@
         <a class="nav-link {{if eq .Page "sales"}}active-page{{end}}" href="/sales">Sales</a>
         <a class="nav-link {{if eq .Page "inventory"}}active-page{{end}}" href="/inventory">Inventory</a>
         <a class="nav-link {{if eq .Page "grading"}}active-page{{end}}" href="/grading">Grading</a>
+        <a class="nav-link {{if eq .Page "expenses"}}active-page{{end}}" href="/expenses">Expenses</a>
         <button class="btn btn-sm btn-outline-secondary"
           hx-post="/api/v1/logout"
           hx-on::after-request="if(event.detail.successful) window.location='/login.html'">

@@ -39,6 +39,7 @@ func main() {
 	gradingRepo := repository.NewGradingRepository(database)
 	cardRepo := repository.NewPokemonCardRepository(database)
 	sealedRepo := repository.NewSealedProductRepository(database)
+	expenseRepo := repository.NewExpenseRepository(database)
 
 	// Services
 	lotSvc := services.NewLotService(lotRepo, itemRepo)
@@ -112,6 +113,12 @@ func main() {
 	mux.Handle("GET /inventory/{id}/edit", viewMiddleware(inventory.InventoryEditForm))
 	mux.Handle("POST /inventory/{id}", viewMiddleware(inventory.UpdateInventoryItem))
 	mux.Handle("POST /inventory/{id}/delete", viewMiddleware(inventory.DeleteInventoryItem))
+
+	// Expenses
+	expenses := handlers.NewExpenseViewHandler(expenseRepo)
+	mux.Handle("GET /expenses", viewMiddleware(expenses.Expenses))
+	mux.Handle("POST /expenses", viewMiddleware(expenses.CreateExpense))
+	mux.Handle("POST /expenses/{id}/delete", viewMiddleware(expenses.DeleteExpense))
 
 	// Grading
 	mux.Handle("GET /grading", viewMiddleware(grading.Grading))

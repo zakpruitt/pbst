@@ -99,13 +99,18 @@ func (h *LotViewHandler) LotDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 // RowPartial renders a single lot item row as an HTML fragment.
-// Used by HTMX "Add row manually" and by the Alpine card-picker fetch.
+// Used by the Alpine card-picker fetch and the "Add Other" button.
 func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	market := parseFormFloat(r, "market")
 	qty, _ := strconv.Atoi(q.Get("qty"))
 	if qty == 0 {
 		qty = 1
+	}
+
+	itemType := q.Get("type")
+	if itemType == "" {
+		itemType = "RAW_CARD"
 	}
 
 	item := models.SnapshotItem{
@@ -115,7 +120,7 @@ func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
 		CardNumber:    q.Get("card"),
 		Rarity:        q.Get("rarity"),
 		ImageURL:      q.Get("img"),
-		ItemType:      "RAW_CARD",
+		ItemType:      itemType,
 		Qty:           qty,
 		MarketPrice:   market,
 		Percentage:    60,

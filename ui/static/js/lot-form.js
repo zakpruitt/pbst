@@ -10,16 +10,28 @@ function cardSearch() {
         },
         clear() { this.query = ''; this.results = []; },
         async pick(c) {
-            this.clear();
             const params = new URLSearchParams({
                 card_id: c.id || '', name: c.name || '', set: c.set_name || '',
                 card: c.card_number || '', rarity: c.rarity || '',
                 market: c.market_price || 0, img: c.image_url || '',
             });
+            this.clear();
+            await this.appendRow(params);
+        },
+        async addOther(name) {
+            const params = new URLSearchParams({ type: 'OTHER', name: (name || this.query || '').trim() });
+            this.clear();
+            await this.appendRow(params);
+        },
+        async appendRow(params) {
             const html = await fetch('/lots/partials/row?' + params).then(r => r.text());
-            const list = document.getElementById('items-list');
-            list.insertAdjacentHTML('beforeend', html);
-            document.getElementById('empty-msg').style.display = 'none';
+            document.getElementById('items-list').insertAdjacentHTML('beforeend', html);
+            document.dispatchEvent(new CustomEvent('lot:changed'));
+        },
+        onEnter() {
+            if (this.results.length === 0 && this.query.trim()) {
+                this.addOther(this.query);
+            }
         },
     };
 }

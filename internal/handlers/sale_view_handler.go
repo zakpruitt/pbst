@@ -46,8 +46,15 @@ func NewSaleViewHandler(
 }
 
 func (h *SaleViewHandler) Sales(w http.ResponseWriter, r *http.Request) {
-	includeIgnored := r.URL.Query().Get("ignored") == "1"
-	sales, err := h.saleRepo.GetAllSales(r.Context(), includeIgnored)
+	view := r.URL.Query().Get("view")
+	switch view {
+	case repository.SaleViewIgnored, repository.SaleViewVince:
+		// accepted
+	default:
+		view = repository.SaleViewMine
+	}
+
+	sales, err := h.saleRepo.GetAllSales(r.Context(), view)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -60,10 +67,10 @@ func (h *SaleViewHandler) Sales(w http.ResponseWriter, r *http.Request) {
 	}
 
 	execTemplate(w, h.sales, "layout", map[string]any{
-		"Page":           "sales",
-		"Groups":         groupSalesByMonth(sales),
-		"StagedCount":    stagedCount,
-		"IncludeIgnored": includeIgnored,
+		"Page":        "sales",
+		"Groups":      groupSalesByMonth(sales),
+		"StagedCount": stagedCount,
+		"View":        view,
 	})
 }
 
@@ -156,6 +163,24 @@ func (h *SaleViewHandler) IgnoreSale(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/sales/staging", http.StatusSeeOther)
+}
+
+func (h *SaleViewHandler) VinceSale(w http.ResponseWriter, r *http.Request) {
+	id, ok := requirePathID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.saleSvc.MarkAsVince(r.Context(), id); err != nil {
+		serverError(w, err)
+		return
+	}
+	// If the user triggered this from the sale detail page (non-staged sale),
+	// send them back to the Vince tab; otherwise stay on the stager.
+	redirect := "/sales/staging"
+	if r.FormValue("from") == "detail" {
+		redirect = "/sales?view=vince"
+	}
+	http.Redirect(w, r, redirect, http.StatusSeeOther)
 }
 
 func (h *SaleViewHandler) DeleteSale(w http.ResponseWriter, r *http.Request) {

@@ -101,6 +101,7 @@ func main() {
 	mux.Handle("GET /sales/{id}/confirm", viewMiddleware(sales.SaleConfirmForm))
 	mux.Handle("POST /sales/{id}/confirm", viewMiddleware(sales.ConfirmSale))
 	mux.Handle("POST /sales/{id}/ignore", viewMiddleware(sales.IgnoreSale))
+	mux.Handle("POST /sales/{id}/vince", viewMiddleware(sales.VinceSale))
 	mux.Handle("POST /sales/{id}/unstage", viewMiddleware(sales.UnstageSale))
 	mux.Handle("POST /sales/{id}/delete", viewMiddleware(sales.DeleteSale))
 

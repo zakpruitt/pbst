@@ -128,7 +128,6 @@
         <tr>
             <th style="width:100%">Card</th>
             <th class="text-end text-nowrap ps-4">Cost Basis</th>
-            <th class="text-end text-nowrap ps-4">Grading Cost</th>
             <th class="text-end text-nowrap ps-4">Upcharge</th>
             <th class="text-end text-nowrap ps-4">Grand Total</th>
             <th class="text-center text-nowrap ps-4">Grade</th>
@@ -137,8 +136,7 @@
         <tbody>
         {{range .Submission.Items}}
         {{$upcharge := 0.0}}{{if .GradedDetails}}{{$upcharge = .GradedDetails.GradingUpcharge}}{{end}}
-        {{$gradingCost := add $base $upcharge}}
-        {{$grandTotal := add .CostBasis $gradingCost}}
+        {{$grandTotal := add .CostBasis (add $base $upcharge)}}
         <tr>
             <td>
                 <div class="d-flex align-items-center gap-2">
@@ -164,7 +162,6 @@
                 </div>
             </td>
             <td class="text-end align-middle text-nowrap ps-4">{{fmtMoney .CostBasis}}</td>
-            <td class="text-end align-middle text-nowrap ps-4">{{fmtMoney $gradingCost}}</td>
             <td class="text-end align-middle text-nowrap ps-4 text-muted">{{if $upcharge}}{{fmtMoney $upcharge}}{{else}}&mdash;{{end}}</td>
             <td class="text-end align-middle text-nowrap ps-4 fw-medium">{{fmtMoney $grandTotal}}</td>
             <td class="text-center align-middle ps-4">

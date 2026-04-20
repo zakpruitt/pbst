@@ -1,31 +1,30 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 
 	"github.com/zakpruitt/pbst/internal/models"
-	"github.com/zakpruitt/pbst/internal/repository"
+	"github.com/zakpruitt/pbst/internal/services"
 )
 
 type InventoryViewHandler struct {
-	index      *template.Template
-	new        *template.Template
-	edit       *template.Template
-	rowPartial *template.Template
-	itemRepo   *repository.TrackedItemRepository
+	index        *template.Template
+	new          *template.Template
+	edit         *template.Template
+	rowPartial   *template.Template
+	inventorySvc services.InventoryService
 }
 
-func NewInventoryViewHandler(itemRepo *repository.TrackedItemRepository) *InventoryViewHandler {
+func NewInventoryViewHandler(inventorySvc services.InventoryService) *InventoryViewHandler {
 	return &InventoryViewHandler{
-		index:      parseTemplate("inventory/index"),
-		new:        parseTemplate("inventory/new"),
-		edit:       parseTemplate("inventory/edit"),
-		rowPartial: parsePartialTemplate("inventory/partials/row"),
-		itemRepo:   itemRepo,
+		index:        parseTemplate("inventory/index"),
+		new:          parseTemplate("inventory/new"),
+		edit:         parseTemplate("inventory/edit"),
+		rowPartial:   parsePartialTemplate("inventory/partials/row"),
+		inventorySvc: inventorySvc,
 	}
 }
 
@@ -43,23 +42,39 @@ type inventoryRowPreset struct {
 	Grade           string
 }
 
-type inventoryRowInput struct {
-	Name            string  `json:"name"`
-	ItemType        string  `json:"item_type"`
-	CostBasis       float64 `json:"cost_basis"`
-	MarketValue     float64 `json:"market_value"`
-	PokemonCardID   string  `json:"pokemon_card_id"`
-	SealedProductID string  `json:"sealed_product_id"`
-	GradingCompany  string  `json:"grading_company"`
-	Grade           string  `json:"grade"`
+func (h *InventoryViewHandler) InventoryNew(w http.ResponseWriter, r *http.Request) {
+	execTemplate(w, h.new, "layout", map[string]any{
+		"Page": "inventory",
+	})
 }
 
-func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request) {
-	purpose := r.URL.Query().Get("purpose")
+func (h *InventoryViewHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		serverError(w, err)
+		return
+	}
+
+	purpose := r.FormValue("purpose")
 	if purpose == "" {
 		purpose = "INVENTORY"
 	}
-	items, err := h.itemRepo.GetItemsByPurpose(r.Context(), purpose)
+
+	input := services.CreateItemsInput{
+		SnapshotJSON:    r.FormValue("items_snapshot"),
+		Purpose:         purpose,
+		AcquisitionDate: parseFormDate(r, "acquisition_date"),
+	}
+	if err := h.inventorySvc.CreateItems(r.Context(), input); err != nil {
+		serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/inventory?purpose="+purpose, http.StatusSeeOther)
+}
+
+func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request) {
+	purpose := queryParam(r, "purpose", "INVENTORY")
+	items, err := h.inventorySvc.GetItemsByPurpose(r.Context(), purpose)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -79,63 +94,6 @@ func (h *InventoryViewHandler) Inventory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	execTemplate(w, h.index, "layout", data)
-}
-
-func (h *InventoryViewHandler) InventoryNew(w http.ResponseWriter, r *http.Request) {
-	execTemplate(w, h.new, "layout", map[string]any{
-		"Page": "inventory",
-	})
-}
-
-func (h *InventoryViewHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		serverError(w, err)
-		return
-	}
-
-	purpose := r.FormValue("purpose")
-	if purpose == "" {
-		purpose = "INVENTORY"
-	}
-	acquisitionDate := parseFormDate(r, "acquisition_date")
-
-	var rows []inventoryRowInput
-	if snap := r.FormValue("items_snapshot"); snap != "" {
-		if err := json.Unmarshal([]byte(snap), &rows); err != nil {
-			serverError(w, err)
-			return
-		}
-	}
-
-	for _, row := range rows {
-		if row.ItemType == "" {
-			row.ItemType = "OTHER"
-		}
-		item := &models.TrackedItem{
-			CostBasis:             row.CostBasis,
-			MarketValueAtPurchase: row.MarketValue,
-			AcquisitionDate:       acquisitionDate,
-			Purpose:               purpose,
-			ItemType:              row.ItemType,
-			PokemonCardID:         nullString(row.PokemonCardID),
-			SealedProductID:       nullString(row.SealedProductID),
-		}
-		if row.PokemonCardID == "" && row.SealedProductID == "" {
-			item.ManualNameOverride = nullString(row.Name)
-		}
-		if row.ItemType == "GRADED_CARD" {
-			item.GradedDetails = &models.GradedDetails{
-				GradingCompany: row.GradingCompany,
-				Grade:          row.Grade,
-			}
-		}
-		if err := h.itemRepo.AddTrackedItem(r.Context(), item); err != nil {
-			serverError(w, err)
-			return
-		}
-	}
-
-	http.Redirect(w, r, "/inventory?purpose="+purpose, http.StatusSeeOther)
 }
 
 func (h *InventoryViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
@@ -158,12 +116,8 @@ func (h *InventoryViewHandler) RowPartial(w http.ResponseWriter, r *http.Request
 	execTemplate(w, h.rowPartial, "inventory-row", preset)
 }
 
-func (h *InventoryViewHandler) InventoryEditForm(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-	item, err := h.itemRepo.GetByID(r.Context(), id)
+func (h *InventoryViewHandler) InventoryEditForm(w http.ResponseWriter, r *http.Request, id uint) {
+	item, err := h.inventorySvc.GetItemByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -174,16 +128,12 @@ func (h *InventoryViewHandler) InventoryEditForm(w http.ResponseWriter, r *http.
 	})
 }
 
-func (h *InventoryViewHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
+func (h *InventoryViewHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := r.ParseForm(); err != nil {
 		serverError(w, err)
 		return
 	}
-	item, err := h.itemRepo.GetByID(r.Context(), id)
+	item, err := h.inventorySvc.GetItemByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -210,37 +160,17 @@ func (h *InventoryViewHandler) UpdateInventoryItem(w http.ResponseWriter, r *htt
 		item.GradedDetails.Grade = r.FormValue("grade")
 	}
 
-	if err := h.itemRepo.Update(r.Context(), item); err != nil {
+	if err := h.inventorySvc.UpdateItem(r.Context(), item); err != nil {
 		serverError(w, err)
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/inventory?purpose=%s", item.Purpose), http.StatusSeeOther)
 }
 
-func (h *InventoryViewHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-	if err := h.itemRepo.Delete(r.Context(), id); err != nil {
+func (h *InventoryViewHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request, id uint) {
+	if err := h.inventorySvc.DeleteItem(r.Context(), id); err != nil {
 		serverError(w, err)
 		return
 	}
 	http.Redirect(w, r, "/inventory", http.StatusSeeOther)
-}
-
-func groupInventoryByType(items []models.TrackedItem) (raw, graded, sealed, other []models.TrackedItem) {
-	for _, item := range items {
-		switch item.ItemType {
-		case "SEALED_PRODUCT":
-			sealed = append(sealed, item)
-		case "GRADED_CARD":
-			graded = append(graded, item)
-		case "OTHER":
-			other = append(other, item)
-		default:
-			raw = append(raw, item)
-		}
-	}
-	return
 }

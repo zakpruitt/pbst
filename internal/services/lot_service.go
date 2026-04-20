@@ -9,16 +9,47 @@ import (
 	"github.com/zakpruitt/pbst/internal/repository"
 )
 
-type LotService struct {
-	lotRepo  *repository.LotRepository
-	itemRepo *repository.TrackedItemRepository
+type LotService interface {
+	CreateLot(ctx context.Context, lot *models.LotPurchase) error
+	GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error)
+	GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error)
+	GetAllLots(ctx context.Context) ([]models.LotPurchase, error)
+	UpdateLot(ctx context.Context, lot *models.LotPurchase) error
+	AcceptLot(ctx context.Context, id uint) error
+	RejectLot(ctx context.Context, id uint) error
+	DeleteLot(ctx context.Context, id uint) error
 }
 
-func NewLotService(lotRepo *repository.LotRepository, itemRepo *repository.TrackedItemRepository) *LotService {
-	return &LotService{lotRepo: lotRepo, itemRepo: itemRepo}
+type lotService struct {
+	lotRepo  repository.LotRepository
+	itemRepo repository.TrackedItemRepository
 }
 
-func (s *LotService) AcceptLot(ctx context.Context, id uint) error {
+func NewLotService(lotRepo repository.LotRepository, itemRepo repository.TrackedItemRepository) LotService {
+	return &lotService{lotRepo: lotRepo, itemRepo: itemRepo}
+}
+
+func (s *lotService) CreateLot(ctx context.Context, lot *models.LotPurchase) error {
+	return s.lotRepo.CreateLot(ctx, lot)
+}
+
+func (s *lotService) GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error) {
+	return s.lotRepo.GetLotByID(ctx, id)
+}
+
+func (s *lotService) GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error) {
+	return s.lotRepo.GetLotWithItems(ctx, id)
+}
+
+func (s *lotService) GetAllLots(ctx context.Context) ([]models.LotPurchase, error) {
+	return s.lotRepo.GetAllLots(ctx)
+}
+
+func (s *lotService) UpdateLot(ctx context.Context, lot *models.LotPurchase) error {
+	return s.lotRepo.UpdateLot(ctx, lot)
+}
+
+func (s *lotService) AcceptLot(ctx context.Context, id uint) error {
 	lot, err := s.lotRepo.GetLotByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("load lot: %w", err)
@@ -41,13 +72,13 @@ func (s *LotService) AcceptLot(ctx context.Context, id uint) error {
 	return s.lotRepo.UpdateStatus(ctx, id, "ACCEPTED")
 }
 
-func (s *LotService) RejectLot(ctx context.Context, id uint) error {
+func (s *lotService) RejectLot(ctx context.Context, id uint) error {
 	return s.lotRepo.UpdateStatus(ctx, id, "REJECTED")
 }
 
 // DeleteLot removes a lot and all of its tracked items. Use with care — this
 // wipes the inventory that originated from the lot, not just the lot record.
-func (s *LotService) DeleteLot(ctx context.Context, id uint) error {
+func (s *lotService) DeleteLot(ctx context.Context, id uint) error {
 	if err := s.itemRepo.DeleteByLotID(ctx, id); err != nil {
 		return fmt.Errorf("delete tracked items: %w", err)
 	}
@@ -57,7 +88,6 @@ func (s *LotService) DeleteLot(ctx context.Context, id uint) error {
 	return nil
 }
 
-// snapshotToTrackedItem builds a TrackedItem from a lot and one of its snapshot entries.
 func snapshotToTrackedItem(lot *models.LotPurchase, item models.SnapshotItem) *models.TrackedItem {
 	qty := item.Qty
 	if qty <= 0 {

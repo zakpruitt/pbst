@@ -69,7 +69,7 @@
             </tr>
             </thead>
             <tbody>
-            {{range .Sales}}
+            {{range .Items}}
             <tr class="sale-row {{if eq .Status "IGNORED"}}sale-row-ignored{{end}}"
                 data-title="{{.Title}}"
                 data-buyer="{{.BuyerUsername}}"

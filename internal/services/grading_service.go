@@ -10,13 +10,23 @@ import (
 	"github.com/zakpruitt/pbst/internal/repository"
 )
 
-type GradingService struct {
-	gradingRepo *repository.GradingRepository
-	itemRepo    *repository.TrackedItemRepository
+type GradingService interface {
+	CreateWithItems(ctx context.Context, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error)
+	GetAllSubmissions(ctx context.Context) ([]models.GradingSubmission, error)
+	GetSubmissionByID(ctx context.Context, id uint) (*models.GradingSubmission, error)
+	UpdateSubmission(ctx context.Context, id uint, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) error
+	DeleteSubmission(ctx context.Context, id uint) error
+	AdvanceStatus(ctx context.Context, id uint, newStatus string) error
+	RecordReturn(ctx context.Context, submissionID uint, grades []ItemGrade) error
 }
 
-func NewGradingService(gradingRepo *repository.GradingRepository, itemRepo *repository.TrackedItemRepository) *GradingService {
-	return &GradingService{gradingRepo: gradingRepo, itemRepo: itemRepo}
+type gradingService struct {
+	gradingRepo repository.GradingRepository
+	itemRepo    repository.TrackedItemRepository
+}
+
+func NewGradingService(gradingRepo repository.GradingRepository, itemRepo repository.TrackedItemRepository) GradingService {
+	return &gradingService{gradingRepo: gradingRepo, itemRepo: itemRepo}
 }
 
 type ItemGrade struct {
@@ -25,14 +35,7 @@ type ItemGrade struct {
 	Upcharge float64
 }
 
-func derivedCostPerCard(submissionCost float64, numItems int) float64 {
-	if numItems <= 0 {
-		return 0
-	}
-	return submissionCost / float64(numItems)
-}
-
-func (s *GradingService) CreateWithItems(ctx context.Context, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error) {
+func (s *gradingService) CreateWithItems(ctx context.Context, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) (*models.GradingSubmission, error) {
 	count, err := s.gradingRepo.CountByCompany(ctx, company)
 	if err != nil {
 		return nil, fmt.Errorf("count submissions: %w", err)
@@ -64,7 +67,15 @@ func (s *GradingService) CreateWithItems(ctx context.Context, company, method st
 	return submission, nil
 }
 
-func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) error {
+func (s *gradingService) GetAllSubmissions(ctx context.Context) ([]models.GradingSubmission, error) {
+	return s.gradingRepo.GetAllSubmissions(ctx)
+}
+
+func (s *gradingService) GetSubmissionByID(ctx context.Context, id uint) (*models.GradingSubmission, error) {
+	return s.gradingRepo.GetSubmissionByID(ctx, id)
+}
+
+func (s *gradingService) UpdateSubmission(ctx context.Context, id uint, company, method string, submissionCost float64, notes sql.NullString, itemIDs []uint) error {
 	submission, err := s.gradingRepo.GetSubmissionByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("load submission: %w", err)
@@ -96,9 +107,7 @@ func (s *GradingService) UpdateSubmission(ctx context.Context, id uint, company,
 	return nil
 }
 
-// DeleteSubmission releases any attached items back to inventory and then
-// deletes the submission.
-func (s *GradingService) DeleteSubmission(ctx context.Context, id uint) error {
+func (s *gradingService) DeleteSubmission(ctx context.Context, id uint) error {
 	if err := s.itemRepo.DetachFromSubmission(ctx, id); err != nil {
 		return fmt.Errorf("detach items: %w", err)
 	}
@@ -108,7 +117,7 @@ func (s *GradingService) DeleteSubmission(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (s *GradingService) AdvanceStatus(ctx context.Context, id uint, newStatus string) error {
+func (s *gradingService) AdvanceStatus(ctx context.Context, id uint, newStatus string) error {
 	if err := s.gradingRepo.UpdateSubmissionStatus(ctx, id, newStatus); err != nil {
 		return fmt.Errorf("update status: %w", err)
 	}
@@ -120,7 +129,7 @@ func (s *GradingService) AdvanceStatus(ctx context.Context, id uint, newStatus s
 	return nil
 }
 
-func (s *GradingService) RecordReturn(ctx context.Context, submissionID uint, grades []ItemGrade) error {
+func (s *gradingService) RecordReturn(ctx context.Context, submissionID uint, grades []ItemGrade) error {
 	submission, err := s.gradingRepo.GetSubmissionByID(ctx, submissionID)
 	if err != nil {
 		return fmt.Errorf("load submission: %w", err)
@@ -146,4 +155,11 @@ func (s *GradingService) RecordReturn(ctx context.Context, submissionID uint, gr
 		return fmt.Errorf("set returned status: %w", err)
 	}
 	return nil
+}
+
+func derivedCostPerCard(submissionCost float64, numItems int) float64 {
+	if numItems <= 0 {
+		return 0
+	}
+	return submissionCost / float64(numItems)
 }

@@ -40,7 +40,7 @@
     <div class="expense-month-group mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="month-label month-pill {{monthClass .FirstDay}}">{{.Label}}</span>
-            <span class="text-muted small">{{fmtMoney .Total}}</span>
+            <span class="text-muted small">{{fmtMoney (sumExpenseCost .Items)}}</span>
         </div>
         <table class="table table-hover bg-white mb-0 mt-2">
             <thead class="table-light">
@@ -51,7 +51,7 @@
             </tr>
             </thead>
             <tbody>
-            {{range .Expenses}}
+            {{range .Items}}
             <tr>
                 <td class="align-middle">
                     <span class="fw-medium expense-name"

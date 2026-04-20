@@ -128,14 +128,14 @@
 </div>
 
 {{/* ── Lists: top sales, recent activity ─────────────────────────────── */}}
-<div class="row g-3">
+<div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="card h-100">
+        <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Top 5 Sales by Net</span>
                 <a href="/sales" class="text-muted small text-decoration-none">View all &rarr;</a>
             </div>
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush" style="max-height:390px;overflow-y:auto">
                 {{range .TopSales}}
                     <a href="/sales/{{.ID}}" class="list-group-item list-group-item-action">
                         <div class="d-flex justify-content-between align-items-start">
@@ -143,7 +143,7 @@
                                 <div class="text-truncate fw-medium" title="{{.Title}}">{{truncate .Title 50}}</div>
                                 <div class="text-muted small">{{fmtDate .SaleDate}} · {{originLabel .Origin}}</div>
                             </div>
-                            <div class="text-end">
+                            <div class="text-end flex-shrink-0">
                                 <div class="fw-medium">{{fmtMoney .NetAmount}}</div>
                                 <div class="text-muted small">{{fmtMoney .GrossAmount}} gross</div>
                             </div>
@@ -156,12 +156,12 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card h-100">
+        <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Recent Activity</span>
                 <span class="text-muted small">Latest sales &amp; lots</span>
             </div>
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush" style="max-height:385px;overflow-y:auto">
                 {{range .RecentSales}}
                     <a href="/sales/{{.ID}}" class="list-group-item list-group-item-action">
                         <div class="d-flex justify-content-between align-items-start">
@@ -170,7 +170,7 @@
                                 <span class="fw-medium" title="{{.Title}}">{{truncate .Title 40}}</span>
                                 <div class="text-muted small">{{fmtDate .SaleDate}}</div>
                             </div>
-                            <div class="text-end text-success">+{{fmtMoney .NetAmount}}</div>
+                            <div class="text-end text-success flex-shrink-0">+{{fmtMoney .NetAmount}}</div>
                         </div>
                     </a>
                 {{end}}
@@ -182,7 +182,7 @@
                                 <span class="fw-medium">{{if .SellerName}}{{.SellerName}}{{else}}Lot #{{.ID}}{{end}}</span>
                                 <div class="text-muted small">{{fmtDate .PurchaseDate}} · {{.Status}}</div>
                             </div>
-                            <div class="text-end text-danger">&minus;{{fmtMoney .TotalCost}}</div>
+                            <div class="text-end text-danger flex-shrink-0">&minus;{{fmtMoney .TotalCost}}</div>
                         </div>
                     </a>
                 {{end}}

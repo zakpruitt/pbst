@@ -8,33 +8,48 @@ import (
 	"gorm.io/gorm"
 )
 
-type LotRepository struct {
+type LotRepository interface {
+	CreateLot(ctx context.Context, lot *models.LotPurchase) error
+	GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error)
+	GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error)
+	GetAllLots(ctx context.Context) ([]models.LotPurchase, error)
+	GetRecent(ctx context.Context, limit int) ([]models.LotPurchase, error)
+	GetTotalCostNonRejected(ctx context.Context) (float64, error)
+	MonthlySpend(ctx context.Context, months int) ([]MonthlySpend, error)
+	CountByStatus(ctx context.Context) ([]LotStatusCount, error)
+	UpdateLot(ctx context.Context, lot *models.LotPurchase) error
+	UpdateStatus(ctx context.Context, id uint, status string) error
+	Delete(ctx context.Context, id uint) error
+}
+
+type lotRepository struct {
 	db *gorm.DB
 }
 
-func NewLotRepository(db *gorm.DB) *LotRepository {
-	return &LotRepository{db: db}
+func NewLotRepository(db *gorm.DB) LotRepository {
+	return &lotRepository{db: db}
 }
-func (r *LotRepository) CreateLot(ctx context.Context, lot *models.LotPurchase) error {
+
+type MonthlySpend struct {
+	Month string
+	Spend float64
+	Count int64
+}
+
+type LotStatusCount struct {
+	Status string
+	Count  int64
+}
+
+func (r *lotRepository) CreateLot(ctx context.Context, lot *models.LotPurchase) error {
 	err := r.db.WithContext(ctx).Create(lot).Error
 	if err != nil {
 		return fmt.Errorf("create lot: %w", err)
 	}
 	return nil
 }
-func (r *LotRepository) GetAllLots(ctx context.Context) ([]models.LotPurchase, error) {
-	var lots []models.LotPurchase
-	err := r.db.WithContext(ctx).
-		Preload("TrackedItems").
-		Order("purchase_date DESC").
-		Find(&lots).Error
-	if err != nil {
-		return nil, fmt.Errorf("get all lots: %w", err)
-	}
-	return lots, nil
-}
 
-func (r *LotRepository) GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error) {
+func (r *lotRepository) GetLotByID(ctx context.Context, id uint) (*models.LotPurchase, error) {
 	var lot models.LotPurchase
 	err := r.db.WithContext(ctx).First(&lot, id).Error
 	if err != nil {
@@ -43,7 +58,7 @@ func (r *LotRepository) GetLotByID(ctx context.Context, id uint) (*models.LotPur
 	return &lot, nil
 }
 
-func (r *LotRepository) GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error) {
+func (r *lotRepository) GetLotWithItems(ctx context.Context, id uint) (*models.LotPurchase, error) {
 	var lot models.LotPurchase
 	err := r.db.WithContext(ctx).
 		Preload("TrackedItems").
@@ -55,7 +70,31 @@ func (r *LotRepository) GetLotWithItems(ctx context.Context, id uint) (*models.L
 	return &lot, nil
 }
 
-func (r *LotRepository) GetTotalCostNonRejected(ctx context.Context) (float64, error) {
+func (r *lotRepository) GetAllLots(ctx context.Context) ([]models.LotPurchase, error) {
+	var lots []models.LotPurchase
+	err := r.db.WithContext(ctx).
+		Preload("TrackedItems").
+		Order("purchase_date DESC").
+		Find(&lots).Error
+	if err != nil {
+		return nil, fmt.Errorf("get all lots: %w", err)
+	}
+	return lots, nil
+}
+
+func (r *lotRepository) GetRecent(ctx context.Context, limit int) ([]models.LotPurchase, error) {
+	var lots []models.LotPurchase
+	err := r.db.WithContext(ctx).
+		Order("purchase_date DESC").
+		Limit(limit).
+		Find(&lots).Error
+	if err != nil {
+		return nil, fmt.Errorf("get recent lots: %w", err)
+	}
+	return lots, nil
+}
+
+func (r *lotRepository) GetTotalCostNonRejected(ctx context.Context) (float64, error) {
 	var total float64
 	err := r.db.WithContext(ctx).
 		Model(&models.LotPurchase{}).
@@ -67,40 +106,8 @@ func (r *LotRepository) GetTotalCostNonRejected(ctx context.Context) (float64, e
 	}
 	return total, nil
 }
-func (r *LotRepository) UpdateLot(ctx context.Context, lot *models.LotPurchase) error {
-	err := r.db.WithContext(ctx).Save(lot).Error
-	if err != nil {
-		return fmt.Errorf("update lot: %w", err)
-	}
-	return nil
-}
 
-func (r *LotRepository) UpdateStatus(ctx context.Context, id uint, status string) error {
-	err := r.db.WithContext(ctx).
-		Model(&models.LotPurchase{}).
-		Where("id = ?", id).
-		Update("status", status).Error
-	if err != nil {
-		return fmt.Errorf("update lot status: %w", err)
-	}
-	return nil
-}
-
-func (r *LotRepository) Delete(ctx context.Context, id uint) error {
-	err := r.db.WithContext(ctx).Delete(&models.LotPurchase{}, id).Error
-	if err != nil {
-		return fmt.Errorf("delete lot: %w", err)
-	}
-	return nil
-}
-
-type MonthlySpend struct {
-	Month string
-	Spend float64
-	Count int64
-}
-
-func (r *LotRepository) MonthlySpend(ctx context.Context, months int) ([]MonthlySpend, error) {
+func (r *lotRepository) MonthlySpend(ctx context.Context, months int) ([]MonthlySpend, error) {
 	var rows []MonthlySpend
 	err := r.db.WithContext(ctx).
 		Model(&models.LotPurchase{}).
@@ -118,12 +125,7 @@ func (r *LotRepository) MonthlySpend(ctx context.Context, months int) ([]Monthly
 	return rows, nil
 }
 
-type LotStatusCount struct {
-	Status string
-	Count  int64
-}
-
-func (r *LotRepository) CountByStatus(ctx context.Context) ([]LotStatusCount, error) {
+func (r *lotRepository) CountByStatus(ctx context.Context) ([]LotStatusCount, error) {
 	var rows []LotStatusCount
 	err := r.db.WithContext(ctx).
 		Model(&models.LotPurchase{}).
@@ -136,14 +138,29 @@ func (r *LotRepository) CountByStatus(ctx context.Context) ([]LotStatusCount, er
 	return rows, nil
 }
 
-func (r *LotRepository) GetRecent(ctx context.Context, limit int) ([]models.LotPurchase, error) {
-	var lots []models.LotPurchase
-	err := r.db.WithContext(ctx).
-		Order("purchase_date DESC").
-		Limit(limit).
-		Find(&lots).Error
+func (r *lotRepository) UpdateLot(ctx context.Context, lot *models.LotPurchase) error {
+	err := r.db.WithContext(ctx).Save(lot).Error
 	if err != nil {
-		return nil, fmt.Errorf("get recent lots: %w", err)
+		return fmt.Errorf("update lot: %w", err)
 	}
-	return lots, nil
+	return nil
+}
+
+func (r *lotRepository) UpdateStatus(ctx context.Context, id uint, status string) error {
+	err := r.db.WithContext(ctx).
+		Model(&models.LotPurchase{}).
+		Where("id = ?", id).
+		Update("status", status).Error
+	if err != nil {
+		return fmt.Errorf("update lot status: %w", err)
+	}
+	return nil
+}
+
+func (r *lotRepository) Delete(ctx context.Context, id uint) error {
+	err := r.db.WithContext(ctx).Delete(&models.LotPurchase{}, id).Error
+	if err != nil {
+		return fmt.Errorf("delete lot: %w", err)
+	}
+	return nil
 }

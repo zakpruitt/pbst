@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/zakpruitt/pbst/internal/models"
 )
 
 var viewFuncs = template.FuncMap{
@@ -32,8 +34,6 @@ var viewFuncs = template.FuncMap{
 			return "Inventory"
 		case "IN_GRADING":
 			return "In Grading"
-		case "PENDING_GRADE":
-			return "To Grade"
 		default:
 			return p
 		}
@@ -44,8 +44,6 @@ var viewFuncs = template.FuncMap{
 			return "bg-primary"
 		case "IN_GRADING":
 			return "bg-warning text-dark"
-		case "PENDING_GRADE":
-			return "bg-info text-dark"
 		default:
 			return "bg-secondary"
 		}
@@ -150,6 +148,13 @@ var viewFuncs = template.FuncMap{
 		default:
 			return "bg-secondary"
 		}
+	},
+	"sumExpenseCost": func(items []models.Expense) float64 {
+		var total float64
+		for _, e := range items {
+			total += e.Cost
+		}
+		return total
 	},
 	"saleStatusLabel": func(s string) string {
 		switch s {

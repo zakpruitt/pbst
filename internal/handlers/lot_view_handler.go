@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/zakpruitt/pbst/internal/models"
-	"github.com/zakpruitt/pbst/internal/repository"
 	"github.com/zakpruitt/pbst/internal/services"
 )
 
@@ -17,55 +16,45 @@ type LotViewHandler struct {
 	lotDetail  *template.Template
 	lotEdit    *template.Template
 	rowPartial *template.Template
-	lotRepo    *repository.LotRepository
-	lotSvc     *services.LotService
-	cardRepo   *repository.PokemonCardRepository
+	lotSvc     services.LotService
 }
 
-func NewLotViewHandler(
-	lotRepo *repository.LotRepository,
-	lotSvc *services.LotService,
-	cardRepo *repository.PokemonCardRepository,
-) *LotViewHandler {
+func NewLotViewHandler(lotSvc services.LotService) *LotViewHandler {
 	return &LotViewHandler{
 		lots:       parseTemplate("lots/index"),
 		lotNew:     parseTemplateWithPartial("lots/new", "lots/partials/row"),
 		lotDetail:  parseTemplate("lots/detail"),
 		lotEdit:    parseTemplateWithPartial("lots/edit", "lots/partials/row"),
 		rowPartial: parsePartialTemplate("lots/partials/row"),
-		lotRepo:    lotRepo,
 		lotSvc:     lotSvc,
-		cardRepo:   cardRepo,
 	}
 }
+
 func (h *LotViewHandler) LotNew(w http.ResponseWriter, r *http.Request) {
 	execTemplate(w, h.lotNew, "layout", map[string]any{"Page": "lots"})
 }
 
 func (h *LotViewHandler) SaveLot(w http.ResponseWriter, r *http.Request) {
-	totalCost := parseFormFloat(r, "total_cost")
-	emv := parseFormFloat(r, "estimated_market_value")
-	purchaseDate := parseFormDate(r, "purchase_date")
-
 	lot := &models.LotPurchase{
 		SellerName:           r.FormValue("seller_name"),
-		PurchaseDate:         purchaseDate,
-		TotalCost:            totalCost,
-		EstimatedMarketValue: emv,
+		PurchaseDate:         parseFormDate(r, "purchase_date"),
+		TotalCost:            parseFormFloat(r, "total_cost"),
+		EstimatedMarketValue: parseFormFloat(r, "estimated_market_value"),
 		Description:          r.FormValue("description"),
 		LotContentSnapshot:   r.FormValue("lot_content_snapshot"),
 		Status:               "PENDING",
 	}
 
-	if err := h.lotRepo.CreateLot(r.Context(), lot); err != nil {
+	if err := h.lotSvc.CreateLot(r.Context(), lot); err != nil {
 		serverError(w, err)
 		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/lots/%d", lot.ID), http.StatusSeeOther)
 }
+
 func (h *LotViewHandler) Lots(w http.ResponseWriter, r *http.Request) {
-	lots, err := h.lotRepo.GetAllLots(r.Context())
+	lots, err := h.lotSvc.GetAllLots(r.Context())
 	if err != nil {
 		serverError(w, err)
 		return
@@ -73,13 +62,8 @@ func (h *LotViewHandler) Lots(w http.ResponseWriter, r *http.Request) {
 	execTemplate(w, h.lots, "layout", map[string]any{"Page": "lots", "Lots": lots})
 }
 
-func (h *LotViewHandler) LotDetail(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
-	lot, err := h.lotRepo.GetLotWithItems(r.Context(), id)
+func (h *LotViewHandler) LotDetail(w http.ResponseWriter, r *http.Request, id uint) {
+	lot, err := h.lotSvc.GetLotWithItems(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -98,8 +82,6 @@ func (h *LotViewHandler) LotDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// RowPartial renders a single lot item row as an HTML fragment.
-// Used by the Alpine card-picker fetch and the "Add Other" button.
 func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	market := parseFormFloat(r, "market")
@@ -128,13 +110,9 @@ func (h *LotViewHandler) RowPartial(w http.ResponseWriter, r *http.Request) {
 
 	execTemplate(w, h.rowPartial, "lot-row", item)
 }
-func (h *LotViewHandler) LotEditForm(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
 
-	lot, err := h.lotRepo.GetLotByID(r.Context(), id)
+func (h *LotViewHandler) LotEditForm(w http.ResponseWriter, r *http.Request, id uint) {
+	lot, err := h.lotSvc.GetLotByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -153,30 +131,21 @@ func (h *LotViewHandler) LotEditForm(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *LotViewHandler) UpdateLot(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
-	lot, err := h.lotRepo.GetLotByID(r.Context(), id)
+func (h *LotViewHandler) UpdateLot(w http.ResponseWriter, r *http.Request, id uint) {
+	lot, err := h.lotSvc.GetLotByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 
-	totalCost := parseFormFloat(r, "total_cost")
-	emv := parseFormFloat(r, "estimated_market_value")
-	purchaseDate := parseFormDate(r, "purchase_date")
-
 	lot.SellerName = r.FormValue("seller_name")
-	lot.PurchaseDate = purchaseDate
-	lot.TotalCost = totalCost
-	lot.EstimatedMarketValue = emv
+	lot.PurchaseDate = parseFormDate(r, "purchase_date")
+	lot.TotalCost = parseFormFloat(r, "total_cost")
+	lot.EstimatedMarketValue = parseFormFloat(r, "estimated_market_value")
 	lot.Description = r.FormValue("description")
 	lot.LotContentSnapshot = r.FormValue("lot_content_snapshot")
 
-	if err = h.lotRepo.UpdateLot(r.Context(), lot); err != nil {
+	if err = h.lotSvc.UpdateLot(r.Context(), lot); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -184,11 +153,7 @@ func (h *LotViewHandler) UpdateLot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/lots/%d", lot.ID), http.StatusSeeOther)
 }
 
-func (h *LotViewHandler) DeleteLot(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
+func (h *LotViewHandler) DeleteLot(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := h.lotSvc.DeleteLot(r.Context(), id); err != nil {
 		serverError(w, err)
 		return
@@ -196,12 +161,7 @@ func (h *LotViewHandler) DeleteLot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/lots", http.StatusSeeOther)
 }
 
-func (h *LotViewHandler) UpdateLotStatus(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
+func (h *LotViewHandler) UpdateLotStatus(w http.ResponseWriter, r *http.Request, id uint) {
 	var err error
 	switch r.FormValue("action") {
 	case "accept":
@@ -213,6 +173,5 @@ func (h *LotViewHandler) UpdateLotStatus(w http.ResponseWriter, r *http.Request)
 		serverError(w, err)
 		return
 	}
-
 	http.Redirect(w, r, fmt.Sprintf("/lots/%d", id), http.StatusSeeOther)
 }

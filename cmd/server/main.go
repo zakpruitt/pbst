@@ -33,13 +33,15 @@ func main() {
 	store := auth.NewStore()
 
 	// Repositories
-	lotRepo := repository.NewLotRepository(database)
-	saleRepo := repository.NewSaleRepository(database)
-	itemRepo := repository.NewTrackedItemRepository(database)
-	gradingRepo := repository.NewGradingRepository(database)
-	cardRepo := repository.NewPokemonCardRepository(database)
-	sealedRepo := repository.NewSealedProductRepository(database)
-	expenseRepo := repository.NewExpenseRepository(database)
+	var (
+		lotRepo     = repository.NewLotRepository(database)
+		saleRepo    = repository.NewSaleRepository(database)
+		itemRepo    = repository.NewTrackedItemRepository(database)
+		gradingRepo = repository.NewGradingRepository(database)
+		cardRepo    = repository.NewPokemonCardRepository(database)
+		sealedRepo  = repository.NewSealedProductRepository(database)
+		expenseRepo = repository.NewExpenseRepository(database)
+	)
 
 	// Services
 	lotSvc := services.NewLotService(lotRepo, itemRepo)
@@ -66,71 +68,73 @@ func main() {
 	}
 
 	// Handlers
-	lots := handlers.NewLotViewHandler(lotRepo, lotSvc, cardRepo)
-	sales := handlers.NewSaleViewHandler(saleRepo, itemRepo, saleSvc)
-	grading := handlers.NewGradingViewHandler(gradingRepo, itemRepo, gradingSvc)
+	dashboardSvc := services.NewDashboardService(lotRepo, saleRepo, itemRepo, gradingRepo)
+	inventorySvc := services.NewInventoryService(itemRepo)
+	lots := handlers.NewLotViewHandler(lotSvc)
+	sales := handlers.NewSaleViewHandler(saleSvc, inventorySvc)
+	grading := handlers.NewGradingViewHandler(gradingSvc, inventorySvc)
 
 	// Auth
 	mux.Handle("POST /api/v1/login", auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogin)))
 	mux.Handle("POST /api/v1/logout", auth.RequestLogger(http.HandlerFunc(auth.NewHandler(store).HandleLogout)))
 
 	// API
-	mux.Handle("GET /api/v1/cards/search", apiMiddleware(handlers.HandleSearchCards(cardRepo)))
+	mux.Handle("GET /api/v1/cards/search", apiMiddleware(handlers.HandleSearchCards(cardRepo))) // API handlers can keep repo access for simple queries
 	mux.Handle("GET /api/v1/sealed/search", apiMiddleware(handlers.HandleSearchSealed(sealedRepo)))
 
 	// Dashboard
-	mux.Handle("GET /", viewMiddleware(handlers.NewDashboardHandler(lotRepo, saleRepo, itemRepo, gradingRepo)))
+	mux.Handle("GET /", viewMiddleware(handlers.NewDashboardHandler(dashboardSvc)))
 
 	// Lots
 	mux.Handle("GET /lots", viewMiddleware(lots.Lots))
 	mux.Handle("GET /lots/new", viewMiddleware(lots.LotNew))
 	mux.Handle("POST /lots", viewMiddleware(lots.SaveLot))
-	mux.Handle("GET /lots/{id}", viewMiddleware(lots.LotDetail))
-	mux.Handle("GET /lots/{id}/edit", viewMiddleware(lots.LotEditForm))
+	mux.Handle("GET /lots/{id}", viewMiddleware(handlers.WithPathID(lots.LotDetail)))
+	mux.Handle("GET /lots/{id}/edit", viewMiddleware(handlers.WithPathID(lots.LotEditForm)))
 	mux.Handle("GET /lots/partials/row", viewMiddleware(lots.RowPartial))
-	mux.Handle("POST /lots/{id}", viewMiddleware(lots.UpdateLot))
-	mux.Handle("POST /lots/{id}/status", viewMiddleware(lots.UpdateLotStatus))
-	mux.Handle("POST /lots/{id}/delete", viewMiddleware(lots.DeleteLot))
+	mux.Handle("POST /lots/{id}", viewMiddleware(handlers.WithPathID(lots.UpdateLot)))
+	mux.Handle("POST /lots/{id}/status", viewMiddleware(handlers.WithPathID(lots.UpdateLotStatus)))
+	mux.Handle("POST /lots/{id}/delete", viewMiddleware(handlers.WithPathID(lots.DeleteLot)))
 
 	// Sales
 	mux.Handle("GET /sales", viewMiddleware(sales.Sales))
 	mux.Handle("GET /sales/new", viewMiddleware(sales.SaleNew))
 	mux.Handle("GET /sales/staging", viewMiddleware(sales.SalesStaging))
 	mux.Handle("POST /sales", viewMiddleware(sales.CreateSale))
-	mux.Handle("GET /sales/{id}", viewMiddleware(sales.SaleDetail))
-	mux.Handle("GET /sales/{id}/confirm", viewMiddleware(sales.SaleConfirmForm))
-	mux.Handle("POST /sales/{id}/confirm", viewMiddleware(sales.ConfirmSale))
-	mux.Handle("POST /sales/{id}/ignore", viewMiddleware(sales.IgnoreSale))
-	mux.Handle("POST /sales/{id}/vince", viewMiddleware(sales.VinceSale))
-	mux.Handle("POST /sales/{id}/unstage", viewMiddleware(sales.UnstageSale))
-	mux.Handle("POST /sales/{id}/delete", viewMiddleware(sales.DeleteSale))
+	mux.Handle("GET /sales/{id}", viewMiddleware(handlers.WithPathID(sales.SaleDetail)))
+	mux.Handle("GET /sales/{id}/confirm", viewMiddleware(handlers.WithPathID(sales.SaleConfirmForm)))
+	mux.Handle("POST /sales/{id}/confirm", viewMiddleware(handlers.WithPathID(sales.ConfirmSale)))
+	mux.Handle("POST /sales/{id}/ignore", viewMiddleware(handlers.WithPathID(sales.IgnoreSale)))
+	mux.Handle("POST /sales/{id}/vince", viewMiddleware(handlers.WithPathID(sales.VinceSale)))
+	mux.Handle("POST /sales/{id}/unstage", viewMiddleware(handlers.WithPathID(sales.UnstageSale)))
+	mux.Handle("POST /sales/{id}/delete", viewMiddleware(handlers.WithPathID(sales.DeleteSale)))
 
 	// Inventory
-	inventory := handlers.NewInventoryViewHandler(itemRepo)
+	inventory := handlers.NewInventoryViewHandler(inventorySvc)
 	mux.Handle("GET /inventory", viewMiddleware(inventory.Inventory))
 	mux.Handle("GET /inventory/new", viewMiddleware(inventory.InventoryNew))
 	mux.Handle("GET /inventory/partials/row", viewMiddleware(inventory.RowPartial))
 	mux.Handle("POST /inventory", viewMiddleware(inventory.CreateInventoryItem))
-	mux.Handle("GET /inventory/{id}/edit", viewMiddleware(inventory.InventoryEditForm))
-	mux.Handle("POST /inventory/{id}", viewMiddleware(inventory.UpdateInventoryItem))
-	mux.Handle("POST /inventory/{id}/delete", viewMiddleware(inventory.DeleteInventoryItem))
+	mux.Handle("GET /inventory/{id}/edit", viewMiddleware(handlers.WithPathID(inventory.InventoryEditForm)))
+	mux.Handle("POST /inventory/{id}", viewMiddleware(handlers.WithPathID(inventory.UpdateInventoryItem)))
+	mux.Handle("POST /inventory/{id}/delete", viewMiddleware(handlers.WithPathID(inventory.DeleteInventoryItem)))
 
 	// Expenses
 	expenses := handlers.NewExpenseViewHandler(expenseRepo)
 	mux.Handle("GET /expenses", viewMiddleware(expenses.Expenses))
 	mux.Handle("POST /expenses", viewMiddleware(expenses.CreateExpense))
-	mux.Handle("POST /expenses/{id}/delete", viewMiddleware(expenses.DeleteExpense))
+	mux.Handle("POST /expenses/{id}/delete", viewMiddleware(handlers.WithPathID(expenses.DeleteExpense)))
 
 	// Grading
 	mux.Handle("GET /grading", viewMiddleware(grading.Grading))
 	mux.Handle("GET /grading/new", viewMiddleware(grading.GradingNew))
 	mux.Handle("POST /grading", viewMiddleware(grading.CreateGrading))
-	mux.Handle("GET /grading/{id}", viewMiddleware(grading.GradingDetail))
-	mux.Handle("GET /grading/{id}/edit", viewMiddleware(grading.GradingEditForm))
-	mux.Handle("POST /grading/{id}", viewMiddleware(grading.UpdateGrading))
-	mux.Handle("POST /grading/{id}/advance", viewMiddleware(grading.AdvanceGradingStatus))
-	mux.Handle("POST /grading/{id}/return", viewMiddleware(grading.RecordReturn))
-	mux.Handle("POST /grading/{id}/delete", viewMiddleware(grading.DeleteGrading))
+	mux.Handle("GET /grading/{id}", viewMiddleware(handlers.WithPathID(grading.GradingDetail)))
+	mux.Handle("GET /grading/{id}/edit", viewMiddleware(handlers.WithPathID(grading.GradingEditForm)))
+	mux.Handle("POST /grading/{id}", viewMiddleware(handlers.WithPathID(grading.UpdateGrading)))
+	mux.Handle("POST /grading/{id}/advance", viewMiddleware(handlers.WithPathID(grading.AdvanceGradingStatus)))
+	mux.Handle("POST /grading/{id}/return", viewMiddleware(handlers.WithPathID(grading.RecordReturn)))
+	mux.Handle("POST /grading/{id}/delete", viewMiddleware(handlers.WithPathID(grading.DeleteGrading)))
 
 	// Static
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./ui/static"))))

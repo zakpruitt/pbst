@@ -9,31 +9,27 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type PokemonCardRepository struct {
+type PokemonCardRepository interface {
+	Upsert(ctx context.Context, cards []models.PokemonCard) error
+	Search(ctx context.Context, query string) ([]models.PokemonCard, error)
+}
+
+type pokemonCardRepository struct {
 	db *gorm.DB
 }
 
-func NewPokemonCardRepository(db *gorm.DB) *PokemonCardRepository {
-	return &PokemonCardRepository{db: db}
+func NewPokemonCardRepository(db *gorm.DB) PokemonCardRepository {
+	return &pokemonCardRepository{db: db}
 }
 
-// Upsert inserts or updates cards by primary key. Used during set syncs.
-func (r *PokemonCardRepository) Upsert(ctx context.Context, cards []models.PokemonCard) error {
+func (r *pokemonCardRepository) Upsert(ctx context.Context, cards []models.PokemonCard) error {
 	err := r.db.WithContext(ctx).Clauses(clause.OnConflict{UpdateAll: true}).Create(&cards).Error
 	if err != nil {
 		return fmt.Errorf("upsert cards: %w", err)
 	}
 	return nil
 }
-func (r *PokemonCardRepository) Search(ctx context.Context, query string) ([]models.PokemonCard, error) {
-	var cards []models.PokemonCard
-	like := "%" + query + "%"
-	err := r.db.WithContext(ctx).
-		Where("name ILIKE ? OR set_name ILIKE ?", like, like).
-		Limit(10).
-		Find(&cards).Error
-	if err != nil {
-		return nil, fmt.Errorf("search cards: %w", err)
-	}
-	return cards, nil
+
+func (r *pokemonCardRepository) Search(ctx context.Context, query string) ([]models.PokemonCard, error) {
+	return searchByName[models.PokemonCard](ctx, r.db, query, 10)
 }

@@ -62,7 +62,7 @@ type ebayTransactionsResponse struct {
 }
 
 type EbaySalesSync struct {
-	saleRepo     *repository.SaleRepository
+	saleRepo     repository.SaleRepository
 	clientID     string
 	clientSecret string
 	refreshToken string
@@ -73,7 +73,7 @@ type EbaySalesSync struct {
 	accessTokenExp time.Time
 }
 
-func NewEbaySalesSync(saleRepo *repository.SaleRepository, clientID, clientSecret, refreshToken string) *EbaySalesSync {
+func NewEbaySalesSync(saleRepo repository.SaleRepository, clientID, clientSecret, refreshToken string) *EbaySalesSync {
 	return &EbaySalesSync{
 		saleRepo:     saleRepo,
 		clientID:     clientID,

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/zakpruitt/pbst/internal/models"
-	"github.com/zakpruitt/pbst/internal/repository"
 	"github.com/zakpruitt/pbst/internal/services"
 )
 
@@ -17,28 +16,26 @@ type GradingViewHandler struct {
 	gradingNew    *template.Template
 	gradingDetail *template.Template
 	gradingEdit   *template.Template
-	gradingRepo   *repository.GradingRepository
-	itemRepo      *repository.TrackedItemRepository
-	gradingSvc    *services.GradingService
+	gradingSvc    services.GradingService
+	inventorySvc  services.InventoryService
 }
 
 func NewGradingViewHandler(
-	gradingRepo *repository.GradingRepository,
-	itemRepo *repository.TrackedItemRepository,
-	gradingSvc *services.GradingService,
+	gradingSvc services.GradingService,
+	inventorySvc services.InventoryService,
 ) *GradingViewHandler {
 	return &GradingViewHandler{
 		grading:       parseTemplate("grading/index"),
 		gradingNew:    parseTemplate("grading/new"),
 		gradingDetail: parseTemplate("grading/detail"),
 		gradingEdit:   parseTemplate("grading/edit"),
-		gradingRepo:   gradingRepo,
-		itemRepo:      itemRepo,
 		gradingSvc:    gradingSvc,
+		inventorySvc:  inventorySvc,
 	}
 }
+
 func (h *GradingViewHandler) GradingNew(w http.ResponseWriter, r *http.Request) {
-	items, err := h.itemRepo.GetInventoryItems(r.Context())
+	items, err := h.inventorySvc.GetItemsByPurpose(r.Context(), "INVENTORY")
 	if err != nil {
 		serverError(w, err)
 		return
@@ -79,46 +76,21 @@ func (h *GradingViewHandler) CreateGrading(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *GradingViewHandler) Grading(w http.ResponseWriter, r *http.Request) {
-	submissions, err := h.gradingRepo.GetAllSubmissions(r.Context())
+	submissions, err := h.gradingSvc.GetAllSubmissions(r.Context())
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 
+	groups := groupByMonth(submissions, func(s models.GradingSubmission) time.Time { return s.CreatedAt })
 	execTemplate(w, h.grading, "layout", map[string]any{
 		"Page":   "grading",
-		"Groups": groupSubmissionsByMonth(submissions),
+		"Groups": groups,
 	})
 }
 
-type SubmissionMonthGroup struct {
-	Label       string
-	FirstDay    time.Time
-	Submissions []models.GradingSubmission
-}
-
-func groupSubmissionsByMonth(submissions []models.GradingSubmission) []SubmissionMonthGroup {
-	var groups []SubmissionMonthGroup
-	var current string
-	for _, s := range submissions {
-		label := s.CreatedAt.Format("January 2006")
-		if label != current {
-			groups = append(groups, SubmissionMonthGroup{Label: label, FirstDay: s.CreatedAt})
-			current = label
-		}
-		i := len(groups) - 1
-		groups[i].Submissions = append(groups[i].Submissions, s)
-	}
-	return groups
-}
-
-func (h *GradingViewHandler) GradingDetail(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
-	submission, err := h.gradingRepo.GetSubmissionByID(r.Context(), id)
+func (h *GradingViewHandler) GradingDetail(w http.ResponseWriter, r *http.Request, id uint) {
+	submission, err := h.gradingSvc.GetSubmissionByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -129,13 +101,9 @@ func (h *GradingViewHandler) GradingDetail(w http.ResponseWriter, r *http.Reques
 		"Submission": submission,
 	})
 }
-func (h *GradingViewHandler) GradingEditForm(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
 
-	submission, err := h.gradingRepo.GetSubmissionByID(r.Context(), id)
+func (h *GradingViewHandler) GradingEditForm(w http.ResponseWriter, r *http.Request, id uint) {
+	submission, err := h.gradingSvc.GetSubmissionByID(r.Context(), id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -146,7 +114,7 @@ func (h *GradingViewHandler) GradingEditForm(w http.ResponseWriter, r *http.Requ
 		attachedIDs[item.ID] = true
 	}
 
-	inventoryItems, err := h.itemRepo.GetInventoryItems(r.Context())
+	inventoryItems, err := h.inventorySvc.GetItemsByPurpose(r.Context(), "INVENTORY")
 	if err != nil {
 		serverError(w, err)
 		return
@@ -164,12 +132,7 @@ func (h *GradingViewHandler) GradingEditForm(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
+func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := r.ParseForm(); err != nil {
 		serverError(w, err)
 		return
@@ -196,11 +159,7 @@ func (h *GradingViewHandler) UpdateGrading(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, fmt.Sprintf("/grading/%d", id), http.StatusSeeOther)
 }
 
-func (h *GradingViewHandler) DeleteGrading(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
+func (h *GradingViewHandler) DeleteGrading(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := h.gradingSvc.DeleteSubmission(r.Context(), id); err != nil {
 		serverError(w, err)
 		return
@@ -208,26 +167,15 @@ func (h *GradingViewHandler) DeleteGrading(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, "/grading", http.StatusSeeOther)
 }
 
-func (h *GradingViewHandler) AdvanceGradingStatus(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
+func (h *GradingViewHandler) AdvanceGradingStatus(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := h.gradingSvc.AdvanceStatus(r.Context(), id, r.FormValue("new_status")); err != nil {
 		serverError(w, err)
 		return
 	}
-
 	http.Redirect(w, r, fmt.Sprintf("/grading/%d", id), http.StatusSeeOther)
 }
 
-func (h *GradingViewHandler) RecordReturn(w http.ResponseWriter, r *http.Request) {
-	id, ok := requirePathID(w, r)
-	if !ok {
-		return
-	}
-
+func (h *GradingViewHandler) RecordReturn(w http.ResponseWriter, r *http.Request, id uint) {
 	if err := r.ParseForm(); err != nil {
 		serverError(w, err)
 		return
@@ -254,14 +202,4 @@ func (h *GradingViewHandler) RecordReturn(w http.ResponseWriter, r *http.Request
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/grading/%d", id), http.StatusSeeOther)
-}
-func splitInventoryItems(items []models.TrackedItem) (raw, graded []models.TrackedItem) {
-	for _, item := range items {
-		if item.GradedDetails != nil && item.GradedDetails.GradingCompany != "" {
-			graded = append(graded, item)
-		} else {
-			raw = append(raw, item)
-		}
-	}
-	return
 }

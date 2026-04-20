@@ -52,13 +52,13 @@ var syncSets = []string{
 }
 
 type PokeWalletSync struct {
-	cardRepo *repository.PokemonCardRepository
+	cardRepo repository.PokemonCardRepository
 	apiKey   string
 	baseURL  string
 	client   *http.Client
 }
 
-func NewPokeWalletSync(cardRepo *repository.PokemonCardRepository, apiKey, baseURL string) *PokeWalletSync {
+func NewPokeWalletSync(cardRepo repository.PokemonCardRepository, apiKey, baseURL string) *PokeWalletSync {
 	return &PokeWalletSync{
 		cardRepo: cardRepo,
 		apiKey:   apiKey,

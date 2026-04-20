@@ -43,14 +43,14 @@
             <div class="small text-muted">Sold: {{fmtMoney .GrossAmount}}</div>
             <div class="fw-semibold text-success">Net: {{fmtMoney .NetAmount}}</div>
         </td>
-        <td class="text-end align-middle text-nowrap ps-4">
-            <div class="d-flex justify-content-end gap-2">
+        <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
+            <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
                 <a href="/sales/{{.ID}}/confirm" class="btn btn-success btn-sm">Confirm</a>
-                <form method="POST" action="/sales/{{.ID}}/vince" class="d-inline">
-                    <button type="submit" class="btn btn-outline-info btn-sm">Vince</button>
+                <form method="POST" action="/sales/{{.ID}}/vince">
+                    <button type="submit" class="btn btn-outline-info btn-sm w-100">Vince</button>
                 </form>
-                <form method="POST" action="/sales/{{.ID}}/ignore" class="d-inline">
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+                <form method="POST" action="/sales/{{.ID}}/ignore">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Ignore</button>
                 </form>
             </div>
         </td>

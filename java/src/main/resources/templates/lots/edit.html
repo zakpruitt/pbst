@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a th:href="'/lots/' + ${lot.id}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; <span th:text="${lot.sellerName}"></span></a>
+<h4 class="mb-4">Edit Lot</h4>
+
+<form id="lot-form" method="POST" th:action="'/lots/' + ${lot.id}">
+    <input type="hidden" id="snapshot-input" name="lot_content_snapshot" value="[]">
+    <input type="hidden" id="total-cost-input" name="total_cost" value="0">
+    <input type="hidden" id="emv-input" name="estimated_market_value" value="0">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Lot Details</h6>
+            <div class="row g-2">
+                <div class="col-12">
+                    <input name="seller_name" class="form-control form-control-sm" th:value="${lot.sellerName}" required>
+                </div>
+                <div class="col-sm-6">
+                    <input name="purchase_date" type="date" class="form-control form-control-sm"
+                           th:value="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'yyyy-MM-dd') : ''}" required>
+                </div>
+                <div class="col-sm-6">
+                    <input name="description" class="form-control form-control-sm"
+                           th:value="${lot.description}" placeholder="Notes (optional)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-data="lotTotals()" @input.window="recalc()" @change.window="recalc()" @lot:changed.window="recalc()">
+        <div id="items-list"></div>
+        <div id="empty-msg" class="text-center text-muted py-4 small card mb-3"
+             th:style="${#lists.isEmpty(snapshotItems) ? '' : 'display:none'}">No items.</div>
+
+        <div class="card mb-3" x-data="cardSearch()">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Add Items</h6>
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control form-control-sm"
+                           placeholder="Search cards by name or set..." autocomplete="off"
+                           x-model="query" @input.debounce.300ms="search()"
+                           @keydown.enter.prevent="onEnter()" @keydown.escape="clear()">
+                    <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                         style="z-index:100;max-height:280px;overflow-y:auto;display:none"
+                         x-show="results.length > 0" @click.outside="clear()">
+                        <template x-for="c in results" :key="c.id">
+                            <button type="button" class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent" @click="pick(c)">
+                                <template x-if="c.image_url"><img :src="c.image_url" style="height:48px;width:auto;border-radius:4px;flex-shrink:0"></template>
+                                <template x-if="!c.image_url"><div style="width:34px"></div></template>
+                                <span><strong class="d-block" x-text="c.name"></strong><span class="text-muted small" x-text="c.set_name + ' #' + c.card_number"></span><br><span class="text-success small" x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="addOther()">+ Add Other</button>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-3">
+            <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+                <span>EMV <strong class="text-body" x-text="'$' + totalEmv.toFixed(2)"></strong></span>
+                <span>Buying <strong class="text-success" x-text="'$' + totalBuying.toFixed(2)"></strong></span>
+                <span>Tracked EMV <strong class="text-body" x-text="'$' + trackedEmv.toFixed(2)"></strong></span>
+                <span>Untracked EMV <strong class="text-body" x-text="'$' + untrackedEmv.toFixed(2)"></strong></span>
+                <span>Est. Flip <strong :class="estFlipNet >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipNet.toFixed(2)"></strong> <span class="text-muted" style="font-size:.7rem">(-12% fees)</span></span>
+                <span>Est. Flip (gross) <strong :class="estFlipGross >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipGross.toFixed(2)"></strong></span>
+                <button type="submit" class="btn btn-success btn-sm ms-auto">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script th:inline="javascript">
+    var existingItems = /*[[${snapshotItems}]]*/ [];
+</script>
+<script src="/static/js/lot-form.js"></script>
+
+</div>
+</body>
+</html>

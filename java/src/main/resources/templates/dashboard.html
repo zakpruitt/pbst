@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h4 class="mb-0">Dashboard</h4>
+    <span class="text-muted small">Lifetime P&amp;L across lots and sales</span>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Total Spent</p>
+            <h5 class="mb-0 text-danger" th:text="'$' + ${#numbers.formatDecimal(data.totalSpent, 1, 2)}"></h5>
+            <p class="text-muted small mb-0 mt-1">on lot purchases</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Gross Revenue</p>
+            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totalGross, 1, 2)}"></h5>
+            <p class="text-muted small mb-0 mt-1">before fees &amp; shipping</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Net Revenue</p>
+            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totalNet, 1, 2)}"></h5>
+            <p class="text-muted small mb-0 mt-1" th:text="'$' + ${#numbers.formatDecimal(data.totalFees, 1, 2)} + ' in fees'"></p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Margin</p>
+            <h5 class="mb-0" th:classappend="${data.margin < 0 ? 'text-danger' : 'text-success'}"
+                th:text="'$' + ${#numbers.formatDecimal(data.margin, 1, 2)}"></h5>
+            <p class="text-muted small mb-0 mt-1">net &minus; spent</p>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Confirmed Sales</p>
+            <h5 class="mb-0" th:text="${data.salesCount}"></h5>
+            <p class="text-muted small mb-0 mt-1" th:text="'avg $' + ${#numbers.formatDecimal(data.avgSale, 1, 2)}"></p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Inventory</p>
+            <h5 class="mb-0" th:text="${data.inventoryCount} + ' items'"></h5>
+            <p class="text-muted small mb-0 mt-1" th:text="'$' + ${#numbers.formatDecimal(data.inventoryMarket, 1, 2)} + ' market'"></p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">In Grading</p>
+            <h5 class="mb-0" th:text="${data.gradingCount} + ' items'"></h5>
+            <p class="text-muted small mb-0 mt-1">awaiting return</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted small mb-1">Last 30 Days</p>
+            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totals30.net, 1, 2)}"></h5>
+            <p class="text-muted small mb-0 mt-1" th:text="${data.totals30.count} + ' sales · 7d: $' + ${#numbers.formatDecimal(data.totals7.net, 1, 2)}"></p>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Monthly P&amp;L — last 12 months</span>
+                <span class="text-muted small">Lot spend vs. sale gross &amp; net</span>
+            </div>
+            <div class="card-body" style="height:320px">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Inventory by Type</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="itemTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Sales by Origin</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="originChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Grading by Status</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:260px">
+                <canvas id="gradingChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Top 5 Sales by Net</span>
+                <a href="/sales" class="text-muted small text-decoration-none">View all &rarr;</a>
+            </div>
+            <div class="list-group list-group-flush" style="max-height:390px;overflow-y:auto">
+                <a th:each="s : ${data.topSales}" th:href="'/sales/' + ${s.id}" class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="me-2" style="min-width:0">
+                            <div class="text-truncate fw-medium" th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 50)}"></div>
+                            <div class="text-muted small" th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')} + ' · ' + ${s.origin}"></div>
+                        </div>
+                        <div class="text-end flex-shrink-0">
+                            <div class="fw-medium" th:text="'$' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+                            <div class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)} + ' gross'"></div>
+                        </div>
+                    </div>
+                </a>
+                <div th:if="${#lists.isEmpty(data.topSales)}" class="list-group-item text-muted small">No sales yet.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Activity</span>
+                <span class="text-muted small">Latest sales &amp; lots</span>
+            </div>
+            <div class="list-group list-group-flush" style="max-height:385px;overflow-y:auto">
+                <a th:each="s : ${data.recentSales}" th:href="'/sales/' + ${s.id}" class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="me-2" style="min-width:0">
+                            <span class="badge bg-success-subtle text-success me-1">Sale</span>
+                            <span class="fw-medium" th:text="${#strings.abbreviate(s.title, 40)}"></span>
+                            <div class="text-muted small" th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></div>
+                        </div>
+                        <div class="text-end text-success flex-shrink-0" th:text="'+$' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+                    </div>
+                </a>
+                <a th:each="l : ${data.recentLots}" th:href="'/lots/' + ${l.id}" class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="me-2" style="min-width:0">
+                            <span class="badge bg-danger-subtle text-danger me-1">Lot</span>
+                            <span class="fw-medium" th:text="${l.sellerName != null and !l.sellerName.isEmpty() ? l.sellerName : 'Lot #' + l.id}"></span>
+                            <div class="text-muted small" th:text="${#temporals.format(l.purchaseDate, 'MMM d, yyyy')} + ' · ' + ${l.status}"></div>
+                        </div>
+                        <div class="text-end text-danger flex-shrink-0" th:text="'-$' + ${#numbers.formatDecimal(l.totalCost, 1, 2)}"></div>
+                    </div>
+                </a>
+                <div th:if="${#lists.isEmpty(data.recentSales) and #lists.isEmpty(data.recentLots)}" class="list-group-item text-muted small">No activity yet.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:if="${data.vinceTotals != null and data.vinceTotals.count > 0}" class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h6 class="mb-1">Vince</h6>
+                <small class="text-muted">Tracked separately — not part of your P&amp;L</small>
+            </div>
+            <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View sales &rarr;</a>
+        </div>
+        <div class="row text-center">
+            <div class="col">
+                <div class="text-muted small text-uppercase">Sales</div>
+                <div class="fw-semibold" th:text="${data.vinceTotals.count}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Gross</div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceTotals.gross, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Net Owed</div>
+                <div class="fw-semibold text-info" th:text="'$' + ${#numbers.formatDecimal(data.vinceTotals.net, 1, 2)}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+(function () {
+    const accent = '#27ae60', muted = '#536471', danger = '#dc3545', blue = '#0d6efd';
+    const amber = '#ffc107', purple = '#6f42c1', teal = '#20c997', border = '#e1e8ed';
+    const palette = [blue, accent, amber, danger, purple, teal, '#fd7e14', '#0dcaf0'];
+
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = muted;
+
+    const money = v => '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: {
+            labels: /*[[${data.monthLabels}]]*/ [],
+            datasets: [
+                { label: 'Spent', data: /*[[${data.monthlySpend}]]*/ [], borderColor: danger, backgroundColor: 'rgba(220,53,69,0.08)', tension: 0.3, fill: true, pointRadius: 3 },
+                { label: 'Gross', data: /*[[${data.monthlyGross}]]*/ [], borderColor: blue, backgroundColor: 'rgba(13,110,253,0.08)', tension: 0.3, fill: false, pointRadius: 3 },
+                { label: 'Net', data: /*[[${data.monthlyNet}]]*/ [], borderColor: accent, backgroundColor: 'rgba(39,174,96,0.12)', tension: 0.3, fill: true, pointRadius: 3 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } }, tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + money(ctx.parsed.y) } } },
+            scales: { x: { grid: { color: border } }, y: { grid: { color: border }, ticks: { callback: money } } }
+        }
+    });
+
+    function doughnut(canvasId, labels, data, colors) {
+        if (!labels.length) { const ctx = document.getElementById(canvasId); if (ctx) ctx.parentElement.innerHTML = '<span class="text-muted small">No data yet.</span>'; return; }
+        const total = data.reduce((a, b) => a + b, 0);
+        new Chart(document.getElementById(canvasId), {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2, hoverOffset: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0; return ` ${ctx.parsed} (${pct}%)`; } } } } }
+        });
+    }
+
+    const itemTypeRows = /*[[${data.itemTypeCounts}]]*/ [];
+    const itemTypeLabelMap = { RAW_CARD: 'Raw', GRADED_CARD: 'Graded', SEALED_PRODUCT: 'Sealed', OTHER: 'Other' };
+    doughnut('itemTypeChart', itemTypeRows.map(r => itemTypeLabelMap[r.itemType] || r.itemType), itemTypeRows.map(r => r.count), palette);
+
+    const originRows = /*[[${data.originCounts}]]*/ [];
+    const originLabelMap = { EBAY: 'eBay', FACEBOOK: 'Facebook', OTHER: 'Other' };
+    doughnut('originChart', originRows.map(r => originLabelMap[r.origin] || r.origin || 'Unknown'), originRows.map(r => r.count), palette);
+
+    const gradingRows = /*[[${data.gradingStatuses}]]*/ [];
+    doughnut('gradingChart', gradingRows.map(r => r.status), gradingRows.map(r => r.count), palette);
+})();
+</script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Sales</h4>
+    <a href="/sales/new" class="btn btn-success btn-sm">+ New Sale</a>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'mine' ? 'active' : ''}" href="/sales">Mine</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'ignored' ? 'active' : ''}" href="/sales?view=ignored">Ignored</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'vince' ? 'active' : ''}" href="/sales?view=vince">Vince</a></li>
+</ul>
+
+<a th:if="${stagedCount > 0}" href="/sales/staging" class="d-block text-decoration-none mb-3">
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0 py-2 px-3">
+        <span><strong th:text="${stagedCount}"></strong> sale<span th:if="${stagedCount != 1}">s</span> awaiting triage</span>
+        <span class="small fw-semibold">Review &rarr;</span>
+    </div>
+</a>
+
+<div th:if="${#lists.isEmpty(groups)}">
+    <p class="text-muted" th:text="${view == 'vince' ? 'No sales attributed to Vince yet.' : (view == 'ignored' ? 'No ignored sales.' : 'No sales yet.')}"></p>
+</div>
+
+<div th:unless="${#lists.isEmpty(groups)}">
+    <div class="card mb-3" x-data="saleFilter()">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm"><input type="search" class="form-control form-control-sm" placeholder="Filter by title or buyer..." x-model="query" @input="apply()"></div>
+                <div class="col-sm-auto">
+                    <select class="form-select form-select-sm" x-model="origin" @change="apply()">
+                        <option value="">All origins</option>
+                        <option value="EBAY">eBay</option>
+                        <option value="FACEBOOK">Facebook</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="col-sm-auto text-muted small" x-text="summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sales-list">
+        <div th:each="group : ${groups}" class="sale-month-group mb-4">
+            <span class="month-label month-pill" th:text="${group.label}"></span>
+            <table class="table table-hover bg-white mb-0 mt-2">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:100%">Item</th>
+                    <th class="text-center text-nowrap ps-4">Origin</th>
+                    <th class="text-end text-nowrap ps-4">Amounts</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${group.items}" class="sale-row"
+                    th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
+                    th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
+                    <td>
+                        <div class="d-flex align-items-start gap-2">
+                            <div class="min-w-0 flex-grow-1">
+                                <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
+                                   th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
+                                <div class="text-muted inv-subtext mt-1">
+                                    <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
+                                    <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
+                                    <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
+                                    <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center align-middle text-nowrap ps-4">
+                        <span class="badge" style="font-size:.65rem"
+                              th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
+                              th:text="${s.origin}"></span>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4">
+                        <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
+                        <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function saleFilter() {
+        return {
+            query: "", origin: "", summary: "",
+            apply() {
+                const q = this.query.trim().toLowerCase();
+                const origin = this.origin;
+                let shown = 0;
+                document.querySelectorAll(".sale-month-group").forEach(group => {
+                    let groupShown = 0;
+                    group.querySelectorAll(".sale-row").forEach(row => {
+                        const title = (row.dataset.title || "").toLowerCase();
+                        const buyer = (row.dataset.buyer || "").toLowerCase();
+                        const rowOrigin = row.dataset.origin || "";
+                        const visible = (!q || title.includes(q) || buyer.includes(q)) && (!origin || rowOrigin === origin);
+                        row.style.display = visible ? "" : "none";
+                        if (visible) { groupShown++; shown++; }
+                    });
+                    group.style.display = groupShown === 0 ? "none" : "";
+                });
+                this.summary = (q || origin) ? `${shown} match${shown === 1 ? "" : "es"}` : "";
+            },
+        };
+    }
+    </script>
+</div>
+
+</div>
+</body>
+</html>

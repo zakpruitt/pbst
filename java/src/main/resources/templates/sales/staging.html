@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Sales</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Sale Stager</h4>
+        <small class="text-muted">Triage eBay orders. Confirm yours, send Vince's to him, ignore the rest.</small>
+    </div>
+    <span class="badge bg-warning text-dark fs-6" th:text="${#lists.size(sales)} + ' staged'"></span>
+</div>
+
+<div th:if="${#lists.isEmpty(sales)}" class="card">
+    <div class="card-body text-center text-muted py-5">Nothing to triage. New eBay orders will land here automatically.</div>
+</div>
+
+<table th:unless="${#lists.isEmpty(sales)}" class="table table-hover bg-white">
+    <thead class="table-light">
+    <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Origin</th><th class="text-end text-nowrap ps-4">Amount</th><th class="text-end text-nowrap ps-4">Actions</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="s : ${sales}">
+        <td>
+            <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium" th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
+            <div class="text-muted inv-subtext mt-1">
+                <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
+                <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
+            </div>
+        </td>
+        <td class="text-center align-middle text-nowrap ps-4">
+            <span class="badge" style="font-size:.65rem"
+                  th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
+                  th:text="${s.origin}"></span>
+        </td>
+        <td class="text-end align-middle text-nowrap ps-4">
+            <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
+            <div class="fw-semibold text-success" th:text="'Net: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+        </td>
+        <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
+            <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
+                <a th:href="'/sales/' + ${s.id} + '/confirm'" class="btn btn-success btn-sm">Confirm</a>
+                <form method="POST" th:action="'/sales/' + ${s.id} + '/vince'"><button type="submit" class="btn btn-outline-info btn-sm w-100">Vince</button></form>
+                <form method="POST" th:action="'/sales/' + ${s.id} + '/ignore'"><button type="submit" class="btn btn-outline-secondary btn-sm w-100">Ignore</button></form>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+</div>
+</body>
+</html>

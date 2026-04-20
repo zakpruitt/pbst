@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Inventory</h4>
+    <a href="/inventory/new" class="btn btn-success btn-sm">Add Item</a>
+</div>
+
+<div th:replace="~{inventory/index :: inventory-page}"></div>
+
+</div>
+
+<!-- HTMX-swappable fragment -->
+<div th:fragment="inventory-page" id="inventory-page">
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${purpose == 'INVENTORY' ? 'active' : ''}"
+           href="/inventory?purpose=INVENTORY"
+           hx-get="/inventory?purpose=INVENTORY"
+           hx-target="#inventory-page"
+           hx-swap="outerHTML"
+           hx-push-url="true">Inventory</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${purpose == 'IN_GRADING' ? 'active' : ''}"
+           href="/inventory?purpose=IN_GRADING"
+           hx-get="/inventory?purpose=IN_GRADING"
+           hx-target="#inventory-page"
+           hx-swap="outerHTML"
+           hx-push-url="true">In Grading</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${purpose == 'PERSONAL_COLLECTION' ? 'active' : ''}"
+           href="/inventory?purpose=PERSONAL_COLLECTION"
+           hx-get="/inventory?purpose=PERSONAL_COLLECTION"
+           hx-target="#inventory-page"
+           hx-swap="outerHTML"
+           hx-push-url="true">Personal Collection</a>
+    </li>
+</ul>
+
+<div id="inventory-list">
+    <p th:if="${#lists.isEmpty(items)}" class="text-muted">No items in this category.</p>
+
+    <div th:if="${!#lists.isEmpty(items)}">
+
+        <div th:if="${!#lists.isEmpty(rawItems)}" class="mb-4">
+            <span class="month-pill section-pill d-inline-block mb-2">Raw</span>
+            <table class="table table-hover bg-white mb-0">
+                <thead class="table-light">
+                <tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-end text-nowrap ps-4"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${rawItems}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
+                            <div>
+                                <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}" class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}" class="text-muted fst-italic">Unnamed</span>
+                                <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext" th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+                                <div th:if="${item.pokemonCard == null and item.sealedProduct != null}" class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
+                                <div class="text-muted inv-subtext">
+                                    <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
+                                    <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+                                    <span th:if="${item.gradingSubmission != null}"> &middot; <a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4 fw-medium"
+                        th:title="${item.gradingFee > 0 ? 'Lot $' + #numbers.formatDecimal(item.costBasis, 1, 2) + ' + Grading $' + #numbers.formatDecimal(item.gradingFee, 1, 2) : ''}"
+                        th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(item.marketValueAtPurchase, 1, 2) : '—'}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4">
+                        <a th:href="'/inventory/' + ${item.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(gradedItems)}" class="mb-4">
+            <span class="month-pill section-pill d-inline-block mb-2">Graded</span>
+            <table class="table table-hover bg-white mb-0">
+                <thead class="table-light">
+                <tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4">Grade</th><th class="text-end text-nowrap ps-4"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${gradedItems}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
+                            <div>
+                                <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
+                                <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext" th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+                                <div class="text-muted inv-subtext">
+                                    <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
+                                    <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+                                    <span th:if="${item.gradingSubmission != null}"> &middot; <a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4 fw-medium"
+                        th:title="${item.gradingFee > 0 ? 'Lot $' + #numbers.formatDecimal(item.costBasis, 1, 2) + ' + Grading $' + #numbers.formatDecimal(item.gradingFee, 1, 2) : ''}"
+                        th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(item.marketValueAtPurchase, 1, 2) : '—'}"></td>
+                    <td class="text-center align-middle text-nowrap ps-4">
+                        <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}"
+                              class="badge"
+                              th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                              th:text="${item.gradedDetails.gradingCompany + ' ' + item.gradedDetails.grade}"></span>
+                        <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4">
+                        <a th:href="'/inventory/' + ${item.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(sealedItems)}" class="mb-4">
+            <span class="month-pill section-pill d-inline-block mb-2">Sealed</span>
+            <table class="table table-hover bg-white mb-0">
+                <thead class="table-light">
+                <tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-end text-nowrap ps-4"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${sealedItems}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div>
+                                <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.sealedProduct != null}" class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+                                <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.sealedProduct == null}" class="text-muted fst-italic">Unnamed</span>
+                                <div th:if="${item.sealedProduct != null}" class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
+                                <div class="text-muted inv-subtext">
+                                    <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
+                                    <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(item.marketValueAtPurchase, 1, 2) : '—'}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4">
+                        <a th:href="'/inventory/' + ${item.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(otherItems)}" class="mb-4">
+            <span class="month-pill section-pill d-inline-block mb-2">Other</span>
+            <table class="table table-hover bg-white mb-0">
+                <thead class="table-light">
+                <tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-end text-nowrap ps-4"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${otherItems}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div>
+                                <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                                <span th:if="${item.manualNameOverride == null or item.manualNameOverride.isEmpty()}" class="text-muted fst-italic">Unnamed</span>
+                                <div class="text-muted inv-subtext">
+                                    <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
+                                    <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(item.marketValueAtPurchase, 1, 2) : '—'}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4">
+                        <a th:href="'/inventory/' + ${item.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+</div>
+
+</body>
+</html>

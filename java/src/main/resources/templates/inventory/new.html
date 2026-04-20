@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a href="/inventory" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Inventory</a>
+<h4 class="mb-4">Add Items</h4>
+
+<form id="inventory-form" method="POST" action="/inventory">
+    <input type="hidden" id="items-snapshot-input" name="itemsSnapshot" value="[]">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Acquisition</h6>
+            <div class="row g-2">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Acquisition Date</label>
+                    <input name="acquisitionDate" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Purpose</label>
+                    <select name="purpose" class="form-select form-select-sm">
+                        <option value="INVENTORY">Inventory</option>
+                        <option value="PERSONAL_COLLECTION">Personal Collection</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-data="inventoryTotals()" @input.window="recalc()" @change.window="recalc()"
+         @inv:changed.window="recalc()">
+
+        <div id="items-list"></div>
+
+        <div id="empty-msg" class="text-center text-muted py-4 small card mb-3">
+            Search for a card or sealed product below, or add an Other item.
+        </div>
+
+        <div class="card mb-3" x-data="inventoryItemSearch()">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Add Items</h6>
+
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control form-control-sm" autocomplete="off"
+                           placeholder="Search cards or sealed products by name or set..."
+                           x-model="query" @input.debounce.300ms="search()"
+                           @keydown.enter.prevent="onEnter()" @keydown.escape="clear()">
+                    <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                         style="z-index:100;max-height:280px;overflow-y:auto" x-show="results.length > 0"
+                         @click.outside="clear()">
+                        <template x-for="c in results" :key="c._kind + ':' + c.id">
+                            <button type="button"
+                                    class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                                    @click="pick(c)">
+                                <template x-if="c.imageUrl">
+                                    <img :src="c.imageUrl"
+                                         style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
+                                </template>
+                                <template x-if="!c.imageUrl">
+                                    <div style="width:34px"></div>
+                                </template>
+                                <span class="flex-grow-1">
+                                    <strong class="d-block" x-text="c.name"></strong>
+                                    <span class="text-muted small"
+                                          x-text="c.setName + (c.cardNumber ? ' #' + c.cardNumber : '')"></span><br>
+                                    <span class="text-success small"
+                                          x-text="c.marketPrice ? '$' + c.marketPrice.toFixed(2) : ''"></span>
+                                </span>
+                                <span class="badge bg-light text-muted border text-uppercase"
+                                      style="font-size:.62rem;letter-spacing:.06em"
+                                      x-text="c._kind === 'sealed' ? 'Sealed' : 'Card'"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="addOther()">
+                    + Add Other
+                </button>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-3">
+            <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+                <span>Items <strong class="text-body" x-text="count"></strong></span>
+                <span>Total Cost <strong class="text-body" x-text="'$' + totalCost.toFixed(2)"></strong></span>
+                <span>Total Market <strong class="text-body" x-text="'$' + totalMarket.toFixed(2)"></strong></span>
+                <button type="submit" class="btn btn-success btn-sm ms-auto">Save Items</button>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<script src="/static/js/inventory-form.js"></script>
+
+</div>
+</body>
+</html>

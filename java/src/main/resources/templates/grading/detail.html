@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Grading</a>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1" th:text="${submission.submissionName}"></h4>
+        <small class="text-muted">
+            <span th:if="${submission.sendDate != null}" th:text="'Sent ' + ${#temporals.format(submission.sendDate, 'MMM d, yyyy')}"></span>
+            <span th:if="${submission.returnDate != null}" th:text="' · Returned ' + ${#temporals.format(submission.returnDate, 'MMM d, yyyy')}"></span>
+        </small>
+    </div>
+    <div class="d-flex gap-2 flex-shrink-0">
+        <a th:href="'/grading/' + ${submission.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+        <form method="POST" th:action="'/grading/' + ${submission.id} + '/delete'" class="d-inline"
+              onsubmit="return confirm('Delete this submission? Attached items will return to inventory.')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div th:if="${submission.notes != null and !submission.notes.isEmpty()}" class="alert alert-light border mb-3 py-2 px-3 small text-muted" th:text="${submission.notes}"></div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col"><div class="text-muted small text-uppercase">Item Total</div><div class="fw-semibold" th:text="${submission.items != null ? submission.items.size() : 0}"></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Sub. Cost</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.submissionCost, 1, 2)}"></div></div>
+            <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Upcharges</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}"></div></div>
+            <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Grand Total</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}"></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Company</div><div><span class="badge bg-secondary" th:text="${submission.company}"></span></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Status</div>
+                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status}"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:if="${submission.items != null and !submission.items.isEmpty()}">
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Items</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Upcharge</th><th class="text-end text-nowrap ps-4">Grand Total</th><th class="text-center text-nowrap ps-4">Grade</th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${submission.items}">
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                        <div>
+                            <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
+                <td class="text-center align-middle ps-4">
+                    <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                    <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<p th:if="${submission.items == null or submission.items.isEmpty()}" class="text-muted small">No items attached.</p>
+
+<div th:if="${submission.status == 'PREPPING' and submission.items != null and !submission.items.isEmpty()}" class="d-flex justify-content-end">
+    <form method="POST" th:action="'/grading/' + ${submission.id} + '/advance'">
+        <input type="hidden" name="new_status" value="IN_TRANSIT">
+        <button type="submit" class="btn btn-secondary btn-sm">Mark Sent</button>
+    </form>
+</div>
+
+</div>
+</body>
+</html>

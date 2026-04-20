@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a th:href="'/grading/' + ${submission.id}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; <span th:text="${submission.submissionName}"></span></a>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1">Edit Submission</h4>
+        <small class="text-muted" th:text="${submission.submissionName} + ' · ' + ${submission.company}"></small>
+    </div>
+    <span class="badge flex-shrink-0" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status}"></span>
+</div>
+
+<form method="POST" th:action="'/grading/' + ${submission.id}">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Submission Details</h6>
+            <div class="row g-2">
+                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Grading Company</label>
+                    <select name="company" class="form-select form-select-sm" required>
+                        <option value="PSA" th:selected="${submission.company == 'PSA'}">PSA</option>
+                        <option value="BGS" th:selected="${submission.company == 'BGS'}">BGS</option>
+                        <option value="CGC" th:selected="${submission.company == 'CGC'}">CGC</option>
+                        <option value="TAG" th:selected="${submission.company == 'TAG'}">TAG</option>
+                    </select>
+                </div>
+                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Submission Method</label><input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular" th:value="${submission.submissionMethod}"></div>
+                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Total Cost ($)</label><input name="submission_cost" type="number" step="0.01" min="0" th:value="${submission.submissionCost}" class="form-control form-control-sm"></div>
+            </div>
+            <div class="mt-2"><label class="form-label small text-muted mb-1">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" th:text="${submission.notes}"></textarea></div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(rawItems) and #lists.isEmpty(gradedItems)}" class="card mb-3">
+        <div class="card-body text-muted">No items in your inventory yet. <a href="/lots/new">Add a lot</a> and mark cards as tracked.</div>
+    </div>
+
+    <div th:if="${!#lists.isEmpty(rawItems)}" class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Raw Cards</span>
+        <table class="table table-hover bg-white mb-0">
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${rawItems}">
+                <td><div class="d-flex align-items-center gap-2">
+                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                    <div>
+                        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                    </div>
+                </div></td>
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:if="${!#lists.isEmpty(gradedItems)}" class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Previously Graded</span>
+        <table class="table table-hover bg-white mb-0">
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Grade</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${gradedItems}">
+                <td><div class="d-flex align-items-center gap-2">
+                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                    <div>
+                        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                    </div>
+                </div></td>
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <span th:if="${item.gradedDetails != null}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                    <span th:unless="${item.gradedDetails != null}">&mdash;</span>
+                </td>
+                <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-end"><button type="submit" class="btn btn-success">Save</button></div>
+</form>
+
+</div>
+</body>
+</html>

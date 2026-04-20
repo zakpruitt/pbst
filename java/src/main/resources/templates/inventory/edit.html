@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a th:href="'/inventory?purpose=' + ${item.purpose}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Inventory</a>
+<h4 class="mb-4">Edit Item</h4>
+
+<form method="POST" th:action="'/inventory/' + ${item.id}">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Item</h6>
+
+            <div class="row g-2">
+                <div class="col-sm-8">
+                    <label class="form-label small text-muted mb-1">Name</label>
+                    <th:block th:if="${item.pokemonCard != null}">
+                        <input class="form-control form-control-sm" th:value="${item.pokemonCard.name}" disabled>
+                        <div class="form-text small" th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+                    </th:block>
+                    <th:block th:if="${item.pokemonCard == null and item.sealedProduct != null}">
+                        <input class="form-control form-control-sm" th:value="${item.sealedProduct.name}" disabled>
+                        <div class="form-text small" th:text="${item.sealedProduct.setName}"></div>
+                    </th:block>
+                    <th:block th:if="${item.pokemonCard == null and item.sealedProduct == null}">
+                        <input name="name" class="form-control form-control-sm" th:value="${item.manualNameOverride}" required>
+                    </th:block>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Type</label>
+                    <input class="form-control form-control-sm" disabled
+                           th:value="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : item.itemType))}">
+                </div>
+            </div>
+
+            <div th:if="${item.itemType == 'GRADED_CARD'}" class="row g-2 mt-0">
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Grading Company</label>
+                    <select name="gradingCompany" class="form-select form-select-sm">
+                        <option value="PSA" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'PSA'}">PSA</option>
+                        <option value="BGS" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'BGS'}">BGS</option>
+                        <option value="CGC" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'CGC'}">CGC</option>
+                        <option value="TAG" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'TAG'}">TAG</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Grade</label>
+                    <input name="grade" class="form-control form-control-sm"
+                           th:value="${item.gradedDetails != null ? item.gradedDetails.grade : ''}">
+                </div>
+            </div>
+
+            <div class="row g-2 mt-0">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Cost Basis ($)</label>
+                    <input name="costBasis" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           th:value="${#numbers.formatDecimal(item.costBasis, 1, 2)}">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Market Value ($)</label>
+                    <input name="marketValue" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                           th:value="${item.marketValueAtPurchase != 0 ? #numbers.formatDecimal(item.marketValueAtPurchase, 1, 2) : ''}">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Acquisition Date</label>
+                    <input name="acquisitionDate" type="date" class="form-control form-control-sm"
+                           th:value="${item.acquisitionDate != null ? item.acquisitionDate : ''}">
+                </div>
+            </div>
+
+            <div class="row g-2 mt-0">
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Purpose</label>
+                    <select name="purpose" class="form-select form-select-sm">
+                        <option value="INVENTORY" th:selected="${item.purpose == 'INVENTORY'}">Inventory</option>
+                        <option value="PERSONAL_COLLECTION" th:selected="${item.purpose == 'PERSONAL_COLLECTION'}">Personal Collection</option>
+                        <option th:if="${item.purpose == 'IN_GRADING'}" value="IN_GRADING" selected>In Grading</option>
+                        <option th:if="${item.purpose == 'SOLD'}" value="SOLD" selected>Sold</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-2">
+                <label class="form-label small text-muted mb-1">Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="2" th:text="${item.notes}"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <button type="submit"
+                th:formaction="'/inventory/' + ${item.id} + '/delete'"
+                formnovalidate
+                class="btn btn-outline-danger btn-sm"
+                onclick="return confirm('Delete this item?')">Delete</button>
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+
+</div>
+</body>
+</html>

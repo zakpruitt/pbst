@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Grading</h4>
+    <a href="/grading/new" class="btn btn-success btn-sm">+ New Submission</a>
+</div>
+
+<div th:if="${#lists.isEmpty(groups)}">
+    <p class="text-muted">No submissions yet. <a href="/grading/new">Create one</a>.</p>
+</div>
+
+<div th:unless="${#lists.isEmpty(groups)}">
+    <div class="card mb-3" x-data="gradingFilter()">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm"><input type="search" class="form-control form-control-sm" placeholder="Filter by name or company..." x-model="query" @input="apply()"></div>
+                <div class="col-sm-auto text-muted small" x-text="summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="grading-list">
+        <div th:each="group : ${groups}" class="grading-month-group mb-4">
+            <span class="month-label month-pill mb-2" th:text="${group.label}"></span>
+            <table class="table table-hover bg-white mt-2 mb-0">
+                <thead class="table-light"><tr><th style="width:100%">Submission</th><th class="text-center text-nowrap ps-4">Items</th><th class="text-end text-nowrap ps-4">Total</th><th class="text-center text-nowrap ps-4">Status</th></tr></thead>
+                <tbody>
+                <tr th:each="s : ${group.items}" class="grading-row"
+                    th:attr="data-name=${s.submissionName},data-company=${s.company}"
+                    th:onclick="'window.location=\'/grading/' + ${s.id} + '\''" style="cursor:pointer">
+                    <td>
+                        <span class="fw-medium" th:text="${s.submissionName}"></span>
+                        <div th:if="${s.sendDate != null}" class="text-muted inv-subtext">
+                            <span th:text="${#temporals.format(s.sendDate, 'MMM d, yyyy')}"></span>
+                            <span> &mdash; </span>
+                            <span th:if="${s.returnDate != null}" th:text="${#temporals.format(s.returnDate, 'MMM d, yyyy')}"></span>
+                            <span th:unless="${s.returnDate != null}">???</span>
+                        </div>
+                    </td>
+                    <td class="text-center align-middle text-nowrap ps-4" th:text="${s.items != null ? s.items.size() : 0}"></td>
+                    <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="${s.grandTotal != null and s.grandTotal != 0 ? '$' + #numbers.formatDecimal(s.grandTotal, 1, 2) : '—'}"></td>
+                    <td class="text-center align-middle text-nowrap ps-4">
+                        <span class="badge" th:classappend="${s.status == 'RETURNED' ? 'bg-success' : (s.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${s.status}"></span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    function gradingFilter() {
+        return {
+            query: "", summary: "",
+            apply() {
+                const q = this.query.trim().toLowerCase();
+                let shown = 0;
+                document.querySelectorAll(".grading-month-group").forEach(group => {
+                    let groupShown = 0;
+                    group.querySelectorAll(".grading-row").forEach(row => {
+                        const name = (row.dataset.name || "").toLowerCase();
+                        const company = (row.dataset.company || "").toLowerCase();
+                        const visible = !q || name.includes(q) || company.includes(q);
+                        row.style.display = visible ? "" : "none";
+                        if (visible) { groupShown++; shown++; }
+                    });
+                    group.style.display = groupShown === 0 ? "none" : "";
+                });
+                this.summary = q ? `${shown} match${shown === 1 ? "" : "es"}` : "";
+            },
+        };
+    }
+    </script>
+</div>
+
+</div>
+</body>
+</html>

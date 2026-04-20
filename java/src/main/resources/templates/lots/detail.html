@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a href="/lots" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Lots</a>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1" th:text="${lot.sellerName}"></h4>
+        <small class="text-muted">
+            <span th:text="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'MMM d, yyyy') : ''}"></span>
+            <span th:if="${lot.description != null and !lot.description.isEmpty()}" th:text="' · ' + ${lot.description}"></span>
+        </small>
+    </div>
+    <div class="d-flex gap-2 flex-shrink-0">
+        <form th:if="${lot.status == 'PENDING'}" method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
+            <input type="hidden" name="action" value="accept">
+            <button type="submit" class="btn btn-success btn-sm">Accept</button>
+        </form>
+        <form th:if="${lot.status == 'PENDING'}" method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
+            <input type="hidden" name="action" value="reject">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+        </form>
+        <a th:href="'/lots/' + ${lot.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
+        <form method="POST" th:action="'/lots/' + ${lot.id} + '/delete'" class="d-inline"
+              onsubmit="return confirm('Delete this lot and all its tracked items? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <div class="text-muted small text-uppercase">Cost</div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">EMV</div>
+                <div class="fw-semibold" th:text="${lot.estimatedMarketValue != 0 ? '$' + #numbers.formatDecimal(lot.estimatedMarketValue, 1, 2) : '—'}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Items</div>
+                <div class="fw-semibold" th:text="${lot.trackedItems != null ? lot.trackedItems.size() : 0}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Status</div>
+                <div><span class="badge" th:classappend="${lot.status == 'ACCEPTED' ? 'bg-success' : (lot.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${lot.status}"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<span class="month-pill section-pill d-inline-block mb-2">Lot Contents</span>
+<p th:if="${#lists.isEmpty(snapshotItems)}" class="text-muted small">No items recorded. <a th:href="'/lots/' + ${lot.id} + '/edit'">Edit lot</a> to add items.</p>
+<table th:unless="${#lists.isEmpty(snapshotItems)}" class="table table-hover bg-white mb-4">
+    <thead class="table-light">
+    <tr>
+        <th style="width:100%">Item</th>
+        <th class="text-center text-nowrap ps-4">Type</th>
+        <th class="text-end text-nowrap ps-4">Qty</th>
+        <th class="text-end text-nowrap ps-4">Spent</th>
+        <th class="text-center text-nowrap ps-4">Tracked</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${snapshotItems}">
+        <td>
+            <div class="d-flex align-items-center gap-2">
+                <img th:if="${item.imageURL != null and !item.imageURL.isEmpty()}" th:src="${item.imageURL}" class="card-thumb" th:attr="data-card-img=${item.imageURL}">
+                <div>
+                    <span class="fw-medium" th:text="${item.name}"></span>
+                    <div th:if="${item.setName != null and !item.setName.isEmpty()}" class="text-muted inv-subtext">
+                        <span th:text="${item.setName}"></span>
+                        <span th:if="${item.cardNumber != null and !item.cardNumber.isEmpty()}" th:text="' · #' + ${item.cardNumber}"></span>
+                    </div>
+                </div>
+            </div>
+        </td>
+        <td class="text-center align-middle text-nowrap ps-4"><small class="text-muted" th:text="${item.itemType}"></small></td>
+        <td class="text-end align-middle text-nowrap ps-4" th:text="${item.qty}"></td>
+        <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.offered, 1, 2)}"></td>
+        <td class="text-center align-middle text-nowrap ps-4">
+            <span th:if="${item.tracked}" class="badge bg-success">TRACKED</span>
+            <span th:unless="${item.tracked}" class="badge bg-secondary">NOT TRACKED</span>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div th:if="${lot.trackedItems != null and !lot.trackedItems.isEmpty()}">
+    <span class="month-pill section-pill d-inline-block mb-2">Tracked Items</span>
+    <table class="table table-hover bg-white">
+        <thead class="table-light">
+        <tr>
+            <th style="width:100%">Item</th>
+            <th class="text-end text-nowrap ps-4">Cost Basis</th>
+            <th class="text-end text-nowrap ps-4">Market</th>
+            <th class="text-center text-nowrap ps-4">Purpose</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ti : ${lot.trackedItems}">
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <img th:if="${ti.pokemonCard != null and ti.pokemonCard.imageUrl != null and !ti.pokemonCard.imageUrl.isEmpty()}"
+                         th:src="${ti.pokemonCard.imageUrl}" class="card-thumb" th:attr="data-card-img=${ti.pokemonCard.imageUrl}">
+                    <div>
+                        <span th:if="${ti.manualNameOverride != null and !ti.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${ti.manualNameOverride}"></span>
+                        <span th:if="${(ti.manualNameOverride == null or ti.manualNameOverride.isEmpty()) and ti.pokemonCard != null}" class="fw-medium" th:text="${ti.pokemonCard.name}"></span>
+                        <span th:if="${(ti.manualNameOverride == null or ti.manualNameOverride.isEmpty()) and ti.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
+                        <div th:if="${ti.pokemonCard != null}" class="text-muted inv-subtext" th:text="${ti.pokemonCard.setName} + ' · #' + ${ti.pokemonCard.cardNumber}"></div>
+                    </div>
+                </div>
+            </td>
+            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
+            <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
+            <td class="text-center align-middle text-nowrap ps-4"><span class="badge bg-secondary" th:text="${ti.purpose}"></span></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Sales</a>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="flex-grow-1 me-3 min-w-0">
+        <h4 class="mb-1" th:text="${sale.title}"></h4>
+        <small class="text-muted">
+            <span th:text="${#temporals.format(sale.saleDate, 'MMM d, yyyy')}"></span>
+            <span th:if="${sale.buyerUsername != null and !sale.buyerUsername.isEmpty()}" th:text="' · ' + ${sale.buyerUsername}"></span>
+        </small>
+    </div>
+    <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
+        <div class="d-flex gap-2">
+            <a th:if="${sale.status == 'STAGED' or sale.status == 'CONFIRMED'}" th:href="'/sales/' + ${sale.id} + '/confirm'" class="btn btn-outline-secondary btn-sm">Edit</a>
+            <form th:if="${sale.status != 'IGNORED' or sale.attributedTo != 'vince'}" method="POST" th:action="'/sales/' + ${sale.id} + '/vince'" class="d-inline">
+                <input th:if="${sale.status != 'STAGED'}" type="hidden" name="from" value="detail">
+                <button type="submit" class="btn btn-outline-info btn-sm" th:text="${sale.status == 'STAGED' ? 'Vince' : 'Send to Vince'}"></button>
+            </form>
+            <form th:if="${sale.status == 'STAGED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/ignore'" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+            </form>
+            <form th:if="${sale.status == 'CONFIRMED' or sale.status == 'IGNORED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/unstage'" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm" th:text="${sale.status == 'CONFIRMED' ? 'Unstage' : 'Restore'}"></button>
+            </form>
+            <form method="POST" th:action="'/sales/' + ${sale.id} + '/delete'" class="d-inline"
+                  onsubmit="return confirm('Delete this sale? Attached items will return to inventory.')">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col"><div class="text-muted small text-uppercase">Sold For</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(sale.grossAmount, 1, 2)}"></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Fees</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(sale.ebayFees, 1, 2)}"></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Earnings</div><div class="fw-semibold text-success" th:text="'$' + ${#numbers.formatDecimal(sale.netAmount, 1, 2)}"></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Status</div>
+                <div>
+                    <span th:if="${sale.attributedTo == 'vince'}" class="badge bg-info text-dark">Vince</span>
+                    <span th:unless="${sale.attributedTo == 'vince'}" class="badge"
+                          th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                          th:text="${sale.status}"></span>
+                </div>
+            </div>
+            <div class="col"><div class="text-muted small text-uppercase">Method of Sale</div>
+                <div><span class="badge" th:classappend="${sale.origin == 'EBAY' ? 'bg-primary' : (sale.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}" th:text="${sale.origin}"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:if="${sale.notes != null and !sale.notes.isEmpty()}" class="alert alert-light border mb-3 py-2 px-3 small text-muted" th:text="${sale.notes}"></div>
+
+<div class="mb-4">
+    <span class="month-pill section-pill d-inline-block mb-2">Attached Items</span>
+    <p th:if="${sale.items == null or sale.items.isEmpty()}" class="text-muted small mb-0">
+        <span th:if="${sale.status == 'CONFIRMED'}">No items attached. <a th:href="'/sales/' + ${sale.id} + '/confirm'">Attach from inventory</a>.</span>
+        <span th:if="${sale.status == 'STAGED'}">Confirm this sale to attach inventory items.</span>
+        <span th:if="${sale.status != 'CONFIRMED' and sale.status != 'STAGED'}">No items attached.</span>
+    </p>
+    <table th:if="${sale.items != null and !sale.items.isEmpty()}" class="table table-hover bg-white mb-0">
+        <thead class="table-light">
+        <tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4">Grade</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${sale.items}">
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
+                         th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                    <div>
+                        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}" class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}" class="text-muted fst-italic">Unnamed</span>
+                    </div>
+                </div>
+            </td>
+            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+            <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
+            <td class="text-center align-middle text-nowrap ps-4">
+                <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</div>
+</body>
+</html>

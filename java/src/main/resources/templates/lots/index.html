@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">Lots</h4>
+  <a href="/lots/new" class="btn btn-success btn-sm">+ New Lot</a>
+</div>
+
+<div th:if="${#lists.isEmpty(lots)}">
+  <p class="text-muted">No lots yet. <a href="/lots/new">Add one</a>.</p>
+</div>
+<table th:unless="${#lists.isEmpty(lots)}" class="table table-hover bg-white">
+  <thead class="table-light">
+    <tr>
+      <th style="width:100%">Seller</th>
+      <th class="text-center text-nowrap ps-4">Items</th>
+      <th class="text-end text-nowrap ps-4">Cost</th>
+      <th class="text-end text-nowrap ps-4">EMV</th>
+      <th class="text-center text-nowrap ps-4">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="lot : ${lots}" style="cursor:pointer" th:onclick="'window.location=\'/lots/' + ${lot.id} + '\''">
+      <td class="align-middle">
+        <span class="fw-medium" th:text="${lot.sellerName}"></span>
+        <div class="text-muted inv-subtext" th:text="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'MMM d, yyyy') : ''}"></div>
+      </td>
+      <td class="text-center align-middle text-nowrap ps-4" th:text="${lot.trackedItems != null ? lot.trackedItems.size() : 0}"></td>
+      <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></td>
+      <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${lot.estimatedMarketValue != 0 ? '$' + #numbers.formatDecimal(lot.estimatedMarketValue, 1, 2) : '—'}"></td>
+      <td class="text-center align-middle text-nowrap ps-4">
+        <span class="badge" th:classappend="${lot.status == 'ACCEPTED' ? 'bg-success' : (lot.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${lot.status}"></span>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>

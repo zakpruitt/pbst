@@ -15,7 +15,16 @@
       "WebSearch",
       "WebFetch(domain:developer.ebay.com)",
       "Bash(git diff:*)",
-      "Bash(echo \"---EXIT:$?---\")"
+      "Bash(echo \"---EXIT:$?---\")",
+      "Bash(head -100 /c/Users/pruit/Desktop/dev/pbst/internal/services/*.go)",
+      "Bash(head -50 /c/Users/pruit/Desktop/dev/pbst/internal/repository/*.go)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(./mvnw compile *)",
+      "Bash(mvn compile *)",
+      "Bash(mkdir -p com/collectingwithzak)",
+      "Bash(cp -r com/zakpruitt/pbst/* com/collectingwithzak/)",
+      "Bash(mv PbstApplication.java CollectingWithZakApplication.java)",
+      "Bash(sed -i 's/PbstApplication/CollectingWithZakApplication/g' CollectingWithZakApplication.java)"
     ]
   }
 }

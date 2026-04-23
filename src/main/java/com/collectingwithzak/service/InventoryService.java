@@ -4,10 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.collectingwithzak.dto.request.UpdateInventoryRequest;
+import com.collectingwithzak.dto.response.InventorySplitResponse;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.GradedDetails;
-import com.collectingwithzak.entity.Sale;
 import com.collectingwithzak.entity.TrackedItem;
+import com.collectingwithzak.entity.enums.ItemType;
+import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.exception.ResourceNotFoundException;
+import com.collectingwithzak.mapper.TrackedItemMapper;
 import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final TrackedItemRepository itemRepo;
+    private final TrackedItemMapper trackedItemMapper;
     private final ObjectMapper objectMapper;
 
     public void createItems(CreateInventoryRequest request) {
@@ -35,13 +38,13 @@ public class InventoryService {
             throw new IllegalArgumentException("Invalid items snapshot JSON", e);
         }
 
-        String purpose = request.getPurpose() != null ? request.getPurpose() : "INVENTORY";
+        String purpose = request.getPurpose() != null ? request.getPurpose() : Purpose.INVENTORY.name();
 
         for (Map<String, Object> row : rows) {
             TrackedItem item = new TrackedItem();
             item.setPurpose(purpose);
             item.setAcquisitionDate(request.getAcquisitionDate());
-            item.setItemType((String) row.getOrDefault("item_type", "RAW_CARD"));
+            item.setItemType((String) row.getOrDefault("item_type", ItemType.RAW_CARD.name()));
 
             String name = (String) row.get("name");
             if (name != null && !name.isBlank()) {
@@ -59,36 +62,40 @@ public class InventoryService {
     }
 
     @Transactional(readOnly = true)
-    public TrackedItem getById(Long id) {
-        return itemRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", id));
+    public TrackedItemResponse getById(Long id) {
+        TrackedItem item = findById(id);
+        return trackedItemMapper.toResponse(item);
     }
 
     @Transactional(readOnly = true)
-    public List<TrackedItem> getByPurpose(String purpose) {
-        return itemRepo.findByPurpose(purpose);
+    public String getItemPurpose(Long id) {
+        return findById(id).getPurpose();
     }
 
     @Transactional(readOnly = true)
-    public List<TrackedItem> getInventoryForSaleConfirm(Sale sale) {
-        Set<Long> attachedIds = sale.getItems().stream()
-                .map(TrackedItem::getId)
-                .collect(Collectors.toSet());
+    public InventorySplitResponse getByPurpose(String purpose) {
+        List<TrackedItem> items = itemRepo.findByPurpose(purpose);
+        List<TrackedItemResponse> all = trackedItemMapper.toResponseList(items);
 
-        List<TrackedItem> available = itemRepo.findAvailableInventory();
-        List<TrackedItem> result = new ArrayList<>(available);
+        List<TrackedItemResponse> raw = new ArrayList<>();
+        List<TrackedItemResponse> graded = new ArrayList<>();
+        List<TrackedItemResponse> sealed = new ArrayList<>();
+        List<TrackedItemResponse> other = new ArrayList<>();
 
-        for (TrackedItem attached : sale.getItems()) {
-            if (!attachedIds.isEmpty() && !result.contains(attached)) {
-                result.add(attached);
+        for (TrackedItemResponse item : all) {
+            switch (item.getItemType()) {
+                case "SEALED_PRODUCT" -> sealed.add(item);
+                case "GRADED_CARD" -> graded.add(item);
+                case "OTHER" -> other.add(item);
+                default -> raw.add(item);
             }
         }
 
-        return result;
+        return new InventorySplitResponse(all, raw, graded, sealed, other);
     }
 
-    public TrackedItem update(Long id, UpdateInventoryRequest request) {
-        TrackedItem item = getById(id);
+    public String update(Long id, UpdateInventoryRequest request) {
+        TrackedItem item = findById(id);
 
         if (request.getName() != null && !request.getName().isBlank()) {
             item.setManualNameOverride(request.getName());
@@ -103,7 +110,7 @@ public class InventoryService {
             item.setPurpose(request.getPurpose());
         }
 
-        if ("GRADED_CARD".equals(item.getItemType())) {
+        if (ItemType.GRADED_CARD.name().equals(item.getItemType())) {
             if (item.getGradedDetails() == null) {
                 item.setGradedDetails(new GradedDetails());
             }
@@ -111,10 +118,16 @@ public class InventoryService {
             item.getGradedDetails().setGrade(request.getGrade());
         }
 
-        return itemRepo.save(item);
+        itemRepo.save(item);
+        return item.getPurpose();
     }
 
     public void delete(Long id) {
         itemRepo.deleteById(id);
+    }
+
+    private TrackedItem findById(Long id) {
+        return itemRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", id));
     }
 }

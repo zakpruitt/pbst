@@ -54,7 +54,7 @@ public class PokeWalletClient {
             all.addAll(body.getResults());
 
             if (body.getPagination() != null) {
-                totalPages = body.getPagination().getTotal_pages();
+                totalPages = body.getPagination().getTotalPages();
             }
 
             page++;

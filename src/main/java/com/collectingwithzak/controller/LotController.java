@@ -3,14 +3,12 @@ package com.collectingwithzak.controller;
 import com.collectingwithzak.dto.SnapshotItem;
 import com.collectingwithzak.dto.request.CreateLotRequest;
 import com.collectingwithzak.dto.request.UpdateLotRequest;
-import com.collectingwithzak.entity.LotPurchase;
+import com.collectingwithzak.dto.response.LotResponse;
 import com.collectingwithzak.service.LotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/lots")
@@ -60,29 +58,25 @@ public class LotController {
 
     @PostMapping
     public String create(CreateLotRequest request) {
-        LotPurchase lot = lotService.create(request);
-        return "redirect:/lots/" + lot.getId();
+        Long id = lotService.create(request);
+        return "redirect:/lots/" + id;
     }
 
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        LotPurchase lot = lotService.getWithItems(id);
-        List<SnapshotItem> snapshot = lot.parseSnapshot();
-
+        LotResponse lot = lotService.getById(id);
         model.addAttribute("page", "lots");
         model.addAttribute("lot", lot);
-        model.addAttribute("snapshotItems", snapshot);
+        model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/detail";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        LotPurchase lot = lotService.getById(id);
-        List<SnapshotItem> items = lot.parseSnapshot();
-
+        LotResponse lot = lotService.getById(id);
         model.addAttribute("page", "lots");
         model.addAttribute("lot", lot);
-        model.addAttribute("snapshotItems", items);
+        model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";
     }
 

@@ -1,8 +1,8 @@
 package com.collectingwithzak.controller;
 
 import com.collectingwithzak.dto.request.CreateExpenseRequest;
+import com.collectingwithzak.dto.response.ExpenseResponse;
 import com.collectingwithzak.dto.response.MonthGroup;
-import com.collectingwithzak.entity.Expense;
 import com.collectingwithzak.service.ExpenseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -23,11 +23,13 @@ public class ExpenseController {
 
     @GetMapping
     public String index(Model model) {
-        List<Expense> expenses = expenseService.getAll();
-        double total = expenses.stream().mapToDouble(Expense::getCost).sum();
+        List<ExpenseResponse> expenses = expenseService.getAll();
+        List<MonthGroup<ExpenseResponse>> groups = MonthGroup.groupByMonth(expenses, ExpenseResponse::getExpenseDate);
+        MonthGroup.computeSubtotals(groups, ExpenseResponse::getCost);
+        double total = expenses.stream().mapToDouble(ExpenseResponse::getCost).sum();
 
         model.addAttribute("page", "expenses");
-        model.addAttribute("groups", MonthGroup.groupByMonth(expenses, Expense::getExpenseDate));
+        model.addAttribute("groups", groups);
         model.addAttribute("total", total);
         model.addAttribute("count", expenses.size());
         return "expenses/index";

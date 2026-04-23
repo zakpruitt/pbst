@@ -1,6 +1,9 @@
 package com.collectingwithzak.service;
 
 import com.collectingwithzak.dto.response.*;
+import com.collectingwithzak.entity.enums.Purpose;
+import com.collectingwithzak.mapper.LotMapper;
+import com.collectingwithzak.mapper.SaleMapper;
 import com.collectingwithzak.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -27,23 +30,27 @@ public class DashboardService {
     private final SaleRepository saleRepo;
     private final TrackedItemRepository itemRepo;
     private final GradingSubmissionRepository gradingRepo;
+    private final SaleMapper saleMapper;
+    private final LotMapper lotMapper;
+    private final VincePaymentService vincePaymentService;
 
     public DashboardData getDashboardData() {
         double totalSpent = lotRepo.getTotalCostNonRejected();
-        double totalGross = saleRepo.getTotalGross();
-        double totalNet = saleRepo.getTotalNet();
-        double totalFees = saleRepo.getTotalFees();
-        long salesCount = saleRepo.countByStatus("CONFIRMED");
-        long gradingCount = itemRepo.countByPurpose("IN_GRADING");
-        long inventoryCount = itemRepo.countByPurpose("INVENTORY");
+        double[] confirmed = saleRepo.getConfirmedTotals();
+        long salesCount = (long) confirmed[0];
+        double totalGross = confirmed[1];
+        double totalNet = confirmed[2];
+        double totalFees = confirmed[3];
+        long gradingCount = itemRepo.countByPurpose(Purpose.IN_GRADING.name());
+        long inventoryCount = itemRepo.countByPurpose(Purpose.INVENTORY.name());
         double avgSale = salesCount > 0 ? totalNet / salesCount : 0;
-        double margin = totalGross > 0 ? (totalNet / totalGross) * 100 : 0;
+        double margin = totalNet - totalSpent;
 
         double[] invTotals = itemRepo.getInventoryTotals();
 
         RangeTotals totals7 = saleRepo.getTotalsSince(LocalDate.now().minusDays(7));
         RangeTotals totals30 = saleRepo.getTotalsSince(LocalDate.now().minusDays(30));
-        RangeTotals vinceTotals = saleRepo.getVinceTotals();
+        VinceLedger vinceLedger = vincePaymentService.getLedger();
 
         List<MonthlySpend> spendData = lotRepo.getMonthlySpend(TIMELINE_MONTHS);
         List<MonthlyRevenue> revenueData = saleRepo.getMonthlyRevenue(TIMELINE_MONTHS);
@@ -75,10 +82,10 @@ public class DashboardService {
                 .itemTypeCounts(itemRepo.countByItemType())
                 .gradingStatuses(gradingRepo.countByStatus())
                 .lotStatuses(lotRepo.countByStatus())
-                .topSales(saleRepo.findTopByNet(PageRequest.of(0, 5)))
-                .recentSales(saleRepo.findRecent(PageRequest.of(0, 5)))
-                .recentLots(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, 5)))
-                .vinceTotals(vinceTotals)
+                .topSales(saleMapper.toResponseList(saleRepo.findTopByNet(PageRequest.of(0, 5))))
+                .recentSales(saleMapper.toResponseList(saleRepo.findRecent(PageRequest.of(0, 5))))
+                .recentLots(lotMapper.toResponseList(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, 5))))
+                .vinceLedger(vinceLedger)
                 .build();
     }
 

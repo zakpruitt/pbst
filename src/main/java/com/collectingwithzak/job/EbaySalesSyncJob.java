@@ -28,7 +28,7 @@ public class EbaySalesSyncJob {
         }
         try {
             ZonedDateTime since = ZonedDateTime.now(ZoneOffset.UTC).minusDays(SYNC_DAYS);
-            saleService.syncFromEbay(ebayClient.fetchOrders(since), ebayClient.fetchTransactions(since));
+            saleService.syncFromEbay(ebayClient.fetchOrderData(since));
         } catch (Exception e) {
             log.error("eBay sync failed", e);
         }

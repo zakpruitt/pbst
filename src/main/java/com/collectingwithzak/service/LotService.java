@@ -3,9 +3,13 @@ package com.collectingwithzak.service;
 import com.collectingwithzak.dto.SnapshotItem;
 import com.collectingwithzak.dto.request.CreateLotRequest;
 import com.collectingwithzak.dto.request.UpdateLotRequest;
+import com.collectingwithzak.dto.response.LotResponse;
 import com.collectingwithzak.entity.GradedDetails;
 import com.collectingwithzak.entity.LotPurchase;
 import com.collectingwithzak.entity.TrackedItem;
+import com.collectingwithzak.entity.enums.ItemType;
+import com.collectingwithzak.entity.enums.LotStatus;
+import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.repository.LotPurchaseRepository;
@@ -25,37 +29,30 @@ public class LotService {
     private final TrackedItemRepository itemRepo;
     private final LotMapper lotMapper;
 
-    public LotPurchase create(CreateLotRequest request) {
+    public Long create(CreateLotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
-        return lotRepo.save(lot);
+        return lotRepo.save(lot).getId();
     }
 
     @Transactional(readOnly = true)
-    public LotPurchase getById(Long id) {
-        return lotRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lot", id));
+    public LotResponse getById(Long id) {
+        LotPurchase lot = findById(id);
+        return lotMapper.toResponse(lot);
     }
 
     @Transactional(readOnly = true)
-    public LotPurchase getWithItems(Long id) {
-        LotPurchase lot = getById(id);
-        lot.getTrackedItems().size();
-        return lot;
+    public List<LotResponse> getAll() {
+        return lotMapper.toResponseList(lotRepo.findAllWithItemsOrderByPurchaseDateDesc());
     }
 
-    @Transactional(readOnly = true)
-    public List<LotPurchase> getAll() {
-        return lotRepo.findAllByOrderByPurchaseDateDesc();
-    }
-
-    public LotPurchase update(Long id, UpdateLotRequest request) {
-        LotPurchase lot = getById(id);
+    public void update(Long id, UpdateLotRequest request) {
+        LotPurchase lot = findById(id);
         lotMapper.updateEntity(request, lot);
-        return lotRepo.save(lot);
+        lotRepo.save(lot);
     }
 
     public void accept(Long id) {
-        LotPurchase lot = getById(id);
+        LotPurchase lot = findById(id);
         List<SnapshotItem> snapshot = lot.parseSnapshot();
 
         for (SnapshotItem item : snapshot) {
@@ -63,11 +60,11 @@ public class LotService {
             itemRepo.save(snapshotToTrackedItem(lot, item));
         }
 
-        lotRepo.updateStatus(id, "ACCEPTED");
+        lotRepo.updateStatus(id, LotStatus.ACCEPTED.name());
     }
 
     public void reject(Long id) {
-        lotRepo.updateStatus(id, "REJECTED");
+        lotRepo.updateStatus(id, LotStatus.REJECTED.name());
     }
 
     public void delete(Long id) {
@@ -75,30 +72,36 @@ public class LotService {
         lotRepo.deleteById(id);
     }
 
+    private LotPurchase findById(Long id) {
+        return lotRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lot", id));
+    }
+
     private TrackedItem snapshotToTrackedItem(LotPurchase lot, SnapshotItem item) {
         int qty = item.getQty() <= 0 ? 1 : item.getQty();
         String purpose = item.getPurpose();
         if ((purpose == null || purpose.isBlank()) && item.isTracked()) {
-            purpose = "INVENTORY";
+            purpose = Purpose.INVENTORY.name();
         }
         String itemType = item.getItemType();
         if (itemType == null || itemType.isBlank()) {
-            itemType = "RAW_CARD";
+            itemType = ItemType.RAW_CARD.name();
         }
 
-        TrackedItem ti = new TrackedItem();
-        ti.setLotPurchase(lot);
-        ti.setAcquisitionDate(lot.getPurchaseDate());
-        ti.setCostBasis(item.getOffered() / qty);
-        ti.setMarketValueAtPurchase(item.getMarketPrice());
-        ti.setPurpose(purpose);
-        ti.setItemType(itemType);
-        ti.setManualNameOverride(item.getName());
+        TrackedItem trackedItem = new TrackedItem();
+        trackedItem.setLotPurchase(lot);
+        trackedItem.setAcquisitionDate(lot.getPurchaseDate());
+        trackedItem.setCostBasis(item.getOffered() / qty);
+        trackedItem.setMarketValueAtPurchase(item.getMarketPrice());
+        trackedItem.setPurpose(purpose);
+        trackedItem.setItemType(itemType);
+        trackedItem.setManualNameOverride(item.getName());
 
-        if ("GRADED_CARD".equals(item.getItemType()) && item.getGradingCompany() != null && !item.getGradingCompany().isBlank()) {
-            ti.setGradedDetails(new GradedDetails(item.getGradingCompany(), item.getGrade(), 0));
+        if (ItemType.GRADED_CARD.name().equals(item.getItemType())
+                && item.getGradingCompany() != null && !item.getGradingCompany().isBlank()) {
+            trackedItem.setGradedDetails(new GradedDetails(item.getGradingCompany(), item.getGrade(), 0));
         }
 
-        return ti;
+        return trackedItem;
     }
 }

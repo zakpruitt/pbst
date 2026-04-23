@@ -3,16 +3,15 @@ package com.collectingwithzak.controller;
 import com.collectingwithzak.dto.InventoryRowPreset;
 import com.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.collectingwithzak.dto.request.UpdateInventoryRequest;
-import com.collectingwithzak.entity.TrackedItem;
+import com.collectingwithzak.dto.response.InventorySplitResponse;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
+import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.service.InventoryService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Controller
 @RequestMapping("/inventory")
@@ -24,28 +23,14 @@ public class InventoryController {
     @GetMapping
     public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
                         HttpServletRequest request, Model model) {
-        List<TrackedItem> items = inventoryService.getByPurpose(purpose);
-
-        List<TrackedItem> raw = new ArrayList<>();
-        List<TrackedItem> graded = new ArrayList<>();
-        List<TrackedItem> sealed = new ArrayList<>();
-        List<TrackedItem> other = new ArrayList<>();
-
-        for (TrackedItem item : items) {
-            switch (item.getItemType()) {
-                case "SEALED_PRODUCT" -> sealed.add(item);
-                case "GRADED_CARD" -> graded.add(item);
-                case "OTHER" -> other.add(item);
-                default -> raw.add(item);
-            }
-        }
+        InventorySplitResponse split = inventoryService.getByPurpose(purpose);
 
         model.addAttribute("page", "inventory");
-        model.addAttribute("items", items);
-        model.addAttribute("rawItems", raw);
-        model.addAttribute("gradedItems", graded);
-        model.addAttribute("sealedItems", sealed);
-        model.addAttribute("otherItems", other);
+        model.addAttribute("items", split.getAllItems());
+        model.addAttribute("rawItems", split.getRawItems());
+        model.addAttribute("gradedItems", split.getGradedItems());
+        model.addAttribute("sealedItems", split.getSealedItems());
+        model.addAttribute("otherItems", split.getOtherItems());
         model.addAttribute("purpose", purpose);
 
         if ("true".equals(request.getHeader("HX-Request"))) {
@@ -80,7 +65,7 @@ public class InventoryController {
     @PostMapping
     public String create(CreateInventoryRequest request) {
         if (request.getPurpose() == null || request.getPurpose().isBlank()) {
-            request.setPurpose("INVENTORY");
+            request.setPurpose(Purpose.INVENTORY.name());
         }
         inventoryService.createItems(request);
         return "redirect:/inventory?purpose=" + request.getPurpose();
@@ -88,7 +73,7 @@ public class InventoryController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        TrackedItem item = inventoryService.getById(id);
+        TrackedItemResponse item = inventoryService.getById(id);
         model.addAttribute("page", "inventory");
         model.addAttribute("item", item);
         return "inventory/edit";
@@ -96,14 +81,13 @@ public class InventoryController {
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, UpdateInventoryRequest request) {
-        TrackedItem item = inventoryService.update(id, request);
-        return "redirect:/inventory?purpose=" + item.getPurpose();
+        String purpose = inventoryService.update(id, request);
+        return "redirect:/inventory?purpose=" + purpose;
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
-        TrackedItem item = inventoryService.getById(id);
-        String purpose = item.getPurpose();
+        String purpose = inventoryService.getItemPurpose(id);
         inventoryService.delete(id);
         return "redirect:/inventory?purpose=" + purpose;
     }

@@ -1,22 +1,30 @@
 package com.collectingwithzak.service;
 
-import com.collectingwithzak.client.EbayClient;
 import com.collectingwithzak.dto.ebay.EbayOrderData;
 import com.collectingwithzak.dto.request.CreateSaleRequest;
+import com.collectingwithzak.dto.response.SaleConfirmFormData;
+import com.collectingwithzak.dto.response.SaleResponse;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.Sale;
+import com.collectingwithzak.entity.TrackedItem;
+import com.collectingwithzak.entity.enums.ItemType;
+import com.collectingwithzak.entity.enums.Origin;
+import com.collectingwithzak.entity.enums.SaleStatus;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.SaleMapper;
+import com.collectingwithzak.mapper.TrackedItemMapper;
 import com.collectingwithzak.repository.SaleRepository;
 import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,39 +35,69 @@ public class SaleService {
     private final SaleRepository saleRepo;
     private final TrackedItemRepository itemRepo;
     private final SaleMapper saleMapper;
-    private final EbayClient ebayClient;
+    private final TrackedItemMapper trackedItemMapper;
 
-    public Sale create(CreateSaleRequest request) {
+    @Autowired
+    @Lazy
+    private SaleService self;
+
+    public void create(CreateSaleRequest request) {
         Sale sale = saleMapper.toEntity(request);
         if (sale.getOrigin() == null || sale.getOrigin().isBlank()) {
-            sale.setOrigin("EBAY");
+            sale.setOrigin(Origin.EBAY.name());
         }
-        return saleRepo.save(sale);
+        saleRepo.save(sale);
     }
 
     @Transactional(readOnly = true)
-    public Sale getById(Long id) {
-        return saleRepo.findById(id)
+    public SaleResponse getByIdWithItems(Long id) {
+        Sale sale = saleRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
+        return saleMapper.toResponse(sale);
     }
 
     @Transactional(readOnly = true)
-    public List<Sale> getAll(String view) {
-        return switch (view) {
+    public List<SaleResponse> getAll(String view) {
+        List<Sale> sales = switch (view) {
             case "vince" -> saleRepo.findVince();
             case "ignored" -> saleRepo.findIgnored();
             default -> saleRepo.findConfirmed();
         };
+        return saleMapper.toResponseList(sales);
     }
 
     @Transactional(readOnly = true)
-    public List<Sale> getStaged() {
-        return saleRepo.findByStatusOrderBySaleDateDesc("STAGED");
+    public List<SaleResponse> getStaged() {
+        return saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED.name()));
     }
 
     @Transactional(readOnly = true)
     public long countStaged() {
-        return saleRepo.countByStatus("STAGED");
+        return saleRepo.countByStatus(SaleStatus.STAGED.name());
+    }
+
+    @Transactional(readOnly = true)
+    public SaleConfirmFormData getConfirmFormData(Long id) {
+        Sale sale = saleRepo.findByIdWithItems(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
+
+        Set<Long> attachedIds = sale.getItems().stream()
+                .map(TrackedItem::getId)
+                .collect(Collectors.toSet());
+
+        List<TrackedItem> available = itemRepo.findAvailableInventory();
+        List<TrackedItem> allItems = new ArrayList<>(available);
+        for (TrackedItem attached : sale.getItems()) {
+            if (!allItems.contains(attached)) {
+                allItems.add(attached);
+            }
+        }
+
+        List<TrackedItemResponse> all = trackedItemMapper.toResponseList(allItems);
+        List<TrackedItemResponse> raw = filterByType(all, ItemType.RAW_CARD);
+        List<TrackedItemResponse> graded = filterByType(all, ItemType.GRADED_CARD);
+
+        return new SaleConfirmFormData(saleMapper.toResponse(sale), raw, graded, attachedIds);
     }
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
@@ -67,25 +105,22 @@ public class SaleService {
         if (itemIds != null && !itemIds.isEmpty()) {
             itemRepo.attachToSale(itemIds, saleId);
         }
-        saleRepo.updateStatus(saleId, "CONFIRMED");
+        saleRepo.updateStatus(saleId, SaleStatus.CONFIRMED.name());
     }
 
     public void ignore(Long saleId) {
         itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, "IGNORED", "");
+        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.IGNORED.name(), "");
     }
 
-    // Stored as IGNORED so every KPI query (which filters on CONFIRMED) already
-    // excludes it, plus the attributed_to flag lets us surface Vince's sales on
-    // a dedicated tab.
     public void markAsVince(Long saleId) {
         itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, "IGNORED", "vince");
+        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.IGNORED.name(), "vince");
     }
 
     public void unstage(Long saleId) {
         itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, "STAGED", "");
+        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.STAGED.name(), "");
     }
 
     public void delete(Long saleId) {
@@ -93,21 +128,21 @@ public class SaleService {
         saleRepo.deleteById(saleId);
     }
 
-    public void syncFromEbay(List<Map<String, Object>> orders, List<Map<String, Object>> transactions) {
-        Map<String, Double> fees = collectFees(transactions);
+    public void syncFromEbay(List<EbayOrderData> orders) {
         int upserted = 0;
-        for (var order : orders) {
+        for (EbayOrderData order : orders) {
             try {
-                upsertFromEbay(saleMapper.fromEbayOrder(extractOrderData(order, fees)));
+                self.upsertFromEbay(saleMapper.fromEbayOrder(order));
                 upserted++;
             } catch (Exception e) {
-                log.warn("Skipping order {}: {}", order.get("orderId"), e.getMessage());
+                log.warn("Skipping order {}: {}", order.getEbayOrderId(), e.getMessage());
             }
         }
         log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
     }
 
-    private void upsertFromEbay(Sale sale) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void upsertFromEbay(Sale sale) {
         Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
         if (existing != null) {
             existing.setGrossAmount(sale.getGrossAmount());
@@ -119,44 +154,14 @@ public class SaleService {
             existing.setBuyerUsername(sale.getBuyerUsername());
             saleRepo.save(existing);
         } else {
-            sale.setStatus("STAGED");
+            sale.setStatus(SaleStatus.STAGED.name());
             saleRepo.save(sale);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Double> collectFees(List<Map<String, Object>> transactions) {
-        Map<String, Double> fees = new HashMap<>();
-        for (var txn : transactions) {
-            String orderId = (String) txn.get("orderId");
-            if (orderId == null || orderId.isBlank()) continue;
-
-            double amount = switch ((String) txn.get("transactionType")) {
-                case "SALE" -> ebayClient.parseAmount((Map<String, String>) txn.get("totalFeeAmount"));
-                case "SHIPPING_LABEL", "NON_SALE_CHARGE" -> Math.abs(ebayClient.parseAmount((Map<String, String>) txn.get("amount")));
-                default -> 0;
-            };
-            if (amount != 0) fees.merge(orderId, amount, Double::sum);
-        }
-        return fees;
-    }
-
-    @SuppressWarnings("unchecked")
-    private EbayOrderData extractOrderData(Map<String, Object> order, Map<String, Double> fees) {
-        String orderId = (String) order.get("orderId");
-        var pricing = (Map<String, Object>) order.get("pricingSummary");
-        var lineItems = (List<Map<String, Object>>) order.get("lineItems");
-        var buyer = (Map<String, Object>) order.get("buyer");
-
-        EbayOrderData data = new EbayOrderData();
-        data.setEbayOrderId(orderId);
-        data.setSaleDate(ZonedDateTime.parse((String) order.get("creationDate")).toLocalDate());
-        data.setTitle(lineItems != null && !lineItems.isEmpty() ? (String) lineItems.getFirst().get("title") : "");
-        data.setBuyerUsername(buyer != null ? (String) buyer.get("username") : "");
-        data.setGrossAmount(ebayClient.parseAmount((Map<String, String>) pricing.get("total")));
-        data.setEbayFees(fees.getOrDefault(orderId, 0.0));
-        data.setShippingCost(ebayClient.parseAmount((Map<String, String>) pricing.get("deliveryCost")));
-        data.setOrderStatus((String) order.get("orderFulfillmentStatus"));
-        return data;
+    private List<TrackedItemResponse> filterByType(List<TrackedItemResponse> items, ItemType type) {
+        return items.stream()
+                .filter(i -> type.name().equals(i.getItemType()))
+                .toList();
     }
 }

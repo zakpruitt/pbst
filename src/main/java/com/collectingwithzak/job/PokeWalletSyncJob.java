@@ -5,6 +5,8 @@ import com.collectingwithzak.mapper.PokemonCardMapper;
 import com.collectingwithzak.repository.PokemonCardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,18 +19,22 @@ import java.util.List;
 public class PokeWalletSyncJob {
 
     private static final List<String> SYNC_SETS = List.of(
-            "24423",        // M-P Promotional Cards
-            "24399",        // Mega Brave
-            "24400",        // Mega Symphonia
-            "Inferno X",
-            "Mega Dream",
-            "Nihil Zero",
-            "Ninja Spinner"
+            "24423", // M-P Promotional Cards
+            "24399", // Mega Brave
+            "24400", // Mega Symphonia
+            "24459", // Inferno X
+            "24499", // Mega Dream
+            "24600", // Nihil Zero
+            "24653"  // Ninja Spinner
     );
 
     private final PokeWalletClient pokeWalletClient;
     private final PokemonCardRepository cardRepo;
     private final PokemonCardMapper cardMapper;
+
+    @Autowired
+    @Lazy
+    private PokeWalletSyncJob self;
 
     @Scheduled(fixedRate = 43_200_000)
     public void sync() {
@@ -40,7 +46,7 @@ public class PokeWalletSyncJob {
         log.info("PokeWallet sync started: {} sets", SYNC_SETS.size());
         for (String setCode : SYNC_SETS) {
             try {
-                syncSet(setCode);
+                self.syncSet(setCode);
             } catch (Exception e) {
                 log.error("Sync failed for set {}", setCode, e);
             }
@@ -55,7 +61,10 @@ public class PokeWalletSyncJob {
             return;
         }
 
-        var entities = cards.stream().map(cardMapper::fromPokeWallet).toList();
+        var entities = cards.stream()
+                .filter(c -> c.getCardInfo() != null && c.getCardInfo().getCardNumber() != null)
+                .map(cardMapper::fromPokeWallet)
+                .toList();
         cardRepo.saveAll(entities);
         log.info("Set synced: {} — {} cards", setCode, entities.size());
     }

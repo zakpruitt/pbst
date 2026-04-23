@@ -10,6 +10,7 @@ import com.collectingwithzak.entity.TrackedItem;
 import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.LotStatus;
 import com.collectingwithzak.entity.enums.Purpose;
+import org.springframework.util.StringUtils;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.repository.LotPurchaseRepository;
@@ -80,11 +81,11 @@ public class LotService {
     private TrackedItem snapshotToTrackedItem(LotPurchase lot, SnapshotItem item) {
         int qty = item.getQty() <= 0 ? 1 : item.getQty();
         String purpose = item.getPurpose();
-        if ((purpose == null || purpose.isBlank()) && item.isTracked()) {
+        if (!StringUtils.hasText(purpose) && item.isTracked()) {
             purpose = Purpose.INVENTORY.name();
         }
         String itemType = item.getItemType();
-        if (itemType == null || itemType.isBlank()) {
+        if (!StringUtils.hasText(itemType)) {
             itemType = ItemType.RAW_CARD.name();
         }
 
@@ -98,7 +99,7 @@ public class LotService {
         trackedItem.setManualNameOverride(item.getName());
 
         if (ItemType.GRADED_CARD.name().equals(item.getItemType())
-                && item.getGradingCompany() != null && !item.getGradingCompany().isBlank()) {
+                && StringUtils.hasText(item.getGradingCompany())) {
             trackedItem.setGradedDetails(new GradedDetails(item.getGradingCompany(), item.getGrade(), 0));
         }
 

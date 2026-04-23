@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Tracked item cell: image + name resolution + set info -->
+<div th:fragment="item-cell(item)" class="d-flex align-items-center gap-2">
+    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}"
+         th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
+         th:data-card-img="${item.pokemonCard.imageUrl}">
+    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null) and item.sealedProduct != null and item.sealedProduct.imageUrl != null}"
+         th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
+         th:data-card-img="${item.sealedProduct.imageUrl}">
+    <div>
+        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}"
+              class="fw-medium" th:text="${item.manualNameOverride}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}"
+              class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}"
+              class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
+              class="text-muted fst-italic">Unnamed</span>
+        <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
+             th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+        <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
+             class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
+    </div>
+</div>
+
+<!-- Tracked item cell with acquisition details (date, lot link, grading link) -->
+<div th:fragment="item-cell-detailed(item)" class="d-flex align-items-center gap-2">
+    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}"
+         th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
+         th:data-card-img="${item.pokemonCard.imageUrl}">
+    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null) and item.sealedProduct != null and item.sealedProduct.imageUrl != null}"
+         th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
+         th:data-card-img="${item.sealedProduct.imageUrl}">
+    <div>
+        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}"
+              class="fw-medium" th:text="${item.manualNameOverride}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}"
+              class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}"
+              class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
+              class="text-muted fst-italic">Unnamed</span>
+        <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
+             th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+        <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
+             class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
+        <div class="text-muted inv-subtext">
+            <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
+            <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+            <span th:if="${item.gradingSubmission != null}"> &middot; <a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
+        </div>
+    </div>
+</div>
+
+<!-- Grade badge: colored PSA/BGS/CGC/TAG badge or mdash -->
+<th:block th:fragment="grade-badge(details)">
+    <span th:if="${details != null and details.grade != null and !details.grade.isEmpty()}"
+          class="badge"
+          th:classappend="${details.gradingCompany == 'PSA' ? 'grade-psa' : (details.gradingCompany == 'BGS' ? 'grade-bgs' : (details.gradingCompany == 'CGC' ? 'grade-cgc' : (details.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+          th:text="${details.gradingCompany + ' ' + details.grade}"></span>
+    <span th:unless="${details != null and details.grade != null and !details.grade.isEmpty()}">&mdash;</span>
+</th:block>
+
+<!-- Dashboard stat card -->
+<div th:fragment="stat-card(label, value, subtext, valueClass)" class="col-sm-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+        <p class="text-muted small mb-1" th:text="${label}"></p>
+        <h5 class="mb-0" th:classappend="${valueClass}" th:text="${value}"></h5>
+        <p class="text-muted small mb-0 mt-1" th:text="${subtext}"></p>
+    </div></div>
+</div>
+
+</html>

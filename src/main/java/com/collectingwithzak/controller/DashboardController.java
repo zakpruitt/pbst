@@ -17,7 +17,6 @@ public class DashboardController {
     public String dashboard(Model model) {
         DashboardData data = dashboardService.getDashboardData();
         model.addAttribute("data", data);
-        model.addAttribute("page", "dashboard");
         return "dashboard";
     }
 }

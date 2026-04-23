@@ -18,24 +18,22 @@
             </span>
         </small>
     </div>
-    <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
-        <div class="d-flex gap-2">
-            <a th:if="${sale.status == 'STAGED' or sale.status == 'CONFIRMED'}" th:href="'/sales/' + ${sale.id} + '/confirm'" class="btn btn-outline-secondary btn-sm">Edit</a>
-            <form th:if="${sale.status != 'IGNORED' or sale.attributedTo != 'vince'}" method="POST" th:action="'/sales/' + ${sale.id} + '/vince'" class="d-inline">
-                <input th:if="${sale.status != 'STAGED'}" type="hidden" name="from" value="detail">
-                <button type="submit" class="btn btn-outline-info btn-sm" th:text="${sale.status == 'STAGED' ? 'Vince' : 'Send to Vince'}"></button>
-            </form>
-            <form th:if="${sale.status == 'STAGED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/ignore'" class="d-inline">
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
-            </form>
-            <form th:if="${sale.status == 'CONFIRMED' or sale.status == 'IGNORED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/unstage'" class="d-inline">
-                <button type="submit" class="btn btn-outline-secondary btn-sm" th:text="${sale.status == 'CONFIRMED' ? 'Unstage' : 'Restore'}"></button>
-            </form>
-            <form method="POST" th:action="'/sales/' + ${sale.id} + '/delete'" class="d-inline"
-                  onsubmit="return confirm('Delete this sale? Attached items will return to inventory.')">
-                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-            </form>
-        </div>
+    <div class="d-flex gap-2 flex-shrink-0">
+        <a th:if="${sale.status == 'STAGED' or sale.status == 'CONFIRMED'}" th:href="'/sales/' + ${sale.id} + '/confirm'" class="btn btn-outline-secondary btn-sm">Edit</a>
+        <form th:if="${sale.status != 'IGNORED' or sale.attributedTo != 'vince'}" method="POST" th:action="'/sales/' + ${sale.id} + '/vince'" class="d-inline">
+            <input th:if="${sale.status != 'STAGED'}" type="hidden" name="from" value="detail">
+            <button type="submit" class="btn btn-outline-info btn-sm" th:text="${sale.status == 'STAGED' ? 'Vince' : 'Send to Vince'}"></button>
+        </form>
+        <form th:if="${sale.status == 'STAGED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/ignore'" class="d-inline">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Ignore</button>
+        </form>
+        <form th:if="${sale.status == 'CONFIRMED' or sale.status == 'IGNORED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/unstage'" class="d-inline">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" th:text="${sale.status == 'CONFIRMED' ? 'Unstage' : 'Restore'}"></button>
+        </form>
+        <form method="POST" th:action="'/sales/' + ${sale.id} + '/delete'" class="d-inline"
+              onsubmit="return confirm('Delete this sale? Attached items will return to inventory.')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+        </form>
     </div>
 </div>
 
@@ -50,11 +48,11 @@
                     <span th:if="${sale.attributedTo == 'vince'}" class="badge bg-info text-dark">Vince</span>
                     <span th:unless="${sale.attributedTo == 'vince'}" class="badge"
                           th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
-                          th:text="${sale.status}"></span>
+                          th:text="${sale.status == 'CONFIRMED' ? 'Confirmed' : (sale.status == 'STAGED' ? 'Staged' : 'Ignored')}"></span>
                 </div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Method of Sale</div>
-                <div><span class="badge" th:classappend="${sale.origin == 'EBAY' ? 'bg-primary' : (sale.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}" th:text="${sale.origin}"></span></div>
+                <div><span class="badge" th:classappend="${sale.origin == 'EBAY' ? 'bg-primary' : (sale.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}" th:text="${sale.origin == 'EBAY' ? 'eBay' : (sale.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span></div>
             </div>
         </div>
     </div>
@@ -76,30 +74,12 @@
         <tbody>
         <tr th:each="item : ${sale.items}">
             <td>
-                <div class="d-flex align-items-center gap-2">
-                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
-                         th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
-                    <div>
-                        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
-                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
-                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}" class="fw-medium" th:text="${item.sealedProduct.name}"></span>
-                        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}" class="text-muted fst-italic">Unnamed</span>
-                        <div class="text-muted inv-subtext" th:if="${item.pokemonCard != null}">
-                            <span th:text="${item.pokemonCard.setName}"></span>
-                            <span th:if="${item.pokemonCard.cardNumber != null and !item.pokemonCard.cardNumber.isEmpty()}" th:text="' · #' + ${item.pokemonCard.cardNumber}"></span>
-                        </div>
-                        <div class="text-muted inv-subtext" th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></div>
-                    </div>
-                </div>
+                <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
             </td>
             <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
             <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
-                <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}"
-                      class="badge"
-                      th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-                      th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
-                <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
+                <th:block th:replace="~{fragments/items :: grade-badge(details=${item.gradedDetails})}"></th:block>
             </td>
         </tr>
         </tbody>

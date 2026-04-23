@@ -11,66 +11,17 @@
 </div>
 
 <div class="row g-3 mb-3">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Total Spent</p>
-            <h5 class="mb-0 text-danger" th:text="'$' + ${#numbers.formatDecimal(data.totalSpent, 1, 2)}"></h5>
-            <p class="text-muted small mb-0 mt-1">on lot purchases</p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Gross Revenue</p>
-            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totalGross, 1, 2)}"></h5>
-            <p class="text-muted small mb-0 mt-1">before fees &amp; shipping</p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Net Revenue</p>
-            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totalNet, 1, 2)}"></h5>
-            <p class="text-muted small mb-0 mt-1" th:text="'$' + ${#numbers.formatDecimal(data.totalFees, 1, 2)} + ' in fees'"></p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Margin</p>
-            <h5 class="mb-0" th:classappend="${data.margin < 0 ? 'text-danger' : 'text-success'}"
-                th:text="'$' + ${#numbers.formatDecimal(data.margin, 1, 2)}"></h5>
-            <p class="text-muted small mb-0 mt-1">net &minus; spent</p>
-        </div></div>
-    </div>
+    <div th:replace="~{fragments/items :: stat-card(label='Total Spent', value='$' + ${#numbers.formatDecimal(data.totalSpent, 1, 2)}, subtext='on lot purchases', valueClass='text-danger')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='Gross Revenue', value='$' + ${#numbers.formatDecimal(data.totalGross, 1, 2)}, subtext='before fees & shipping', valueClass='')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='Net Revenue', value='$' + ${#numbers.formatDecimal(data.totalNet, 1, 2)}, subtext='$' + ${#numbers.formatDecimal(data.totalFees, 1, 2)} + ' in fees', valueClass='')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='Margin', value='$' + ${#numbers.formatDecimal(data.margin, 1, 2)}, subtext='net − spent', valueClass=${data.margin < 0 ? 'text-danger' : 'text-success'})}"></div>
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Confirmed Sales</p>
-            <h5 class="mb-0" th:text="${data.salesCount}"></h5>
-            <p class="text-muted small mb-0 mt-1" th:text="'avg $' + ${#numbers.formatDecimal(data.avgSale, 1, 2)}"></p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Inventory</p>
-            <h5 class="mb-0" th:text="${data.inventoryCount} + ' items'"></h5>
-            <p class="text-muted small mb-0 mt-1" th:text="'$' + ${#numbers.formatDecimal(data.inventoryMarket, 1, 2)} + ' market'"></p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">In Grading</p>
-            <h5 class="mb-0" th:text="${data.gradingCount} + ' items'"></h5>
-            <p class="text-muted small mb-0 mt-1">awaiting return</p>
-        </div></div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card h-100"><div class="card-body">
-            <p class="text-muted small mb-1">Last 30 Days</p>
-            <h5 class="mb-0" th:text="'$' + ${#numbers.formatDecimal(data.totals30.net, 1, 2)}"></h5>
-            <p class="text-muted small mb-0 mt-1" th:text="${data.totals30.count} + ' sales · 7d: $' + ${#numbers.formatDecimal(data.totals7.net, 1, 2)}"></p>
-        </div></div>
-    </div>
+    <div th:replace="~{fragments/items :: stat-card(label='Confirmed Sales', value=${data.salesCount}, subtext='avg $' + ${#numbers.formatDecimal(data.avgSale, 1, 2)}, valueClass='')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='Inventory', value=${data.inventoryCount} + ' items', subtext='$' + ${#numbers.formatDecimal(data.inventoryMarket, 1, 2)} + ' market', valueClass='')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='In Grading', value=${data.gradingCount} + ' items', subtext='awaiting return', valueClass='')}"></div>
+    <div th:replace="~{fragments/items :: stat-card(label='Last 30 Days', value='$' + ${#numbers.formatDecimal(data.totals30.net, 1, 2)}, subtext=${data.totals30.count} + ' sales · 7d: $' + ${#numbers.formatDecimal(data.totals7.net, 1, 2)}, valueClass='')}"></div>
 </div>
 
 <div class="row g-3 mb-3">
@@ -160,7 +111,7 @@
                         <div class="me-2" style="min-width:0">
                             <span class="badge bg-danger-subtle text-danger me-1">Lot</span>
                             <span class="fw-medium" th:text="${l.sellerName != null and !l.sellerName.isEmpty() ? l.sellerName : 'Lot #' + l.id}"></span>
-                            <div class="text-muted small" th:text="${#temporals.format(l.purchaseDate, 'MMM d, yyyy')} + ' · ' + ${l.status}"></div>
+                            <div class="text-muted small" th:text="${#temporals.format(l.purchaseDate, 'MMM d, yyyy')} + ' · ' + ${l.status == 'ACCEPTED' ? 'Accepted' : (l.status == 'REJECTED' ? 'Rejected' : 'Pending')}"></div>
                         </div>
                         <div class="text-end text-danger flex-shrink-0" th:text="'-$' + ${#numbers.formatDecimal(l.totalCost, 1, 2)}"></div>
                     </div>

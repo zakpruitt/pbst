@@ -49,7 +49,7 @@
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Status</div>
-                <div><span class="badge" th:classappend="${lot.status == 'ACCEPTED' ? 'bg-success' : (lot.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${lot.status}"></span></div>
+                <div><span class="badge" th:classappend="${lot.status == 'ACCEPTED' ? 'bg-success' : (lot.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${lot.status == 'ACCEPTED' ? 'Accepted' : (lot.status == 'REJECTED' ? 'Rejected' : 'Pending')}"></span></div>
             </div>
         </div>
     </div>
@@ -115,30 +115,17 @@
         <tbody>
         <tr th:each="ti : ${lot.trackedItems}">
             <td>
-                <div class="d-flex align-items-center gap-2">
-                    <img th:if="${ti.pokemonCard != null and ti.pokemonCard.imageUrl != null and !ti.pokemonCard.imageUrl.isEmpty()}"
-                         th:src="${ti.pokemonCard.imageUrl}" class="card-thumb" th:attr="data-card-img=${ti.pokemonCard.imageUrl}">
-                    <div>
-                        <span th:if="${ti.manualNameOverride != null and !ti.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${ti.manualNameOverride}"></span>
-                        <span th:if="${(ti.manualNameOverride == null or ti.manualNameOverride.isEmpty()) and ti.pokemonCard != null}" class="fw-medium" th:text="${ti.pokemonCard.name}"></span>
-                        <span th:if="${(ti.manualNameOverride == null or ti.manualNameOverride.isEmpty()) and ti.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
-                        <div th:if="${ti.pokemonCard != null}" class="text-muted inv-subtext" th:text="${ti.pokemonCard.setName} + ' · #' + ${ti.pokemonCard.cardNumber}"></div>
-                    </div>
-                </div>
+                <div th:replace="~{fragments/items :: item-cell(item=${ti})}"></div>
             </td>
             <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
             <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
-                <span th:if="${ti.gradedDetails != null and ti.gradedDetails.grade != null and !ti.gradedDetails.grade.isEmpty()}"
-                      class="badge"
-                      th:classappend="${ti.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (ti.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (ti.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (ti.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-                      th:text="${ti.gradedDetails.gradingCompany + ' ' + ti.gradedDetails.grade}"></span>
-                <span th:unless="${ti.gradedDetails != null and ti.gradedDetails.grade != null and !ti.gradedDetails.grade.isEmpty()}">&mdash;</span>
+                <th:block th:replace="~{fragments/items :: grade-badge(details=${ti.gradedDetails})}"></th:block>
             </td>
             <td class="text-center align-middle text-nowrap ps-4">
                 <span class="badge"
                       th:classappend="${ti.purpose == 'INVENTORY' ? 'bg-primary' : (ti.purpose == 'IN_GRADING' ? 'bg-warning text-dark' : 'bg-secondary')}"
-                      th:text="${ti.purpose == 'INVENTORY' ? 'Inventory' : (ti.purpose == 'IN_GRADING' ? 'In Grading' : ti.purpose)}"></span>
+                      th:text="${ti.purpose == 'INVENTORY' ? 'Inventory' : (ti.purpose == 'IN_GRADING' ? 'In Grading' : (ti.purpose == 'PERSONAL_COLLECTION' ? 'Personal' : (ti.purpose == 'SOLD' ? 'Sold' : (ti.purpose == 'PENDING_GRADE' ? 'Pending Grade' : ti.purpose))))}"></span>
             </td>
         </tr>
         </tbody>

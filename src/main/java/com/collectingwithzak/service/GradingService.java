@@ -76,7 +76,10 @@ public class GradingService {
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(
                 itemRepo.findByPurpose(Purpose.INVENTORY.name()));
 
-        return new GradingFormData(null, filterByType(all, ItemType.RAW_CARD), filterByType(all, ItemType.GRADED_CARD), Set.of());
+        return new GradingFormData(null,
+                TrackedItemResponse.filterByType(all, ItemType.RAW_CARD),
+                TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
+                Set.of());
     }
 
     @Transactional(readOnly = true)
@@ -94,8 +97,8 @@ public class GradingService {
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(allItems);
         return new GradingFormData(
                 gradingMapper.toResponse(submission),
-                filterByType(all, ItemType.RAW_CARD),
-                filterByType(all, ItemType.GRADED_CARD),
+                TrackedItemResponse.filterByType(all, ItemType.RAW_CARD),
+                TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
                 attachedIds);
     }
 
@@ -156,9 +159,4 @@ public class GradingService {
                 .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));
     }
 
-    private List<TrackedItemResponse> filterByType(List<TrackedItemResponse> items, ItemType type) {
-        return items.stream()
-                .filter(i -> type.name().equals(i.getItemType()))
-                .toList();
-    }
 }

@@ -39,7 +39,7 @@
                            th:text="${submission.company}"></span></div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
-                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status}"></span></div>
+                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_TRANSIT' ? 'In Transit' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span></div>
             </div>
         </div>
     </div>
@@ -54,14 +54,7 @@
             <tbody>
             <tr th:each="item : ${submission.items}" th:attr="data-item-id=${item.id}">
                 <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
-                        <div>
-                            <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
-                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
-                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
-                        </div>
-                    </div>
+                    <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
                 <td class="text-end align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4"><input type="text" class="form-control form-control-sm grade-input" placeholder="e.g. 10"></td>
@@ -84,24 +77,13 @@
             <tbody>
             <tr th:each="item : ${submission.items}">
                 <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
-                        <div>
-                            <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
-                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
-                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
-                        </div>
-                    </div>
+                    <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
                 <td class="text-end align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
-                    <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}"
-                          class="badge"
-                          th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-                          th:text="${item.gradedDetails.gradingCompany + ' ' + item.gradedDetails.grade}"></span>
-                    <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
+                    <th:block th:replace="~{fragments/items :: grade-badge(details=${item.gradedDetails})}"></th:block>
                 </td>
             </tr>
             </tbody>

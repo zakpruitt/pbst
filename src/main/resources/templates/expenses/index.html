@@ -41,15 +41,15 @@
         </div>
         <table class="table table-hover bg-white mb-0 mt-2">
             <thead class="table-light">
-            <tr><th style="width:100%">Expense</th><th class="text-end text-nowrap ps-4">Cost</th><th class="text-center text-nowrap ps-4" style="width:4rem"></th></tr>
+            <tr><th style="width:100%">Expense</th><th class="text-nowrap ps-4">Date</th><th class="text-end text-nowrap ps-4">Cost</th><th class="text-center text-nowrap ps-4" style="width:4rem"></th></tr>
             </thead>
             <tbody>
             <tr th:each="e : ${group.items}">
                 <td class="align-middle">
                     <span class="fw-medium expense-name" th:attr="data-full=${e.name}" th:title="'Click to copy: ' + ${e.name}"
                           onclick="copyExpenseName(this)" th:text="${#strings.abbreviate(e.name, 45)}"></span>
-                    <div class="text-muted inv-subtext" th:text="${#temporals.format(e.expenseDate, 'MMM d, yyyy')}"></div>
                 </td>
+                <td class="align-middle text-nowrap ps-4 text-muted" th:text="${#temporals.format(e.expenseDate, 'MMM d, yyyy')}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
                     <form method="POST" th:action="'/expenses/' + ${e.id} + '/delete'" onsubmit="return confirm('Delete this expense?')">

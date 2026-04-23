@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +44,7 @@ public class SaleService {
 
     public void create(CreateSaleRequest request) {
         Sale sale = saleMapper.toEntity(request);
-        if (sale.getOrigin() == null || sale.getOrigin().isBlank()) {
+        if (!StringUtils.hasText(sale.getOrigin())) {
             sale.setOrigin(Origin.EBAY.name());
         }
         saleRepo.save(sale);
@@ -94,10 +95,12 @@ public class SaleService {
         }
 
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(allItems);
-        List<TrackedItemResponse> raw = filterByType(all, ItemType.RAW_CARD);
-        List<TrackedItemResponse> graded = filterByType(all, ItemType.GRADED_CARD);
 
-        return new SaleConfirmFormData(saleMapper.toResponse(sale), raw, graded, attachedIds);
+        return new SaleConfirmFormData(
+                saleMapper.toResponse(sale),
+                TrackedItemResponse.filterByType(all, ItemType.RAW_CARD),
+                TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
+                attachedIds);
     }
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
@@ -159,9 +162,4 @@ public class SaleService {
         }
     }
 
-    private List<TrackedItemResponse> filterByType(List<TrackedItemResponse> items, ItemType type) {
-        return items.stream()
-                .filter(i -> type.name().equals(i.getItemType()))
-                .toList();
-    }
 }

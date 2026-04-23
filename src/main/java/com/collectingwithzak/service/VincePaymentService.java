@@ -6,6 +6,7 @@ import com.collectingwithzak.dto.response.VinceLedger;
 import com.collectingwithzak.dto.response.VincePaymentResponse;
 import com.collectingwithzak.entity.VincePayment;
 import com.collectingwithzak.entity.enums.PaymentType;
+import org.springframework.util.StringUtils;
 import com.collectingwithzak.mapper.VincePaymentMapper;
 import com.collectingwithzak.repository.SaleRepository;
 import com.collectingwithzak.repository.VincePaymentRepository;
@@ -30,7 +31,7 @@ public class VincePaymentService {
         if (payment.getPaymentDate() == null) {
             payment.setPaymentDate(LocalDate.now());
         }
-        if (payment.getType() == null || payment.getType().isBlank()) {
+        if (!StringUtils.hasText(payment.getType())) {
             payment.setType(PaymentType.PAYOUT.name());
         }
         paymentRepo.save(payment);

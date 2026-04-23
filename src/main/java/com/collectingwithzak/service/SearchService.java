@@ -8,6 +8,7 @@ import com.collectingwithzak.repository.SealedProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -21,12 +22,12 @@ public class SearchService {
     private final SearchMapper searchMapper;
 
     public List<CardSearchResult> searchCards(String query) {
-        if (query == null || query.isBlank()) return List.of();
+        if (!StringUtils.hasText(query)) return List.of();
         return searchMapper.cardsToSearchResults(cardRepo.search(query));
     }
 
     public List<SealedSearchResult> searchSealed(String query) {
-        if (query == null || query.isBlank()) return List.of();
+        if (!StringUtils.hasText(query)) return List.of();
         return searchMapper.sealedToSearchResults(sealedRepo.search(query));
     }
 }

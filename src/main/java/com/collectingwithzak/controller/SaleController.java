@@ -33,8 +33,10 @@ public class SaleController {
         List<SaleResponse> sales = saleService.getAll(view);
         long stagedCount = saleService.countStaged();
 
-        model.addAttribute("page", "sales");
-        model.addAttribute("groups", MonthGroup.groupByMonth(sales, SaleResponse::getSaleDate));
+
+        List<MonthGroup<SaleResponse>> groups = MonthGroup.groupByMonth(sales, SaleResponse::getSaleDate);
+        MonthGroup.computeSubtotals(groups, SaleResponse::getNetAmount);
+        model.addAttribute("groups", groups);
         model.addAttribute("stagedCount", stagedCount);
         model.addAttribute("view", view);
 
@@ -48,13 +50,13 @@ public class SaleController {
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        model.addAttribute("page", "sales");
+
         return "sales/new";
     }
 
     @GetMapping("/staging")
     public String staging(Model model) {
-        model.addAttribute("page", "sales");
+
         model.addAttribute("sales", saleService.getStaged());
         return "sales/staging";
     }
@@ -68,7 +70,7 @@ public class SaleController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         SaleResponse sale = saleService.getByIdWithItems(id);
-        model.addAttribute("page", "sales");
+
         model.addAttribute("sale", sale);
         return "sales/detail";
     }
@@ -76,7 +78,7 @@ public class SaleController {
     @GetMapping("/{id}/confirm")
     public String confirmForm(@PathVariable Long id, Model model) {
         SaleConfirmFormData formData = saleService.getConfirmFormData(id);
-        model.addAttribute("page", "sales");
+
         model.addAttribute("sale", formData.getSale());
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());

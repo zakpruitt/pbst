@@ -28,7 +28,6 @@ public class ExpenseController {
         MonthGroup.computeSubtotals(groups, ExpenseResponse::getCost);
         double total = expenses.stream().mapToDouble(ExpenseResponse::getCost).sum();
 
-        model.addAttribute("page", "expenses");
         model.addAttribute("groups", groups);
         model.addAttribute("total", total);
         model.addAttribute("count", expenses.size());

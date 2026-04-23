@@ -10,6 +10,7 @@ import com.collectingwithzak.entity.GradedDetails;
 import com.collectingwithzak.entity.TrackedItem;
 import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.Purpose;
+import org.springframework.util.StringUtils;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.TrackedItemMapper;
 import com.collectingwithzak.repository.TrackedItemRepository;
@@ -47,7 +48,7 @@ public class InventoryService {
             item.setItemType((String) row.getOrDefault("item_type", ItemType.RAW_CARD.name()));
 
             String name = (String) row.get("name");
-            if (name != null && !name.isBlank()) {
+            if (StringUtils.hasText(name)) {
                 item.setManualNameOverride(name);
             }
 
@@ -97,7 +98,7 @@ public class InventoryService {
     public String update(Long id, UpdateInventoryRequest request) {
         TrackedItem item = findById(id);
 
-        if (request.getName() != null && !request.getName().isBlank()) {
+        if (StringUtils.hasText(request.getName())) {
             item.setManualNameOverride(request.getName());
         }
         item.setCostBasis(request.getCostBasis());
@@ -106,7 +107,7 @@ public class InventoryService {
             item.setAcquisitionDate(request.getAcquisitionDate());
         }
         item.setNotes(request.getNotes());
-        if (request.getPurpose() != null && !request.getPurpose().isBlank()) {
+        if (StringUtils.hasText(request.getPurpose())) {
             item.setPurpose(request.getPurpose());
         }
 

@@ -7,6 +7,8 @@ import com.collectingwithzak.dto.response.InventorySplitResponse;
 import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.service.InventoryService;
+import org.springframework.util.StringUtils;
+import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -25,13 +27,16 @@ public class InventoryController {
                         HttpServletRequest request, Model model) {
         InventorySplitResponse split = inventoryService.getByPurpose(purpose);
 
-        model.addAttribute("page", "inventory");
-        model.addAttribute("items", split.getAllItems());
+
+        List<TrackedItemResponse> allItems = split.getAllItems();
+        model.addAttribute("items", allItems);
         model.addAttribute("rawItems", split.getRawItems());
         model.addAttribute("gradedItems", split.getGradedItems());
         model.addAttribute("sealedItems", split.getSealedItems());
         model.addAttribute("otherItems", split.getOtherItems());
         model.addAttribute("purpose", purpose);
+        model.addAttribute("totalCost", TrackedItemResponse.sumCost(allItems));
+        model.addAttribute("totalMarket", TrackedItemResponse.sumMarket(allItems));
 
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "inventory/index :: inventory-page";
@@ -58,13 +63,13 @@ public class InventoryController {
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        model.addAttribute("page", "inventory");
+
         return "inventory/new";
     }
 
     @PostMapping
     public String create(CreateInventoryRequest request) {
-        if (request.getPurpose() == null || request.getPurpose().isBlank()) {
+        if (!StringUtils.hasText(request.getPurpose())) {
             request.setPurpose(Purpose.INVENTORY.name());
         }
         inventoryService.createItems(request);
@@ -74,7 +79,7 @@ public class InventoryController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         TrackedItemResponse item = inventoryService.getById(id);
-        model.addAttribute("page", "inventory");
+
         model.addAttribute("item", item);
         return "inventory/edit";
     }

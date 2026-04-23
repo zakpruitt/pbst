@@ -8,6 +8,7 @@ import com.collectingwithzak.dto.response.GradingSubmissionResponse;
 import com.collectingwithzak.dto.response.MonthGroup;
 import com.collectingwithzak.service.GradingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class GradingController {
     @GetMapping
     public String index(Model model) {
         List<GradingSubmissionResponse> submissions = gradingService.getAll();
-        model.addAttribute("page", "grading");
+
         model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
         return "grading/index";
     }
@@ -32,7 +33,7 @@ public class GradingController {
     @GetMapping("/new")
     public String newForm(Model model) {
         GradingFormData formData = gradingService.getNewFormData();
-        model.addAttribute("page", "grading");
+
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
         return "grading/new";
@@ -47,7 +48,7 @@ public class GradingController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
-        model.addAttribute("page", "grading");
+
         model.addAttribute("submission", submission);
         return "grading/detail";
     }
@@ -55,7 +56,7 @@ public class GradingController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         GradingFormData formData = gradingService.getEditFormData(id);
-        model.addAttribute("page", "grading");
+
         model.addAttribute("submission", formData.getSubmission());
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
@@ -76,9 +77,10 @@ public class GradingController {
     }
 
     @PostMapping("/{id}/return")
-    public String recordReturn(@PathVariable Long id, @RequestBody RecordReturnRequest request) {
+    @ResponseBody
+    public ResponseEntity<Void> recordReturn(@PathVariable Long id, @RequestBody RecordReturnRequest request) {
         gradingService.recordReturn(id, request.getGrades());
-        return "redirect:/grading/" + id;
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/delete")

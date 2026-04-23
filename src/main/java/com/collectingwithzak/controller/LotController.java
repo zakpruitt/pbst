@@ -19,7 +19,7 @@ public class LotController {
 
     @GetMapping
     public String index(Model model) {
-        model.addAttribute("page", "lots");
+
         model.addAttribute("lots", lotService.getAll());
         return "lots/index";
     }
@@ -52,7 +52,7 @@ public class LotController {
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        model.addAttribute("page", "lots");
+
         return "lots/new";
     }
 
@@ -65,7 +65,7 @@ public class LotController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         LotResponse lot = lotService.getById(id);
-        model.addAttribute("page", "lots");
+
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/detail";
@@ -74,7 +74,7 @@ public class LotController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         LotResponse lot = lotService.getById(id);
-        model.addAttribute("page", "lots");
+
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";

@@ -24,7 +24,16 @@
       "Bash(mkdir -p com/collectingwithzak)",
       "Bash(cp -r com/zakpruitt/pbst/* com/collectingwithzak/)",
       "Bash(mv PbstApplication.java CollectingWithZakApplication.java)",
-      "Bash(sed -i 's/PbstApplication/CollectingWithZakApplication/g' CollectingWithZakApplication.java)"
+      "Bash(sed -i 's/PbstApplication/CollectingWithZakApplication/g' CollectingWithZakApplication.java)",
+      "Bash(./mvnw.cmd -q compile)",
+      "Bash(mvn -q compile -DskipTests)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(docker run *)",
+      "Bash(docker run *)",
+      "Bash(where.exe mvn *)",
+      "Bash(where.exe mvnw *)",
+      "Bash(git reset *)"
     ]
-  }
+  },
+  "model": "claude-opus-4-6"
 }

@@ -26,7 +26,7 @@
 
     <div id="grading-list">
         <div th:each="group : ${groups}" class="grading-month-group mb-4">
-            <span class="month-label month-pill mb-2" th:text="${group.label}"></span>
+            <span class="month-label month-pill mb-2" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
             <table class="table table-hover bg-white mt-2 mb-0">
                 <thead class="table-light"><tr><th style="width:100%">Submission</th><th class="text-center text-nowrap ps-4">Items</th><th class="text-end text-nowrap ps-4">Total</th><th class="text-center text-nowrap ps-4">Status</th></tr></thead>
                 <tbody>

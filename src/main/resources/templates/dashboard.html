@@ -171,27 +171,38 @@
     </div>
 </div>
 
-<div th:if="${data.vinceTotals != null and data.vinceTotals.count > 0}" class="card mb-4">
+<div th:if="${data.vinceLedger != null and data.vinceLedger.salesCount > 0}" class="card mb-4">
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
                 <h6 class="mb-1">Vince</h6>
                 <small class="text-muted">Tracked separately — not part of your P&amp;L</small>
             </div>
-            <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View sales &rarr;</a>
+            <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View ledger &rarr;</a>
         </div>
         <div class="row text-center">
             <div class="col">
                 <div class="text-muted small text-uppercase">Sales</div>
-                <div class="fw-semibold" th:text="${data.vinceTotals.count}"></div>
+                <div class="fw-semibold" th:text="${data.vinceLedger.salesCount}"></div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Gross</div>
-                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceTotals.gross, 1, 2)}"></div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesGross, 1, 2)}"></div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Net Owed</div>
-                <div class="fw-semibold text-info" th:text="'$' + ${#numbers.formatDecimal(data.vinceTotals.net, 1, 2)}"></div>
+                <div class="fw-semibold text-info" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesNet, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Paid Out</div>
+                <div class="fw-semibold text-danger" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.totalPaidOut, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small text-uppercase">Balance</div>
+                <div class="fw-bold" th:classappend="${data.vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"
+                     th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.balance, 1, 2)}"></div>
+                <div class="text-muted" style="font-size:.6rem"
+                     th:text="${data.vinceLedger.balance > 0 ? 'you owe' : (data.vinceLedger.balance < 0 ? 'he owes you' : 'settled')}"></div>
             </div>
         </div>
     </div>

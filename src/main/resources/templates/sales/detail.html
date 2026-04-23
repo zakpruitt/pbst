@@ -13,6 +13,9 @@
         <small class="text-muted">
             <span th:text="${#temporals.format(sale.saleDate, 'MMM d, yyyy')}"></span>
             <span th:if="${sale.buyerUsername != null and !sale.buyerUsername.isEmpty()}" th:text="' · ' + ${sale.buyerUsername}"></span>
+            <span th:if="${sale.origin == 'EBAY' and sale.ebayOrderId != null and !sale.ebayOrderId.isEmpty()}">
+                · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${sale.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">View on eBay ↗</a>
+            </span>
         </small>
     </div>
     <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
@@ -75,19 +78,27 @@
             <td>
                 <div class="d-flex align-items-center gap-2">
                     <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
-                         th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                         th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
                     <div>
                         <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
                         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
                         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}" class="fw-medium" th:text="${item.sealedProduct.name}"></span>
                         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}" class="text-muted fst-italic">Unnamed</span>
+                        <div class="text-muted inv-subtext" th:if="${item.pokemonCard != null}">
+                            <span th:text="${item.pokemonCard.setName}"></span>
+                            <span th:if="${item.pokemonCard.cardNumber != null and !item.pokemonCard.cardNumber.isEmpty()}" th:text="' · #' + ${item.pokemonCard.cardNumber}"></span>
+                        </div>
+                        <div class="text-muted inv-subtext" th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></div>
                     </div>
                 </div>
             </td>
             <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
             <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
-                <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}"
+                      class="badge"
+                      th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                      th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
                 <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
             </td>
         </tr>

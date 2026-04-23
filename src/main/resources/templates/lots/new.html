@@ -9,19 +9,19 @@
 <h4 class="mb-4">New Lot</h4>
 
 <form id="lot-form" method="POST" action="/lots">
-    <input type="hidden" id="snapshot-input" name="lot_content_snapshot" value="[]">
-    <input type="hidden" id="total-cost-input" name="total_cost" value="0">
-    <input type="hidden" id="emv-input" name="estimated_market_value" value="0">
+    <input type="hidden" id="snapshot-input" name="lotContentSnapshot" value="[]">
+    <input type="hidden" id="total-cost-input" name="totalCost" value="0">
+    <input type="hidden" id="emv-input" name="estimatedMarketValue" value="0">
 
     <div class="card mb-3">
         <div class="card-body">
             <h6 class="card-title mb-3">Lot Details</h6>
             <div class="row g-2">
                 <div class="col-12">
-                    <input name="seller_name" class="form-control form-control-sm" placeholder="Seller name" required>
+                    <input name="sellerName" class="form-control form-control-sm" placeholder="Seller name" required>
                 </div>
                 <div class="col-sm-6">
-                    <input name="purchase_date" type="date" class="form-control form-control-sm" required>
+                    <input name="purchaseDate" type="date" class="form-control form-control-sm" required>
                 </div>
                 <div class="col-sm-6">
                     <input name="description" class="form-control form-control-sm" placeholder="Notes (optional)">
@@ -47,9 +47,9 @@
                          x-show="results.length > 0" @click.outside="clear()">
                         <template x-for="c in results" :key="c.id">
                             <button type="button" class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent" @click="pick(c)">
-                                <template x-if="c.image_url"><img :src="c.image_url" style="height:48px;width:auto;border-radius:4px;flex-shrink:0"></template>
-                                <template x-if="!c.image_url"><div style="width:34px"></div></template>
-                                <span><strong class="d-block" x-text="c.name"></strong><span class="text-muted small" x-text="c.set_name + ' #' + c.card_number"></span><br><span class="text-success small" x-text="c.market_price ? '$' + c.market_price.toFixed(2) : ''"></span></span>
+                                <template x-if="c.imageUrl"><img :src="c.imageUrl" style="height:48px;width:auto;border-radius:4px;flex-shrink:0"></template>
+                                <template x-if="!c.imageUrl"><div style="width:34px"></div></template>
+                                <span><strong class="d-block" x-text="c.name"></strong><span class="text-muted small" x-text="c.setName + ' #' + c.cardNumber"></span><br><span class="text-success small" x-text="c.marketPrice ? '$' + c.marketPrice.toFixed(2) : ''"></span></span>
                             </button>
                         </template>
                     </div>

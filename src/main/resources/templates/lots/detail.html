@@ -71,7 +71,7 @@
     <tr th:each="item : ${snapshotItems}">
         <td>
             <div class="d-flex align-items-center gap-2">
-                <img th:if="${item.imageURL != null and !item.imageURL.isEmpty()}" th:src="${item.imageURL}" class="card-thumb" th:attr="data-card-img=${item.imageURL}">
+                <img th:if="${item.imageUrl != null and !item.imageUrl.isEmpty()}" th:src="${item.imageUrl}" class="card-thumb" th:attr="data-card-img=${item.imageUrl}">
                 <div>
                     <span class="fw-medium" th:text="${item.name}"></span>
                     <div th:if="${item.setName != null and !item.setName.isEmpty()}" class="text-muted inv-subtext">
@@ -81,7 +81,15 @@
                 </div>
             </div>
         </td>
-        <td class="text-center align-middle text-nowrap ps-4"><small class="text-muted" th:text="${item.itemType}"></small></td>
+        <td class="text-center align-middle text-nowrap ps-4">
+            <span th:if="${item.itemType == 'GRADED_CARD' and item.gradingCompany != null and !item.gradingCompany.isEmpty()}"
+                  class="badge"
+                  th:classappend="${item.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                  th:text="${item.gradingCompany + ' ' + (item.grade != null ? item.grade : '')}"></span>
+            <span th:if="${item.itemType != 'GRADED_CARD' or item.gradingCompany == null or item.gradingCompany.isEmpty()}"
+                  class="badge bg-secondary"
+                  th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
+        </td>
         <td class="text-end align-middle text-nowrap ps-4" th:text="${item.qty}"></td>
         <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.offered, 1, 2)}"></td>
         <td class="text-center align-middle text-nowrap ps-4">
@@ -100,6 +108,7 @@
             <th style="width:100%">Item</th>
             <th class="text-end text-nowrap ps-4">Cost Basis</th>
             <th class="text-end text-nowrap ps-4">Market</th>
+            <th class="text-center text-nowrap ps-4">Grade</th>
             <th class="text-center text-nowrap ps-4">Purpose</th>
         </tr>
         </thead>
@@ -119,7 +128,18 @@
             </td>
             <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
             <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
-            <td class="text-center align-middle text-nowrap ps-4"><span class="badge bg-secondary" th:text="${ti.purpose}"></span></td>
+            <td class="text-center align-middle text-nowrap ps-4">
+                <span th:if="${ti.gradedDetails != null and ti.gradedDetails.grade != null and !ti.gradedDetails.grade.isEmpty()}"
+                      class="badge"
+                      th:classappend="${ti.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (ti.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (ti.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (ti.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                      th:text="${ti.gradedDetails.gradingCompany + ' ' + ti.gradedDetails.grade}"></span>
+                <span th:unless="${ti.gradedDetails != null and ti.gradedDetails.grade != null and !ti.gradedDetails.grade.isEmpty()}">&mdash;</span>
+            </td>
+            <td class="text-center align-middle text-nowrap ps-4">
+                <span class="badge"
+                      th:classappend="${ti.purpose == 'INVENTORY' ? 'bg-primary' : (ti.purpose == 'IN_GRADING' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                      th:text="${ti.purpose == 'INVENTORY' ? 'Inventory' : (ti.purpose == 'IN_GRADING' ? 'In Grading' : ti.purpose)}"></span>
+            </td>
         </tr>
         </tbody>
     </table>

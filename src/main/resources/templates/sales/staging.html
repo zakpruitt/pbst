@@ -24,11 +24,14 @@
     </thead>
     <tbody>
     <tr th:each="s : ${sales}">
-        <td>
+        <td class="align-middle">
             <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium" th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
             <div class="text-muted inv-subtext mt-1">
                 <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
                 <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
+                <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
+                    · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
+                </span>
             </div>
         </td>
         <td class="text-center align-middle text-nowrap ps-4">
@@ -43,8 +46,12 @@
         <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
             <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
                 <a th:href="'/sales/' + ${s.id} + '/confirm'" class="btn btn-success btn-sm">Confirm</a>
-                <form method="POST" th:action="'/sales/' + ${s.id} + '/vince'"><button type="submit" class="btn btn-outline-info btn-sm w-100">Vince</button></form>
-                <form method="POST" th:action="'/sales/' + ${s.id} + '/ignore'"><button type="submit" class="btn btn-outline-secondary btn-sm w-100">Ignore</button></form>
+                <button type="button" class="btn btn-outline-info btn-sm w-100"
+                        th:attr="hx-post='/sales/' + ${s.id} + '/vince'"
+                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">Vince</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+                        th:attr="hx-post='/sales/' + ${s.id} + '/ignore'"
+                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">Ignore</button>
             </div>
         </td>
     </tr>

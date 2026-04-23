@@ -23,6 +23,110 @@
     </div>
 </a>
 
+<th:block th:if="${view == 'vince' and vinceLedger != null}">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title mb-3">Vince Ledger</h6>
+            <div class="row text-center g-2 mb-3">
+                <div class="col">
+                    <div class="text-muted small">Sales</div>
+                    <div class="fw-semibold" th:text="${vinceLedger.salesCount}"></div>
+                </div>
+                <div class="col">
+                    <div class="text-muted small">Gross</div>
+                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(vinceLedger.salesGross, 1, 2)}"></div>
+                </div>
+                <div class="col">
+                    <div class="text-muted small">Net Owed</div>
+                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(vinceLedger.salesNet, 1, 2)}"></div>
+                </div>
+                <div class="col">
+                    <div class="text-muted small">Paid Out</div>
+                    <div class="fw-semibold text-danger" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalPaidOut, 1, 2)}"></div>
+                </div>
+                <div class="col" th:if="${vinceLedger.totalVinceOwes > 0}">
+                    <div class="text-muted small">He Owes Me</div>
+                    <div class="fw-semibold text-warning" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalVinceOwes, 1, 2)}"></div>
+                </div>
+                <div class="col">
+                    <div class="text-muted small">Balance</div>
+                    <div class="fw-bold" th:classappend="${vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"
+                         th:text="'$' + ${#numbers.formatDecimal(vinceLedger.balance, 1, 2)}"></div>
+                    <div class="text-muted" style="font-size:.65rem"
+                         th:text="${vinceLedger.balance > 0 ? 'you owe Vince' : (vinceLedger.balance < 0 ? 'Vince owes you' : 'settled')}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4" x-data="{ showPayments: false }">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="card-title mb-0">Payments</h6>
+                <button class="btn btn-sm btn-outline-secondary" @click="showPayments = !showPayments"
+                        x-text="showPayments ? 'Hide' : 'Show'"></button>
+            </div>
+
+            <div x-show="showPayments" x-cloak>
+                <form method="POST" action="/sales/vince/payments" class="row g-2 mb-3 align-items-end">
+                    <div class="col-sm-2">
+                        <label class="form-label small text-muted mb-1">Amount</label>
+                        <input name="amount" type="number" step="0.01" min="0" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label small text-muted mb-1">Date</label>
+                        <input name="paymentDate" type="date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label small text-muted mb-1">Type</label>
+                        <select name="type" class="form-select form-select-sm">
+                            <option value="PAYOUT">Payout to Vince</option>
+                            <option value="RECEIVABLE">Vince Owes Me</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label small text-muted mb-1">Description</label>
+                        <input name="description" class="form-control form-control-sm" placeholder="Optional note">
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="submit" class="btn btn-success btn-sm w-100">Add</button>
+                    </div>
+                </form>
+
+                <table th:if="${vincePayments != null and !vincePayments.isEmpty()}" class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p : ${vincePayments}">
+                        <td th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
+                        <td>
+                            <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
+                                  th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
+                        </td>
+                        <td class="text-muted" th:text="${p.description}"></td>
+                        <td class="text-end fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
+                        <td class="text-end">
+                            <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1"
+                                        onclick="return confirm('Delete this payment?')">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <p th:if="${vincePayments == null or vincePayments.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
+            </div>
+        </div>
+    </div>
+</th:block>
+
 <div th:if="${#lists.isEmpty(groups)}">
     <p class="text-muted" th:text="${view == 'vince' ? 'No sales attributed to Vince yet.' : (view == 'ignored' ? 'No ignored sales.' : 'No sales yet.')}"></p>
 </div>
@@ -47,7 +151,7 @@
 
     <div id="sales-list">
         <div th:each="group : ${groups}" class="sale-month-group mb-4">
-            <span class="month-label month-pill" th:text="${group.label}"></span>
+            <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
             <table class="table table-hover bg-white mb-0 mt-2">
                 <thead class="table-light">
                 <tr>

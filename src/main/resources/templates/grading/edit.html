@@ -28,8 +28,8 @@
                         <option value="TAG" th:selected="${submission.company == 'TAG'}">TAG</option>
                     </select>
                 </div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Submission Method</label><input name="submission_method" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular" th:value="${submission.submissionMethod}"></div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Total Cost ($)</label><input name="submission_cost" type="number" step="0.01" min="0" th:value="${submission.submissionCost}" class="form-control form-control-sm"></div>
+                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Submission Method</label><input name="submissionMethod" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular" th:value="${submission.submissionMethod}"></div>
+                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Total Cost ($)</label><input name="submissionCost" type="number" step="0.01" min="0" th:value="${submission.submissionCost}" class="form-control form-control-sm"></div>
             </div>
             <div class="mt-2"><label class="form-label small text-muted mb-1">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" th:text="${submission.notes}"></textarea></div>
         </div>
@@ -46,7 +46,7 @@
             <tbody>
             <tr th:each="item : ${rawItems}">
                 <td><div class="d-flex align-items-center gap-2">
-                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
                     <div>
                         <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
                         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
@@ -54,7 +54,7 @@
                 </div></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
-                <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
+                <td class="text-center align-middle ps-4"><input type="checkbox" name="itemIds" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>
         </table>
@@ -67,7 +67,7 @@
             <tbody>
             <tr th:each="item : ${gradedItems}">
                 <td><div class="d-flex align-items-center gap-2">
-                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
                     <div>
                         <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
                         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
@@ -75,10 +75,12 @@
                 </div></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
                 <td class="text-center align-middle text-nowrap ps-4">
-                    <span th:if="${item.gradedDetails != null}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                    <span th:if="${item.gradedDetails != null}" class="badge"
+                          th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                          th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
                     <span th:unless="${item.gradedDetails != null}">&mdash;</span>
                 </td>
-                <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
+                <td class="text-center align-middle ps-4"><input type="checkbox" name="itemIds" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>
         </table>

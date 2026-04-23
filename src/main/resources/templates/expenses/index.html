@@ -36,7 +36,8 @@
 <div th:unless="${#lists.isEmpty(groups)}" id="expenses-list">
     <div th:each="group : ${groups}" class="expense-month-group mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="month-label month-pill" th:text="${group.label}"></span>
+            <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
+            <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
         </div>
         <table class="table table-hover bg-white mb-0 mt-2">
             <thead class="table-light">

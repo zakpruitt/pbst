@@ -33,7 +33,11 @@
             <div class="col"><div class="text-muted small text-uppercase">Sub. Cost</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.submissionCost, 1, 2)}"></div></div>
             <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Upcharges</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}"></div></div>
             <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Grand Total</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}"></div></div>
-            <div class="col"><div class="text-muted small text-uppercase">Company</div><div><span class="badge bg-secondary" th:text="${submission.company}"></span></div></div>
+            <div class="col"><div class="text-muted small text-uppercase">Company</div>
+                <div><span class="badge"
+                           th:classappend="${submission.company == 'PSA' ? 'grade-psa' : (submission.company == 'BGS' ? 'grade-bgs' : (submission.company == 'CGC' ? 'grade-cgc' : (submission.company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                           th:text="${submission.company}"></span></div>
+            </div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
                 <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status}"></span></div>
             </div>
@@ -41,7 +45,38 @@
     </div>
 </div>
 
-<div th:if="${submission.items != null and !submission.items.isEmpty()}">
+<!-- Record Grades form (IN_TRANSIT) -->
+<div th:if="${submission.status == 'IN_TRANSIT' and submission.items != null and !submission.items.isEmpty()}">
+    <div class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2">Record Grades</span>
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4" style="width:100px">Grade</th><th class="text-end text-nowrap ps-4" style="width:100px">Upcharge</th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${submission.items}" th:attr="data-item-id=${item.id}">
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
+                        <div>
+                            <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
+                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+                            <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null}" class="text-muted fst-italic">Unnamed</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-center align-middle ps-4"><input type="text" class="form-control form-control-sm grade-input" placeholder="e.g. 10"></td>
+                <td class="text-end align-middle ps-4"><input type="number" step="0.01" min="0" class="form-control form-control-sm upcharge-input" value="0"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-success btn-sm" onclick="recordReturn()">Record Return</button>
+        </div>
+    </div>
+</div>
+
+<!-- Items table (not IN_TRANSIT) -->
+<div th:if="${submission.status != 'IN_TRANSIT' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Items</span>
         <table class="table table-sm table-hover bg-white mb-0">
@@ -50,7 +85,7 @@
             <tr th:each="item : ${submission.items}">
                 <td>
                     <div class="d-flex align-items-center gap-2">
-                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb">
+                        <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}" th:src="${item.pokemonCard.imageUrl}" class="card-thumb" th:data-card-img="${item.pokemonCard.imageUrl}">
                         <div>
                             <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}" class="fw-medium" th:text="${item.manualNameOverride}"></span>
                             <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}" class="fw-medium" th:text="${item.pokemonCard.name}"></span>
@@ -62,7 +97,10 @@
                 <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
-                    <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}" class="badge bg-secondary" th:text="${item.gradedDetails.gradingCompany} + ' ' + ${item.gradedDetails.grade}"></span>
+                    <span th:if="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}"
+                          class="badge"
+                          th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                          th:text="${item.gradedDetails.gradingCompany + ' ' + item.gradedDetails.grade}"></span>
                     <span th:unless="${item.gradedDetails != null and item.gradedDetails.grade != null and !item.gradedDetails.grade.isEmpty()}">&mdash;</span>
                 </td>
             </tr>
@@ -78,6 +116,24 @@
         <button type="submit" class="btn btn-secondary btn-sm">Mark Sent</button>
     </form>
 </div>
+
+<script th:if="${submission.status == 'IN_TRANSIT'}" th:inline="javascript">
+function recordReturn() {
+    const grades = [];
+    document.querySelectorAll('tr[data-item-id]').forEach(row => {
+        grades.push({
+            itemId: parseInt(row.dataset.itemId),
+            grade: row.querySelector('.grade-input').value.trim(),
+            upcharge: parseFloat(row.querySelector('.upcharge-input').value) || 0
+        });
+    });
+    fetch(`/grading/${/*[[${submission.id}]]*/0}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grades: grades })
+    }).then(r => { if (r.ok || r.redirected) window.location.reload(); else alert('Error recording return'); });
+}
+</script>
 
 </div>
 </body>

@@ -6,6 +6,8 @@ import com.collectingwithzak.dto.SnapshotItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ import java.util.List;
 @Table(name = "lot_purchases")
 @Getter
 @Setter
+@SQLDelete(sql = "UPDATE lot_purchases SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class LotPurchase extends BaseEntity {
 
     @Column(name = "seller_name")
@@ -25,16 +29,16 @@ public class LotPurchase extends BaseEntity {
     @Column(name = "purchase_date")
     private LocalDate purchaseDate;
 
-    @Column(name = "total_cost")
+    @Column(name = "total_cost", columnDefinition = "numeric(10,2)")
     private double totalCost;
 
-    @Column(name = "estimated_market_value")
+    @Column(name = "estimated_market_value", columnDefinition = "numeric(10,2)")
     private double estimatedMarketValue;
 
     @Column(name = "lot_content_snapshot", columnDefinition = "text")
     private String lotContentSnapshot;
 
-    private String status;
+    private String status = "PENDING";
 
     @OneToMany(mappedBy = "lotPurchase", fetch = FetchType.LAZY)
     private List<TrackedItem> trackedItems = new ArrayList<>();

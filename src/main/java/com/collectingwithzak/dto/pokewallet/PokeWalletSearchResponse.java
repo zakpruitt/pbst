@@ -1,6 +1,7 @@
 package com.collectingwithzak.dto.pokewallet;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -15,14 +16,16 @@ public class PokeWalletSearchResponse {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Pagination {
         private int page;
-        private int total_pages;
+        @JsonProperty("total_pages")
+        private int totalPages;
     }
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class PokeWalletCard {
         private String id;
-        private CardInfo card_info;
+        @JsonProperty("card_info")
+        private CardInfo cardInfo;
         private TcgPlayer tcgplayer;
     }
 
@@ -30,9 +33,12 @@ public class PokeWalletSearchResponse {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CardInfo {
         private String name;
-        private String set_name;
-        private String set_code;
-        private String card_number;
+        @JsonProperty("set_name")
+        private String setName;
+        @JsonProperty("set_code")
+        private String setCode;
+        @JsonProperty("card_number")
+        private String cardNumber;
         private String rarity;
     }
 
@@ -46,7 +52,9 @@ public class PokeWalletSearchResponse {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class PriceVariant {
-        private Double market_price;
-        private Double low_price;
+        @JsonProperty("market_price")
+        private Double marketPrice;
+        @JsonProperty("low_price")
+        private Double lowPrice;
     }
 }

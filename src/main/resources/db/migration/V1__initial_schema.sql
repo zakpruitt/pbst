@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS sealed_products (
 CREATE TABLE IF NOT EXISTS lot_purchases (
     id                      BIGSERIAL PRIMARY KEY,
     seller_name             TEXT NOT NULL DEFAULT '',
-    purchase_date           TIMESTAMPTZ,
+    purchase_date           DATE,
     description             TEXT NOT NULL DEFAULT '',
     total_cost              NUMERIC(10,2) NOT NULL DEFAULT 0,
     estimated_market_value  NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS lot_purchases (
 CREATE TABLE IF NOT EXISTS grading_submissions (
     id                BIGSERIAL PRIMARY KEY,
     submission_name   TEXT NOT NULL DEFAULT '',
-    send_date         TIMESTAMPTZ,
-    return_date       TIMESTAMPTZ,
+    send_date         DATE,
+    return_date       DATE,
     company           TEXT NOT NULL DEFAULT '',
     status            TEXT NOT NULL DEFAULT 'PREPPING',
     submission_method TEXT NOT NULL DEFAULT '',
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS grading_submissions (
 CREATE TABLE IF NOT EXISTS sales (
     id             BIGSERIAL PRIMARY KEY,
     ebay_order_id  TEXT UNIQUE,
-    sale_date      TIMESTAMPTZ,
+    sale_date      DATE,
     title          TEXT NOT NULL DEFAULT '',
     buyer_username TEXT NOT NULL DEFAULT '',
     gross_amount   NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS sales (
 
 CREATE TABLE IF NOT EXISTS tracked_items (
     id                      BIGSERIAL PRIMARY KEY,
-    acquisition_date        TIMESTAMPTZ,
+    acquisition_date        DATE,
     cost_basis              NUMERIC(10,2) NOT NULL DEFAULT 0,
     market_value_at_purchase NUMERIC(10,2) NOT NULL DEFAULT 0,
     manual_name_override    TEXT,
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS tracked_items (
 CREATE TABLE IF NOT EXISTS expenses (
     id            BIGSERIAL PRIMARY KEY,
     name          TEXT NOT NULL DEFAULT '',
-    expense_date  TIMESTAMPTZ,
+    expense_date  DATE,
     cost          NUMERIC(10,2) NOT NULL DEFAULT 0,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -7,7 +7,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -16,32 +17,33 @@ import java.time.LocalDateTime;
 @Table(name = "pokemon_cards")
 @Getter
 @Setter
-@SoftDelete(columnName = "deleted_at")
+@SQLDelete(sql = "UPDATE pokemon_cards SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class PokemonCard {
 
     @Id
     private String id;
 
-    private String name;
+    private String name = "";
 
     @Column(name = "set_code")
-    private String setCode;
+    private String setCode = "";
 
     @Column(name = "set_name")
-    private String setName;
+    private String setName = "";
 
     @Column(name = "card_number")
-    private String cardNumber;
+    private String cardNumber = "";
 
-    private String rarity;
+    private String rarity = "";
 
     @Column(name = "image_url")
-    private String imageUrl;
+    private String imageUrl = "";
 
-    @Column(name = "market_price")
+    @Column(name = "market_price", columnDefinition = "numeric(10,2)")
     private double marketPrice;
 
-    @Column(name = "low_price")
+    @Column(name = "low_price", columnDefinition = "numeric(10,2)")
     private double lowPrice;
 
     @Column(name = "last_price_sync")

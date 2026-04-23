@@ -3,6 +3,8 @@ package com.collectingwithzak.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -12,6 +14,8 @@ import java.util.List;
 @Table(name = "grading_submissions")
 @Getter
 @Setter
+@SQLDelete(sql = "UPDATE grading_submissions SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class GradingSubmission extends BaseEntity {
 
     @Column(name = "submission_name")
@@ -19,7 +23,7 @@ public class GradingSubmission extends BaseEntity {
 
     private String company;
 
-    private String status;
+    private String status = "PREPPING";
 
     @Column(name = "submission_method")
     private String submissionMethod;
@@ -32,16 +36,16 @@ public class GradingSubmission extends BaseEntity {
 
     private String notes;
 
-    @Column(name = "cost_per_card")
+    @Column(name = "cost_per_card", columnDefinition = "numeric(10,2)")
     private double costPerCard;
 
-    @Column(name = "tax_rate")
+    @Column(name = "tax_rate", columnDefinition = "numeric(6,5)")
     private double taxRate;
 
-    @Column(name = "submission_cost")
+    @Column(name = "submission_cost", columnDefinition = "numeric(10,2)")
     private double submissionCost;
 
-    @Column(name = "upcharge_total")
+    @Column(name = "upcharge_total", columnDefinition = "numeric(10,2)")
     private double upchargeTotal;
 
     @OneToMany(mappedBy = "gradingSubmission", fetch = FetchType.LAZY)

@@ -2,19 +2,28 @@ package com.collectingwithzak.mapper;
 
 import com.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse.PokeWalletCard;
 import com.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse.TcgPlayer;
+import com.collectingwithzak.dto.response.CardSearchResult;
+import com.collectingwithzak.dto.response.PokemonCardResponse;
 import com.collectingwithzak.entity.PokemonCard;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PokemonCardMapper {
 
-    @Mapping(source = "card_info.name", target = "name")
-    @Mapping(source = "card_info.set_code", target = "setCode")
-    @Mapping(source = "card_info.set_name", target = "setName")
-    @Mapping(source = "card_info.card_number", target = "cardNumber")
-    @Mapping(source = "card_info.rarity", target = "rarity")
+    PokemonCardResponse toResponse(PokemonCard entity);
+
+    CardSearchResult toSearchResult(PokemonCard entity);
+
+    List<CardSearchResult> toSearchResultList(List<PokemonCard> entities);
+
+    @Mapping(source = "cardInfo.name", target = "name")
+    @Mapping(source = "cardInfo.setCode", target = "setCode")
+    @Mapping(source = "cardInfo.setName", target = "setName")
+    @Mapping(source = "cardInfo.cardNumber", target = "cardNumber")
+    @Mapping(source = "cardInfo.rarity", target = "rarity")
     @Mapping(target = "imageUrl", ignore = true)
     @Mapping(target = "marketPrice", ignore = true)
     @Mapping(target = "lowPrice", ignore = true)
@@ -26,23 +35,26 @@ public interface PokemonCardMapper {
     @AfterMapping
     default void mapPricesAndImage(PokeWalletCard dto, @MappingTarget PokemonCard card) {
         card.setLastPriceSync(LocalDateTime.now());
+        if (card.getSetName() == null) card.setSetName("");
+        if (card.getRarity() == null) card.setRarity("");
 
         TcgPlayer tcg = dto.getTcgplayer();
         if (tcg == null) return;
 
         if (tcg.getPrices() != null && !tcg.getPrices().isEmpty()) {
             var price = tcg.getPrices().getFirst();
-            if (price.getMarket_price() != null) card.setMarketPrice(price.getMarket_price());
-            if (price.getLow_price() != null) card.setLowPrice(price.getLow_price());
+            if (price.getMarketPrice() != null) card.setMarketPrice(price.getMarketPrice());
+            if (price.getLowPrice() != null) card.setLowPrice(price.getLowPrice());
         }
-        card.setImageUrl(tcgImageUrl(tcg.getUrl()));
-    }
 
-    default String tcgImageUrl(String url) {
-        if (url == null || !url.contains("/product/")) return "";
+        String url = tcg.getUrl();
+        if (url == null || !url.contains("/product/")) {
+            card.setImageUrl("");
+            return;
+        }
         String after = url.substring(url.indexOf("/product/") + "/product/".length());
         int q = after.indexOf('?');
         String productId = q >= 0 ? after.substring(0, q) : after;
-        return "https://tcgplayer-cdn.tcgplayer.com/product/" + productId + "_in_1000x1000.jpg";
+        card.setImageUrl("https://tcgplayer-cdn.tcgplayer.com/product/" + productId + "_in_1000x1000.jpg");
     }
 }

@@ -19,6 +19,6 @@ public class GradedDetails {
 
     private String grade;
 
-    @Column(name = "grading_upcharge")
+    @Column(name = "grading_upcharge", columnDefinition = "numeric(10,2)")
     private double gradingUpcharge;
 }

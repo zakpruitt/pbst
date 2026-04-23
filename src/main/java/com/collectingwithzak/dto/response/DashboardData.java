@@ -1,7 +1,5 @@
 package com.collectingwithzak.dto.response;
 
-import com.collectingwithzak.entity.LotPurchase;
-import com.collectingwithzak.entity.Sale;
 import lombok.Builder;
 import lombok.Data;
 
@@ -35,8 +33,8 @@ public class DashboardData {
     private List<GradingStatusCount> gradingStatuses;
     private List<LotStatusCount> lotStatuses;
 
-    private List<Sale> topSales;
-    private List<Sale> recentSales;
-    private List<LotPurchase> recentLots;
-    private RangeTotals vinceTotals;
+    private List<SaleResponse> topSales;
+    private List<SaleResponse> recentSales;
+    private List<LotResponse> recentLots;
+    private VinceLedger vinceLedger;
 }

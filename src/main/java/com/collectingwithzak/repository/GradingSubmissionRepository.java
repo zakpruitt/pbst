@@ -8,15 +8,21 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface GradingSubmissionRepository extends JpaRepository<GradingSubmission, Long> {
 
+    // ---------- Business logic ----------
+
     List<GradingSubmission> findAllByOrderByCreatedAtDesc();
 
-    long countByCompany(String company);
+    @Query("SELECT DISTINCT g FROM GradingSubmission g LEFT JOIN FETCH g.items ORDER BY g.createdAt DESC")
+    List<GradingSubmission> findAllWithItemsOrderByCreatedAtDesc();
 
-    @Query(value = "SELECT status, COUNT(*) FROM grading_submissions GROUP BY status", nativeQuery = true)
-    List<Object[]> countByStatusRaw();
+    @Query("SELECT g FROM GradingSubmission g LEFT JOIN FETCH g.items WHERE g.id = :id")
+    Optional<GradingSubmission> findByIdWithItems(Long id);
+
+    long countByCompany(String company);
 
     @Modifying
     @Query("UPDATE GradingSubmission g SET g.status = :status WHERE g.id = :id")
@@ -29,6 +35,11 @@ public interface GradingSubmissionRepository extends JpaRepository<GradingSubmis
     @Modifying
     @Query("UPDATE GradingSubmission g SET g.upchargeTotal = :upchargeTotal, g.returnDate = :returnDate WHERE g.id = :id")
     void updateReturnDetails(Long id, double upchargeTotal, LocalDate returnDate);
+
+    // ---------- Dashboard / KPI ----------
+
+    @Query(value = "SELECT status, COUNT(*) FROM grading_submissions WHERE deleted_at IS NULL GROUP BY status", nativeQuery = true)
+    List<Object[]> countByStatusRaw();
 
     default List<GradingStatusCount> countByStatus() {
         return countByStatusRaw().stream()

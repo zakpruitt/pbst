@@ -12,7 +12,18 @@ import java.util.List;
 
 public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
 
+    // ---------- Business logic ----------
+
     List<LotPurchase> findAllByOrderByPurchaseDateDesc();
+
+    @Query("SELECT DISTINCT l FROM LotPurchase l LEFT JOIN FETCH l.trackedItems ORDER BY l.purchaseDate DESC")
+    List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
+
+    @Modifying
+    @Query("UPDATE LotPurchase l SET l.status = :status WHERE l.id = :id")
+    void updateStatus(Long id, String status);
+
+    // ---------- Dashboard / KPI ----------
 
     List<LotPurchase> findByOrderByPurchaseDateDesc(Pageable pageable);
 
@@ -21,17 +32,13 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
 
     @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', purchase_date), 'YYYY-MM') AS month, " +
                    "COALESCE(SUM(total_cost), 0) AS spend, COUNT(*) AS count " +
-                   "FROM lot_purchases WHERE status != 'REJECTED' " +
+                   "FROM lot_purchases WHERE status != 'REJECTED' AND deleted_at IS NULL " +
                    "AND purchase_date >= NOW() - make_interval(months => :months) " +
                    "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlySpendRaw(int months);
 
-    @Query(value = "SELECT status, COUNT(*) FROM lot_purchases GROUP BY status", nativeQuery = true)
+    @Query(value = "SELECT status, COUNT(*) FROM lot_purchases WHERE deleted_at IS NULL GROUP BY status", nativeQuery = true)
     List<Object[]> countByStatusRaw();
-
-    @Modifying
-    @Query("UPDATE LotPurchase l SET l.status = :status WHERE l.id = :id")
-    void updateStatus(Long id, String status);
 
     default List<MonthlySpend> getMonthlySpend(int months) {
         return getMonthlySpendRaw(months).stream()

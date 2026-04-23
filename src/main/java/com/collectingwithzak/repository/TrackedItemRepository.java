@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> {
 
+    // ---------- Business logic ----------
+
     @Query("SELECT t FROM TrackedItem t " +
            "LEFT JOIN FETCH t.pokemonCard LEFT JOIN FETCH t.sealedProduct " +
            "LEFT JOIN FETCH t.lotPurchase LEFT JOIN FETCH t.gradingSubmission " +
@@ -20,20 +22,6 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
     @Query("SELECT t FROM TrackedItem t LEFT JOIN FETCH t.pokemonCard " +
            "WHERE t.purpose = 'INVENTORY' AND t.sale IS NULL")
     List<TrackedItem> findAvailableInventory();
-
-    @Query("SELECT COUNT(t) FROM TrackedItem t WHERE t.purpose = :purpose " +
-           "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
-    long countByPurpose(String purpose);
-
-    @Query(value = "SELECT item_type, COUNT(*), " +
-                   "COALESCE(SUM(market_value_at_purchase), 0), COALESCE(SUM(cost_basis), 0) " +
-                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL " +
-                   "GROUP BY item_type", nativeQuery = true)
-    List<Object[]> countByItemTypeRaw();
-
-    @Query(value = "SELECT COALESCE(SUM(cost_basis), 0), COALESCE(SUM(market_value_at_purchase), 0) " +
-                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL", nativeQuery = true)
-    Object[] getInventoryTotalsRaw();
 
     @Modifying
     @Query("UPDATE TrackedItem t SET t.gradingSubmission.id = :submissionId WHERE t.id IN :itemIds")
@@ -58,6 +46,22 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
 
     void deleteByLotPurchaseId(Long lotPurchaseId);
 
+    // ---------- Dashboard / KPI ----------
+
+    @Query("SELECT COUNT(t) FROM TrackedItem t WHERE t.purpose = :purpose " +
+           "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
+    long countByPurpose(String purpose);
+
+    @Query(value = "SELECT item_type, COUNT(*), " +
+                   "COALESCE(SUM(market_value_at_purchase), 0), COALESCE(SUM(cost_basis), 0) " +
+                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL AND deleted_at IS NULL " +
+                   "GROUP BY item_type", nativeQuery = true)
+    List<Object[]> countByItemTypeRaw();
+
+    @Query(value = "SELECT COALESCE(SUM(cost_basis), 0), COALESCE(SUM(market_value_at_purchase), 0) " +
+                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL AND deleted_at IS NULL", nativeQuery = true)
+    List<Object[]> getInventoryTotalsRaw();
+
     default List<ItemTypeCount> countByItemType() {
         return countByItemTypeRaw().stream()
                 .map(row -> new ItemTypeCount(
@@ -69,7 +73,7 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
     }
 
     default double[] getInventoryTotals() {
-        Object[] row = getInventoryTotalsRaw();
+        Object[] row = getInventoryTotalsRaw().getFirst();
         return new double[]{((Number) row[0]).doubleValue(), ((Number) row[1]).doubleValue()};
     }
 }

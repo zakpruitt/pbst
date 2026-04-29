@@ -28,7 +28,7 @@
         <div th:each="group : ${groups}" class="grading-month-group mb-4">
             <span class="month-label month-pill mb-2" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
             <table class="table table-hover bg-white mt-2 mb-0">
-                <thead class="table-light"><tr><th style="width:100%">Submission</th><th class="text-center text-nowrap ps-4">Items</th><th class="text-end text-nowrap ps-4">Total</th><th class="text-center text-nowrap ps-4">Status</th></tr></thead>
+                <thead class="table-light"><tr><th style="width:100%">Submission</th><th class="text-center text-nowrap ps-4">Company</th><th class="text-center text-nowrap ps-4">Items</th><th class="text-end text-nowrap ps-4">Total</th><th class="text-center text-nowrap ps-4">Status</th></tr></thead>
                 <tbody>
                 <tr th:each="s : ${group.items}" class="grading-row"
                     th:attr="data-name=${s.submissionName},data-company=${s.company}"
@@ -42,10 +42,15 @@
                             <span th:unless="${s.returnDate != null}">???</span>
                         </div>
                     </td>
+                    <td class="text-center align-middle text-nowrap ps-4">
+                        <span class="badge"
+                              th:classappend="${s.company == 'PSA' ? 'grade-psa' : (s.company == 'BGS' ? 'grade-bgs' : (s.company == 'CGC' ? 'grade-cgc' : (s.company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+                              th:text="${s.company}"></span>
+                    </td>
                     <td class="text-center align-middle text-nowrap ps-4" th:text="${s.items != null ? s.items.size() : 0}"></td>
                     <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="${s.grandTotal != null and s.grandTotal != 0 ? '$' + #numbers.formatDecimal(s.grandTotal, 1, 2) : '—'}"></td>
                     <td class="text-center align-middle text-nowrap ps-4">
-                        <span class="badge" th:classappend="${s.status == 'RETURNED' ? 'bg-success' : (s.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${s.status}"></span>
+                        <span class="badge" th:classappend="${s.status == 'RETURNED' ? 'bg-success' : (s.status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${s.status == 'RETURNED' ? 'Returned' : (s.status == 'IN_GRADING' ? 'In Grading' : (s.status == 'PREPPING' ? 'Prepping' : (s.status == 'ACCEPTED' ? 'Accepted' : (s.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span>
                     </td>
                 </tr>
                 </tbody>

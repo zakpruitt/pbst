@@ -7,30 +7,38 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">Expenses</h4>
-    <div class="text-muted small">
-        <span th:text="${count}"></span> expense<span th:if="${count != 1}">s</span> &middot;
-        <span th:text="'$' + ${#numbers.formatDecimal(total, 1, 2)}"></span> total
+    <a href="/expenses/new" class="btn btn-success btn-sm">+ New Expense</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row text-center g-2">
+            <div class="col">
+                <div class="text-muted small">Expenses</div>
+                <div class="fw-semibold" th:text="${count}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small">Total</div>
+                <div class="fw-semibold text-danger" th:text="'$' + ${#numbers.formatDecimal(total, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small">Average</div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(avg, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small">Last 30 Days</div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(total30, 1, 2)}"></div>
+            </div>
+            <div class="col">
+                <div class="text-muted small">This Month</div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(totalMonth, 1, 2)}"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-<form method="POST" action="/expenses" class="card mb-3">
-    <div class="card-body py-2">
-        <div class="row g-2 align-items-center">
-            <div class="col-sm"><input name="name" type="text" class="form-control form-control-sm" placeholder="Expense name (e.g. Atlanta trip)" required></div>
-            <div class="col-sm-auto"><input name="expenseDate" type="date" class="form-control form-control-sm" required></div>
-            <div class="col-sm-auto">
-                <div class="input-group input-group-sm" style="width:130px">
-                    <span class="input-group-text">$</span>
-                    <input name="cost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" required>
-                </div>
-            </div>
-            <div class="col-sm-auto"><button type="submit" class="btn btn-success btn-sm">+ Add</button></div>
-        </div>
-    </div>
-</form>
-
 <div th:if="${#lists.isEmpty(groups)}">
-    <p class="text-muted">No expenses yet. Use the form above to add one.</p>
+    <p class="text-muted">No expenses yet. <a href="/expenses/new">Add one</a>.</p>
 </div>
 
 <div th:unless="${#lists.isEmpty(groups)}" id="expenses-list">
@@ -39,7 +47,7 @@
             <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
             <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
         </div>
-        <table class="table table-hover bg-white mb-0 mt-2">
+        <table class="table table-sm table-hover bg-white mb-0 mt-2">
             <thead class="table-light">
             <tr><th style="width:100%">Expense</th><th class="text-nowrap ps-4">Date</th><th class="text-end text-nowrap ps-4">Cost</th><th class="text-center text-nowrap ps-4" style="width:4rem"></th></tr>
             </thead>
@@ -53,7 +61,7 @@
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
                     <form method="POST" th:action="'/expenses/' + ${e.id} + '/delete'" onsubmit="return confirm('Delete this expense?')">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">&times;</button>
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                     </form>
                 </td>
             </tr>

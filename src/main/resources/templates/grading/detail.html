@@ -24,7 +24,12 @@
     </div>
 </div>
 
-<div th:if="${submission.notes != null and !submission.notes.isEmpty()}" class="alert alert-light border mb-3 py-2 px-3 small text-muted" th:text="${submission.notes}"></div>
+<div th:if="${submission.notes != null and !submission.notes.isEmpty()}" class="card mb-3">
+    <div class="card-body py-2 px-3">
+        <div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Notes</div>
+        <div class="small" th:text="${submission.notes}"></div>
+    </div>
+</div>
 
 <div class="card mb-3">
     <div class="card-body">
@@ -39,18 +44,18 @@
                            th:text="${submission.company}"></span></div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
-                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_TRANSIT' ? 'In Transit' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span></div>
+                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_GRADING' ? 'In Grading' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Record Grades form (IN_TRANSIT) -->
-<div th:if="${submission.status == 'IN_TRANSIT' and submission.items != null and !submission.items.isEmpty()}">
+<!-- Record Grades form (IN_GRADING) -->
+<div th:if="${submission.status == 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Record Grades</span>
         <table class="table table-sm table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4" style="width:100px">Grade</th><th class="text-end text-nowrap ps-4" style="width:100px">Upcharge</th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4" style="width:100px">New Grade</th><th class="text-end text-nowrap ps-4" style="width:100px">Upcharge</th></tr></thead>
             <tbody>
             <tr th:each="item : ${submission.items}" th:attr="data-item-id=${item.id}">
                 <td>
@@ -63,28 +68,28 @@
             </tbody>
         </table>
         <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn btn-success btn-sm" onclick="recordReturn()">Record Return</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="recordReturn()">&#128203; Record Return</button>
         </div>
     </div>
 </div>
 
-<!-- Items table (not IN_TRANSIT) -->
-<div th:if="${submission.status != 'IN_TRANSIT' and submission.items != null and !submission.items.isEmpty()}">
+<!-- Items table (not IN_GRADING) -->
+<div th:if="${submission.status != 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Items</span>
         <table class="table table-sm table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Upcharge</th><th class="text-end text-nowrap ps-4">Grand Total</th><th class="text-center text-nowrap ps-4">Grade</th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Upcharge</th><th class="text-end text-nowrap ps-4">Grand Total</th></tr></thead>
             <tbody>
             <tr th:each="item : ${submission.items}">
                 <td>
                     <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
+                </td>
                 <td class="text-end align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
-                <td class="text-center align-middle ps-4">
-                    <th:block th:replace="~{fragments/items :: grade-badge(details=${item.gradedDetails})}"></th:block>
-                </td>
             </tr>
             </tbody>
         </table>
@@ -94,12 +99,13 @@
 
 <div th:if="${submission.status == 'PREPPING' and submission.items != null and !submission.items.isEmpty()}" class="d-flex justify-content-end">
     <form method="POST" th:action="'/grading/' + ${submission.id} + '/advance'">
-        <input type="hidden" name="new_status" value="IN_TRANSIT">
-        <button type="submit" class="btn btn-secondary btn-sm">Mark Sent</button>
+        <input type="hidden" name="new_status" value="IN_GRADING">
+        <button type="submit" class="btn btn-warning btn-sm">&#9993; Mark Sent</button>
     </form>
 </div>
 
-<script th:if="${submission.status == 'IN_TRANSIT'}" th:inline="javascript">
+<script th:if="${submission.status == 'IN_GRADING'}" th:inline="javascript">
+var submissionId = /*[[${submission.id}]]*/ 0;
 function recordReturn() {
     const grades = [];
     document.querySelectorAll('tr[data-item-id]').forEach(row => {
@@ -109,7 +115,7 @@ function recordReturn() {
             upcharge: parseFloat(row.querySelector('.upcharge-input').value) || 0
         });
     });
-    fetch(`/grading/${/*[[${submission.id}]]*/0}/return`, {
+    fetch('/grading/' + submissionId + '/return', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ grades: grades })

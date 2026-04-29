@@ -12,7 +12,7 @@
         <h4 class="mb-1">Edit Submission</h4>
         <small class="text-muted" th:text="${submission.submissionName} + ' · ' + ${submission.company}"></small>
     </div>
-    <span class="badge flex-shrink-0" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_TRANSIT' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_TRANSIT' ? 'In Transit' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span>
+    <span class="badge flex-shrink-0" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_GRADING' ? 'In Grading' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span>
 </div>
 
 <form method="POST" th:action="'/grading/' + ${submission.id}">
@@ -42,14 +42,17 @@
     <div th:if="${!#lists.isEmpty(rawItems)}" class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Raw Cards</span>
         <table class="table table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
             <tbody>
             <tr th:each="item : ${rawItems}">
                 <td>
                     <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
+                </td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle ps-4"><input type="checkbox" name="itemIds" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>
@@ -59,17 +62,17 @@
     <div th:if="${!#lists.isEmpty(gradedItems)}" class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Previously Graded</span>
         <table class="table table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4">Grade</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
             <tbody>
             <tr th:each="item : ${gradedItems}">
                 <td>
                     <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
-                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle text-nowrap ps-4">
-                    <th:block th:replace="~{fragments/items :: grade-badge(details=${item.gradedDetails})}"></th:block>
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
                 </td>
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle ps-4"><input type="checkbox" name="itemIds" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>

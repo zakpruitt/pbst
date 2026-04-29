@@ -22,7 +22,7 @@
         </form>
         <form th:if="${lot.status == 'PENDING'}" method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
             <input type="hidden" name="action" value="reject">
-            <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+            <button type="submit" class="btn btn-outline-danger btn-sm">&#10005; Reject</button>
         </form>
         <a th:href="'/lots/' + ${lot.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
         <form method="POST" th:action="'/lots/' + ${lot.id} + '/delete'" class="d-inline"
@@ -57,7 +57,7 @@
 
 <span class="month-pill section-pill d-inline-block mb-2">Lot Contents</span>
 <p th:if="${#lists.isEmpty(snapshotItems)}" class="text-muted small">No items recorded. <a th:href="'/lots/' + ${lot.id} + '/edit'">Edit lot</a> to add items.</p>
-<table th:unless="${#lists.isEmpty(snapshotItems)}" class="table table-hover bg-white mb-4">
+<table th:unless="${#lists.isEmpty(snapshotItems)}" class="table table-sm table-hover bg-white mb-4">
     <thead class="table-light">
     <tr>
         <th style="width:100%">Item</th>
@@ -93,8 +93,8 @@
         <td class="text-end align-middle text-nowrap ps-4" th:text="${item.qty}"></td>
         <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.offered, 1, 2)}"></td>
         <td class="text-center align-middle text-nowrap ps-4">
-            <span th:if="${item.tracked}" class="badge bg-success">TRACKED</span>
-            <span th:unless="${item.tracked}" class="badge bg-secondary">NOT TRACKED</span>
+            <span th:if="${item.tracked}" class="badge bg-success">Tracked</span>
+            <span th:unless="${item.tracked}" class="badge bg-secondary">Not Tracked</span>
         </td>
     </tr>
     </tbody>
@@ -102,13 +102,13 @@
 
 <div th:if="${lot.trackedItems != null and !lot.trackedItems.isEmpty()}">
     <span class="month-pill section-pill d-inline-block mb-2">Tracked Items</span>
-    <table class="table table-hover bg-white">
+    <table class="table table-sm table-hover bg-white">
         <thead class="table-light">
         <tr>
             <th style="width:100%">Item</th>
+            <th class="text-center text-nowrap ps-4">Type</th>
             <th class="text-end text-nowrap ps-4">Cost Basis</th>
-            <th class="text-end text-nowrap ps-4">Market</th>
-            <th class="text-center text-nowrap ps-4">Grade</th>
+            <th class="text-center text-nowrap ps-4">Market</th>
             <th class="text-center text-nowrap ps-4">Purpose</th>
         </tr>
         </thead>
@@ -117,11 +117,11 @@
             <td>
                 <div th:replace="~{fragments/items :: item-cell(item=${ti})}"></div>
             </td>
-            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
-            <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
-                <th:block th:replace="~{fragments/items :: grade-badge(details=${ti.gradedDetails})}"></th:block>
+                <th:block th:replace="~{fragments/items :: type-badge(item=${ti})}"></th:block>
             </td>
+            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
+            <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
                 <span class="badge"
                       th:classappend="${ti.purpose == 'INVENTORY' ? 'bg-primary' : (ti.purpose == 'IN_GRADING' ? 'bg-warning text-dark' : 'bg-secondary')}"

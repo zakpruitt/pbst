@@ -77,7 +77,7 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="me-2" style="min-width:0">
                             <div class="text-truncate fw-medium" th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 50)}"></div>
-                            <div class="text-muted small" th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')} + ' · ' + ${s.origin}"></div>
+                            <div class="text-muted small" th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')} + ' · ' + ${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></div>
                         </div>
                         <div class="text-end flex-shrink-0">
                             <div class="fw-medium" th:text="'$' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
@@ -126,8 +126,8 @@
     <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
-                <h6 class="mb-1">Vince</h6>
-                <small class="text-muted">Tracked separately — not part of your P&amp;L</small>
+                <h6 class="mb-1">Vince Summary</h6>
+                <small class="text-muted">Not part of collectingwithzak's P&amp;L</small>
             </div>
             <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View ledger &rarr;</a>
         </div>
@@ -162,8 +162,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script th:inline="javascript">
 (function () {
-    const accent = '#27ae60', muted = '#536471', danger = '#dc3545', blue = '#0d6efd';
-    const amber = '#ffc107', purple = '#6f42c1', teal = '#20c997', border = '#e1e8ed';
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const accent = isDark ? '#2ecc71' : '#27ae60', muted = isDark ? '#9ca3af' : '#536471', danger = '#dc3545', blue = '#0d6efd';
+    const amber = '#ffc107', purple = '#6f42c1', teal = '#20c997', border = isDark ? '#2c3034' : '#e1e8ed';
+    const surface = isDark ? '#1a1d21' : '#ffffff';
     const palette = [blue, accent, amber, danger, purple, teal, '#fd7e14', '#0dcaf0'];
 
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -195,7 +197,7 @@
         const total = data.reduce((a, b) => a + b, 0);
         new Chart(document.getElementById(canvasId), {
             type: 'doughnut',
-            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#fff', borderWidth: 2, hoverOffset: 6 }] },
+            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: surface, borderWidth: 2, hoverOffset: 6 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0; return ` ${ctx.parsed} (${pct}%)`; } } } } }
         });
     }

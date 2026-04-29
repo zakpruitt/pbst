@@ -37,7 +37,7 @@
         <td class="text-center align-middle text-nowrap ps-4">
             <span class="badge" style="font-size:.65rem"
                   th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
-                  th:text="${s.origin}"></span>
+                  th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
         </td>
         <td class="text-end align-middle text-nowrap ps-4">
             <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
@@ -45,13 +45,13 @@
         </td>
         <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
             <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
-                <a th:href="'/sales/' + ${s.id} + '/confirm'" class="btn btn-success btn-sm">Confirm</a>
+                <a th:href="'/sales/' + ${s.id} + '/confirm?from=staging'" class="btn btn-success btn-sm">Confirm</a>
                 <button type="button" class="btn btn-outline-info btn-sm w-100"
                         th:attr="hx-post='/sales/' + ${s.id} + '/vince'"
-                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">Vince</button>
+                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">&#8594; Vince</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm w-100"
                         th:attr="hx-post='/sales/' + ${s.id} + '/ignore'"
-                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">Ignore</button>
+                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">&#8212; Ignore</button>
             </div>
         </td>
     </tr>

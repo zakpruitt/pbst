@@ -3,10 +3,10 @@
 
 <!-- Tracked item cell: image + name resolution + set info -->
 <div th:fragment="item-cell(item)" class="d-flex align-items-center gap-2">
-    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}"
+    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
          th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
          th:data-card-img="${item.pokemonCard.imageUrl}">
-    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null) and item.sealedProduct != null and item.sealedProduct.imageUrl != null}"
+    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null or item.pokemonCard.imageUrl.isEmpty()) and item.sealedProduct != null and item.sealedProduct.imageUrl != null and !item.sealedProduct.imageUrl.isEmpty()}"
          th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
          th:data-card-img="${item.sealedProduct.imageUrl}">
     <div>
@@ -27,10 +27,10 @@
 
 <!-- Tracked item cell with acquisition details (date, lot link, grading link) -->
 <div th:fragment="item-cell-detailed(item)" class="d-flex align-items-center gap-2">
-    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null}"
+    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
          th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
          th:data-card-img="${item.pokemonCard.imageUrl}">
-    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null) and item.sealedProduct != null and item.sealedProduct.imageUrl != null}"
+    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null or item.pokemonCard.imageUrl.isEmpty()) and item.sealedProduct != null and item.sealedProduct.imageUrl != null and !item.sealedProduct.imageUrl.isEmpty()}"
          th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
          th:data-card-img="${item.sealedProduct.imageUrl}">
     <div>
@@ -61,6 +61,17 @@
           th:classappend="${details.gradingCompany == 'PSA' ? 'grade-psa' : (details.gradingCompany == 'BGS' ? 'grade-bgs' : (details.gradingCompany == 'CGC' ? 'grade-cgc' : (details.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
           th:text="${details.gradingCompany + ' ' + details.grade}"></span>
     <span th:unless="${details != null and details.grade != null and !details.grade.isEmpty()}">&mdash;</span>
+</th:block>
+
+<!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest -->
+<th:block th:fragment="type-badge(item)">
+    <span th:if="${item.itemType == 'GRADED_CARD' and item.gradedDetails != null and item.gradedDetails.gradingCompany != null and !item.gradedDetails.gradingCompany.isEmpty()}"
+          class="badge"
+          th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+          th:text="${item.gradedDetails.gradingCompany + ' ' + (item.gradedDetails.grade != null ? item.gradedDetails.grade : '')}"></span>
+    <span th:if="${item.itemType != 'GRADED_CARD' or item.gradedDetails == null or item.gradedDetails.gradingCompany == null or item.gradedDetails.gradingCompany.isEmpty()}"
+          class="badge bg-secondary"
+          th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
 </th:block>
 
 <!-- Dashboard stat card -->

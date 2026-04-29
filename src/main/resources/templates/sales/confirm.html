@@ -5,7 +5,8 @@
 <body>
 <div layout:fragment="content">
 
-<a th:href="'/sales/' + ${sale.id}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Sale</a>
+<a th:href="${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}" class="text-muted text-decoration-none small d-inline-block mb-3"
+   th:text="${from == 'staging' ? '← Stager' : '← Sale'}"></a>
 
 <div class="mb-4">
     <h4 class="mb-2" th:text="${sale.status == 'CONFIRMED' ? 'Edit Attached Items' : 'Confirm Sale'}"></h4>
@@ -21,6 +22,7 @@
 </div>
 
 <form method="POST" th:action="'/sales/' + ${sale.id} + '/confirm'">
+    <input th:if="${from == 'staging'}" type="hidden" name="from" value="staging">
     <div th:if="${#lists.isEmpty(rawItems) and #lists.isEmpty(gradedItems)}" class="card mb-3">
         <div class="card-body text-muted">No items available in your inventory. You can still confirm this sale without attaching items.</div>
     </div>
@@ -28,14 +30,17 @@
     <div th:if="${!#lists.isEmpty(rawItems)}" class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Raw Cards</span>
         <table class="table table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
             <tbody>
             <tr th:each="item : ${rawItems}">
                 <td>
                     <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
+                </td>
                 <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>
@@ -45,17 +50,17 @@
     <div th:if="${!#lists.isEmpty(gradedItems)}" class="mb-4">
         <span class="month-pill section-pill d-inline-block mb-2">Graded</span>
         <table class="table table-hover bg-white mb-0">
-            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-end text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4">Grade</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
             <tbody>
             <tr th:each="item : ${gradedItems}">
                 <td>
                     <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
                 </td>
-                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-end align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle text-nowrap ps-4">
-                    <th:block th:replace="~{fragments/items :: grade-badge(details=${item.gradedDetails})}"></th:block>
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
                 </td>
+                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle ps-4"><input type="checkbox" name="item_ids" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds.contains(item.id)}"></td>
             </tr>
             </tbody>
@@ -63,7 +68,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center">
-        <a th:href="'/sales/' + ${sale.id}" class="text-muted text-decoration-none small">Cancel</a>
+        <a th:href="${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}" class="text-muted text-decoration-none small">Cancel</a>
         <button type="submit" class="btn btn-success" th:text="${sale.status == 'CONFIRMED' ? 'Save Items' : 'Confirm Sale'}"></button>
     </div>
 </form>

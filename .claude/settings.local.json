@@ -34,7 +34,9 @@
       "Bash(where.exe mvnw *)",
       "Bash(git reset *)",
       "Bash(git status *)",
-      "PowerShell(mvn compile *)"
+      "PowerShell(mvn compile *)",
+      "Bash(git rm *)",
+      "Bash(git checkout *)"
     ]
   },
   "model": "claude-opus-4-6"

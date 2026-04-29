@@ -130,7 +130,7 @@ public class GradingService {
 
     public void advanceStatus(Long id, String newStatus) {
         gradingRepo.updateStatus(id, newStatus);
-        if (GradingStatus.IN_TRANSIT.name().equals(newStatus)) {
+        if (GradingStatus.IN_GRADING.name().equals(newStatus)) {
             gradingRepo.setSendDate(id, LocalDate.now());
         }
     }

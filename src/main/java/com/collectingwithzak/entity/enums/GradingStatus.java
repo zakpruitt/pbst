@@ -2,7 +2,7 @@ package com.collectingwithzak.entity.enums;
 
 public enum GradingStatus {
     PREPPING,
-    IN_TRANSIT,
+    IN_GRADING,
     ACCEPTED,
     RETURNED,
     REJECTED,

@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.repository.LotPurchaseRepository;
+import com.collectingwithzak.repository.PokemonCardRepository;
 import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class LotService {
 
     private final LotPurchaseRepository lotRepo;
     private final TrackedItemRepository itemRepo;
+    private final PokemonCardRepository cardRepo;
     private final LotMapper lotMapper;
 
     public Long create(CreateLotRequest request) {
@@ -97,6 +99,10 @@ public class LotService {
         trackedItem.setPurpose(purpose);
         trackedItem.setItemType(itemType);
         trackedItem.setManualNameOverride(item.getName());
+
+        if (StringUtils.hasText(item.getPokemonCardId())) {
+            cardRepo.findById(item.getPokemonCardId()).ifPresent(trackedItem::setPokemonCard);
+        }
 
         if (ItemType.GRADED_CARD.name().equals(item.getItemType())
                 && StringUtils.hasText(item.getGradingCompany())) {

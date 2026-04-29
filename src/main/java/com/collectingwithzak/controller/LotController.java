@@ -4,11 +4,14 @@ import com.collectingwithzak.dto.SnapshotItem;
 import com.collectingwithzak.dto.request.CreateLotRequest;
 import com.collectingwithzak.dto.request.UpdateLotRequest;
 import com.collectingwithzak.dto.response.LotResponse;
+import com.collectingwithzak.dto.response.MonthGroup;
 import com.collectingwithzak.service.LotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/lots")
@@ -19,8 +22,10 @@ public class LotController {
 
     @GetMapping
     public String index(Model model) {
-
-        model.addAttribute("lots", lotService.getAll());
+        List<LotResponse> lots = lotService.getAll();
+        List<MonthGroup<LotResponse>> groups = MonthGroup.groupByMonth(lots, LotResponse::getPurchaseDate);
+        MonthGroup.computeSubtotals(groups, LotResponse::getTotalCost);
+        model.addAttribute("groups", groups);
         return "lots/index";
     }
 

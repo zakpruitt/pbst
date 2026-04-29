@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -27,11 +28,32 @@ public class ExpenseController {
         List<MonthGroup<ExpenseResponse>> groups = MonthGroup.groupByMonth(expenses, ExpenseResponse::getExpenseDate);
         MonthGroup.computeSubtotals(groups, ExpenseResponse::getCost);
         double total = expenses.stream().mapToDouble(ExpenseResponse::getCost).sum();
+        double avg = expenses.isEmpty() ? 0 : total / expenses.size();
+
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        LocalDate firstOfMonth = LocalDate.now().withDayOfMonth(1);
+
+        List<ExpenseResponse> last30 = expenses.stream()
+                .filter(e -> !e.getExpenseDate().isBefore(thirtyDaysAgo))
+                .toList();
+        List<ExpenseResponse> thisMonth = expenses.stream()
+                .filter(e -> !e.getExpenseDate().isBefore(firstOfMonth))
+                .toList();
 
         model.addAttribute("groups", groups);
         model.addAttribute("total", total);
         model.addAttribute("count", expenses.size());
+        model.addAttribute("avg", avg);
+        model.addAttribute("total30", last30.stream().mapToDouble(ExpenseResponse::getCost).sum());
+        model.addAttribute("count30", last30.size());
+        model.addAttribute("totalMonth", thisMonth.stream().mapToDouble(ExpenseResponse::getCost).sum());
+        model.addAttribute("countMonth", thisMonth.size());
         return "expenses/index";
+    }
+
+    @GetMapping("/new")
+    public String newExpense() {
+        return "expenses/new";
     }
 
     @PostMapping

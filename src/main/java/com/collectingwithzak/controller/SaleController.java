@@ -76,19 +76,25 @@ public class SaleController {
     }
 
     @GetMapping("/{id}/confirm")
-    public String confirmForm(@PathVariable Long id, Model model) {
+    public String confirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
         SaleConfirmFormData formData = saleService.getConfirmFormData(id);
 
         model.addAttribute("sale", formData.getSale());
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
         model.addAttribute("attachedIds", formData.getAttachedIds());
+        model.addAttribute("from", from != null ? from : "");
         return "sales/confirm";
     }
 
     @PostMapping("/{id}/confirm")
-    public String confirm(@PathVariable Long id, @RequestParam(name = "item_ids", required = false) List<Long> itemIds) {
+    public String confirm(@PathVariable Long id,
+                          @RequestParam(name = "item_ids", required = false) List<Long> itemIds,
+                          @RequestParam(name = "from", required = false) String from) {
         saleService.confirmWithItems(id, itemIds != null ? itemIds : List.of());
+        if ("staging".equals(from)) {
+            return "redirect:/sales/staging";
+        }
         return "redirect:/sales/" + id;
     }
 

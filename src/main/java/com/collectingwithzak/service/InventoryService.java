@@ -13,6 +13,8 @@ import com.collectingwithzak.entity.enums.Purpose;
 import org.springframework.util.StringUtils;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.TrackedItemMapper;
+import com.collectingwithzak.repository.PokemonCardRepository;
+import com.collectingwithzak.repository.SealedProductRepository;
 import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,8 @@ import java.util.Map;
 public class InventoryService {
 
     private final TrackedItemRepository itemRepo;
+    private final PokemonCardRepository cardRepo;
+    private final SealedProductRepository sealedRepo;
     private final TrackedItemMapper trackedItemMapper;
     private final ObjectMapper objectMapper;
 
@@ -55,8 +59,18 @@ public class InventoryService {
             Number cost = (Number) row.get("cost_basis");
             if (cost != null) item.setCostBasis(cost.doubleValue());
 
-            Number market = (Number) row.get("market_price");
+            Number market = (Number) row.get("market_value");
             if (market != null) item.setMarketValueAtPurchase(market.doubleValue());
+
+            String cardId = (String) row.get("pokemon_card_id");
+            if (StringUtils.hasText(cardId)) {
+                cardRepo.findById(cardId).ifPresent(item::setPokemonCard);
+            }
+
+            String sealedId = (String) row.get("sealed_product_id");
+            if (StringUtils.hasText(sealedId)) {
+                sealedRepo.findById(sealedId).ifPresent(item::setSealedProduct);
+            }
 
             itemRepo.save(item);
         }

@@ -35,11 +35,11 @@
                     th:onclick="'window.location=\'/grading/' + ${s.id} + '\''" style="cursor:pointer">
                     <td>
                         <span class="fw-medium" th:text="${s.submissionName}"></span>
-                        <div th:if="${s.sendDate != null}" class="text-muted inv-subtext">
-                            <span th:text="${#temporals.format(s.sendDate, 'MMM d, yyyy')}"></span>
-                            <span> &mdash; </span>
-                            <span th:if="${s.returnDate != null}" th:text="${#temporals.format(s.returnDate, 'MMM d, yyyy')}"></span>
-                            <span th:unless="${s.returnDate != null}">???</span>
+                        <div th:if="${s.sendDate != null}" class="inv-subtext">
+                            <span th:replace="~{fragments/items :: date-color(date=${s.sendDate})}"></span>
+                            <span class="text-muted"> &mdash; </span>
+                            <span th:if="${s.returnDate != null}" th:replace="~{fragments/items :: date-color(date=${s.returnDate})}"></span>
+                            <span th:unless="${s.returnDate != null}" class="text-muted">???</span>
                         </div>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4">

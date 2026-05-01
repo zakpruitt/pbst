@@ -27,7 +27,7 @@
         <td class="align-middle">
             <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium" th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
             <div class="text-muted inv-subtext mt-1">
-                <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
+                <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
                 <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
                 <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
                     · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>

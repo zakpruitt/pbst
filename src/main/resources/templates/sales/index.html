@@ -120,7 +120,7 @@
                         </thead>
                         <tbody>
                         <tr th:each="p : ${group.items}">
-                            <td class="align-middle text-nowrap pe-4" th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
+                            <td class="align-middle text-nowrap pe-4"><span th:replace="~{fragments/items :: date-color(date=${p.paymentDate})}"></span></td>
                             <td class="text-center align-middle text-nowrap px-4">
                                 <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
                                       th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
@@ -192,7 +192,7 @@
                                             <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
                                                th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
                                             <div class="text-muted inv-subtext mt-1">
-                                                <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
+                                                <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
                                                 <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
                                                 <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
                                                 <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
@@ -268,7 +268,7 @@
                                 <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
                                    th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
                                 <div class="text-muted inv-subtext mt-1">
-                                    <span th:text="${#temporals.format(s.saleDate, 'MMM d, yyyy')}"></span>
+                                    <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
                                     <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
                                     <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
                                     <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>

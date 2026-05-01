@@ -57,7 +57,7 @@
                     <span class="fw-medium expense-name" th:attr="data-full=${e.name}" th:title="'Click to copy: ' + ${e.name}"
                           onclick="copyExpenseName(this)" th:text="${#strings.abbreviate(e.name, 45)}"></span>
                 </td>
-                <td class="align-middle text-nowrap ps-4 text-muted" th:text="${#temporals.format(e.expenseDate, 'MMM d, yyyy')}"></td>
+                <td class="align-middle text-nowrap ps-4"><span th:replace="~{fragments/items :: date-color(date=${e.expenseDate})}"></span></td>
                 <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
                     <form method="POST" th:action="'/expenses/' + ${e.id} + '/delete'" onsubmit="return confirm('Delete this expense?')">

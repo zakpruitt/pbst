@@ -11,7 +11,7 @@
     <div class="flex-grow-1 me-3 min-w-0">
         <h4 class="mb-1" th:text="${lot.sellerName}"></h4>
         <small class="text-muted">
-            <span th:text="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'MMM d, yyyy') : ''}"></span>
+            <span th:if="${lot.purchaseDate != null}" th:replace="~{fragments/items :: date-color(date=${lot.purchaseDate})}"></span>
             <span th:if="${lot.description != null and !lot.description.isEmpty()}" th:text="' · ' + ${lot.description}"></span>
         </small>
     </div>

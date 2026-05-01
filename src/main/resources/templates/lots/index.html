@@ -54,7 +54,7 @@
                     th:attr="data-seller=${lot.sellerName},data-status=${lot.status}">
                     <td class="align-middle">
                         <span class="fw-medium" th:text="${lot.sellerName}"></span>
-                        <div class="text-muted inv-subtext" th:text="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'MMM d, yyyy') : ''}"></div>
+                        <div th:if="${lot.purchaseDate != null}" class="inv-subtext"><span th:replace="~{fragments/items :: date-color(date=${lot.purchaseDate})}"></span></div>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4" th:text="${lot.trackedItems != null ? lot.trackedItems.size() : 0}"></td>
                     <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></td>

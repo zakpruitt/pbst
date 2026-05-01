@@ -13,7 +13,7 @@
     <div class="d-flex justify-content-between align-items-start gap-3">
         <div class="flex-grow-1 min-w-0">
             <div class="fw-medium" th:text="${sale.title}"></div>
-            <small class="text-muted" th:text="${#temporals.format(sale.saleDate, 'MMM d, yyyy')} + ' · $' + ${#numbers.formatDecimal(sale.grossAmount, 1, 2)}"></small>
+            <small class="text-muted"><span th:replace="~{fragments/items :: date-color(date=${sale.saleDate})}"></span> · $<span th:text="${#numbers.formatDecimal(sale.grossAmount, 1, 2)}"></span></small>
         </div>
         <span class="badge flex-shrink-0"
               th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"

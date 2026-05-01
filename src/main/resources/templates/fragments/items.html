@@ -45,7 +45,7 @@
         <div class="text-muted inv-subtext">
             <span th:if="${item.pokemonCard != null}" th:text="${item.pokemonCard.setName}"></span>
             <span th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></span>
-            <span th:if="${item.acquisitionDate != null}"> &middot; <span th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span></span>
+            <span th:if="${item.acquisitionDate != null}"> &middot; <span th:replace="~{fragments/items :: date-color(date=${item.acquisitionDate})}"></span></span>
         </div>
         <div th:if="${item.lotPurchase != null or item.gradingSubmission != null}" class="text-muted inv-subtext">
             <span th:if="${item.lotPurchase != null}"><a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
@@ -82,5 +82,12 @@
         <p class="text-muted small mb-0 mt-1" th:text="${subtext}"></p>
     </div></div>
 </div>
+
+<!-- Month-colored date display -->
+<span th:fragment="date-color(date)"
+      th:with="m=${#temporals.month(date)},
+               c=${m == 1 ? '#90caf9' : (m == 2 ? '#f48fb1' : (m == 3 ? '#a5d6a7' : (m == 4 ? '#ce93d8' : (m == 5 ? '#fff59d' : (m == 6 ? '#ffcc80' : (m == 7 ? '#ef9a9a' : (m == 8 ? '#ffd54f' : (m == 9 ? '#bcaaa4' : (m == 10 ? '#ffab91' : (m == 11 ? '#d7ccc8' : '#81c784'))))))))))}"
+      th:style="'color:' + ${c}"
+      th:text="${#temporals.format(date, 'MMM d, yyyy')}"></span>
 
 </html>

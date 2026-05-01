@@ -11,8 +11,8 @@
     <div class="flex-grow-1 me-3 min-w-0">
         <h4 class="mb-1" th:text="${submission.submissionName}"></h4>
         <small class="text-muted">
-            <span th:if="${submission.sendDate != null}" th:text="'Sent ' + ${#temporals.format(submission.sendDate, 'MMM d, yyyy')}"></span>
-            <span th:if="${submission.returnDate != null}" th:text="' · Returned ' + ${#temporals.format(submission.returnDate, 'MMM d, yyyy')}"></span>
+            <span th:if="${submission.sendDate != null}">Sent <span th:replace="~{fragments/items :: date-color(date=${submission.sendDate})}"></span></span>
+            <span th:if="${submission.returnDate != null}"> · Returned <span th:replace="~{fragments/items :: date-color(date=${submission.returnDate})}"></span></span>
         </small>
     </div>
     <div class="d-flex gap-2 flex-shrink-0">

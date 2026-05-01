@@ -38,7 +38,8 @@
       "Bash(git rm *)",
       "Bash(git checkout *)",
       "Bash(git remote *)",
-      "PowerShell(./mvnw compile -q 2>&1 | Select-Object -Last 10)"
+      "PowerShell(./mvnw compile -q 2>&1 | Select-Object -Last 10)",
+      "Bash(echo \"exit:$?\")"
     ]
   },
   "model": "claude-opus-4-6"

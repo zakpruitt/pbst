@@ -62,8 +62,8 @@
     <tr>
         <th style="width:100%">Item</th>
         <th class="text-center text-nowrap ps-4">Type</th>
-        <th class="text-end text-nowrap ps-4">Qty</th>
-        <th class="text-end text-nowrap ps-4">Spent</th>
+        <th class="text-center text-nowrap ps-4">Qty</th>
+        <th class="text-center text-nowrap ps-4">Spent</th>
         <th class="text-center text-nowrap ps-4">Tracked</th>
     </tr>
     </thead>
@@ -90,8 +90,8 @@
                   class="badge bg-secondary"
                   th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
         </td>
-        <td class="text-end align-middle text-nowrap ps-4" th:text="${item.qty}"></td>
-        <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.offered, 1, 2)}"></td>
+        <td class="text-center align-middle text-nowrap ps-4" th:text="${item.qty}"></td>
+        <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.offered, 1, 2)}"></td>
         <td class="text-center align-middle text-nowrap ps-4">
             <span th:if="${item.tracked}" class="badge bg-success">Tracked</span>
             <span th:unless="${item.tracked}" class="badge bg-secondary">Not Tracked</span>
@@ -107,7 +107,7 @@
         <tr>
             <th style="width:100%">Item</th>
             <th class="text-center text-nowrap ps-4">Type</th>
-            <th class="text-end text-nowrap ps-4">Cost Basis</th>
+            <th class="text-center text-nowrap ps-4">Cost Basis</th>
             <th class="text-center text-nowrap ps-4">Market</th>
             <th class="text-center text-nowrap ps-4">Purpose</th>
         </tr>
@@ -120,7 +120,7 @@
             <td class="text-center align-middle text-nowrap ps-4">
                 <th:block th:replace="~{fragments/items :: type-badge(item=${ti})}"></th:block>
             </td>
-            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
+            <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(ti.costBasis, 1, 2)}"></td>
             <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${ti.marketValueAtPurchase != 0 ? '$' + #numbers.formatDecimal(ti.marketValueAtPurchase, 1, 2) : '—'}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
                 <span class="badge"

@@ -43,7 +43,7 @@
                 <tr>
                     <th style="width:100%">Seller</th>
                     <th class="text-center text-nowrap ps-4">Items</th>
-                    <th class="text-end text-nowrap ps-4">Cost</th>
+                    <th class="text-center text-nowrap ps-4">Cost</th>
                     <th class="text-center text-nowrap ps-4">EMV</th>
                     <th class="text-center text-nowrap ps-4">Status</th>
                 </tr>
@@ -57,7 +57,7 @@
                         <div class="text-muted inv-subtext" th:text="${lot.purchaseDate != null ? #temporals.format(lot.purchaseDate, 'MMM d, yyyy') : ''}"></div>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4" th:text="${lot.trackedItems != null ? lot.trackedItems.size() : 0}"></td>
-                    <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></td>
+                    <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></td>
                     <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${lot.estimatedMarketValue != 0 ? '$' + #numbers.formatDecimal(lot.estimatedMarketValue, 1, 2) : '—'}"></td>
                     <td class="text-center align-middle text-nowrap ps-4">
                         <span class="badge"

@@ -47,9 +47,9 @@
             <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
             <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
         </div>
-        <table class="table table-sm table-hover bg-white mb-0 mt-2">
+        <table class="table table-hover bg-white mb-0 mt-2">
             <thead class="table-light">
-            <tr><th style="width:100%">Expense</th><th class="text-nowrap ps-4">Date</th><th class="text-end text-nowrap ps-4">Cost</th><th class="text-center text-nowrap ps-4" style="width:4rem"></th></tr>
+            <tr><th style="width:100%">Expense</th><th class="text-nowrap ps-4">Date</th><th class="text-center text-nowrap ps-4">Cost</th><th class="text-center text-nowrap ps-4" style="width:4rem"></th></tr>
             </thead>
             <tbody>
             <tr th:each="e : ${group.items}">
@@ -58,7 +58,7 @@
                           onclick="copyExpenseName(this)" th:text="${#strings.abbreviate(e.name, 45)}"></span>
                 </td>
                 <td class="align-middle text-nowrap ps-4 text-muted" th:text="${#temporals.format(e.expenseDate, 'MMM d, yyyy')}"></td>
-                <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
                     <form method="POST" th:action="'/expenses/' + ${e.id} + '/delete'" onsubmit="return confirm('Delete this expense?')">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>

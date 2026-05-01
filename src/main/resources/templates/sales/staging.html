@@ -20,7 +20,7 @@
 
 <table th:unless="${#lists.isEmpty(sales)}" class="table table-hover bg-white">
     <thead class="table-light">
-    <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Origin</th><th class="text-end text-nowrap ps-4">Amount</th><th class="text-end text-nowrap ps-4">Actions</th></tr>
+    <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Origin</th><th class="text-center text-nowrap ps-4">Amount</th><th class="text-center text-nowrap ps-4">Actions</th></tr>
     </thead>
     <tbody>
     <tr th:each="s : ${sales}">
@@ -39,7 +39,7 @@
                   th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
                   th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
         </td>
-        <td class="text-end align-middle text-nowrap ps-4">
+        <td class="text-center align-middle text-nowrap ps-4">
             <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
             <div class="fw-semibold text-success" th:text="'Net: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
         </td>

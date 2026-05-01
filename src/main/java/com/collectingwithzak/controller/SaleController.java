@@ -5,6 +5,7 @@ import com.collectingwithzak.dto.request.CreateVincePaymentRequest;
 import com.collectingwithzak.dto.response.MonthGroup;
 import com.collectingwithzak.dto.response.SaleConfirmFormData;
 import com.collectingwithzak.dto.response.SaleResponse;
+import com.collectingwithzak.dto.response.VincePaymentResponse;
 import com.collectingwithzak.service.SaleService;
 import com.collectingwithzak.service.VincePaymentService;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,10 @@ public class SaleController {
 
         if ("vince".equals(view)) {
             model.addAttribute("vinceLedger", vincePaymentService.getLedger());
-            model.addAttribute("vincePayments", vincePaymentService.getAll());
+            List<VincePaymentResponse> payments = vincePaymentService.getAll();
+            List<MonthGroup<VincePaymentResponse>> paymentGroups = MonthGroup.groupByMonth(payments, VincePaymentResponse::getPaymentDate);
+            MonthGroup.computeSubtotals(paymentGroups, VincePaymentResponse::getAmount);
+            model.addAttribute("vincePaymentGroups", paymentGroups);
         }
 
         return "sales/index";

@@ -101,35 +101,43 @@
                 </div>
             </form>
 
-            <table th:if="${vincePayments != null and !vincePayments.isEmpty()}" class="table table-sm table-hover bg-white mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th class="text-nowrap">Date</th>
-                    <th class="text-nowrap">Type</th>
-                    <th style="width:100%">Description</th>
-                    <th class="text-end text-nowrap ps-4">Amount</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="p : ${vincePayments}">
-                    <td class="align-middle text-nowrap" th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
-                    <td class="align-middle text-nowrap">
-                        <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
-                              th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
-                    </td>
-                    <td class="align-middle text-muted" th:text="${p.description}"></td>
-                    <td class="text-end align-middle text-nowrap ps-4 fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
-                    <td class="text-end align-middle">
-                        <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline">
-                            <button type="submit" class="btn btn-outline-danger btn-sm"
-                                    onclick="return confirm('Delete this payment?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <p th:if="${vincePayments == null or vincePayments.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
+            <div th:if="${vincePaymentGroups != null and !vincePaymentGroups.isEmpty()}">
+                <div th:each="group : ${vincePaymentGroups}" class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
+                        <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
+                    </div>
+                    <div class="table-responsive">
+                    <table class="table table-sm table-hover bg-white mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="text-nowrap">Date</th>
+                            <th class="text-nowrap">Type</th>
+                            <th class="text-end text-nowrap ps-4" style="width:100%">Amount</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${group.items}" th:title="${p.description}">
+                            <td class="align-middle text-nowrap" th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
+                            <td class="align-middle text-nowrap">
+                                <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
+                                      th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
+                            </td>
+                            <td class="text-end align-middle text-nowrap ps-4 fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
+                            <td class="text-end align-middle">
+                                <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Delete this payment?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+            <p th:if="${vincePaymentGroups == null or vincePaymentGroups.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
         </div>
 
         <!-- Sales tab -->
@@ -162,6 +170,7 @@
                             <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
                             <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)} + ' net'"></span>
                         </div>
+                        <div class="table-responsive">
                         <table class="table table-sm table-hover bg-white mb-0">
                             <thead class="table-light">
                             <tr>
@@ -203,6 +212,7 @@
                             </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -236,6 +246,7 @@
                 <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
                 <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)} + ' net'"></span>
             </div>
+            <div class="table-responsive">
             <table class="table table-sm table-hover bg-white mb-0">
                 <thead class="table-light">
                 <tr>
@@ -277,6 +288,7 @@
                 </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

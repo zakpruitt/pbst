@@ -36,7 +36,9 @@
       "Bash(git status *)",
       "PowerShell(mvn compile *)",
       "Bash(git rm *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git remote *)",
+      "PowerShell(./mvnw compile -q 2>&1 | Select-Object -Last 10)"
     ]
   },
   "model": "claude-opus-4-6"

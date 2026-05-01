@@ -6,7 +6,13 @@
 <div layout:fragment="content">
 
 <a th:href="'/inventory?purpose=' + ${item.purpose}" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Inventory</a>
-<h4 class="mb-4">Edit Item</h4>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Edit Item</h4>
+    <form method="POST" th:action="'/inventory/' + ${item.id} + '/delete'" onsubmit="return confirm('Delete this item?')">
+        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+    </form>
+</div>
 
 <form method="POST" th:action="'/inventory/' + ${item.id}">
     <div class="card mb-3">
@@ -89,12 +95,7 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between">
-        <button type="submit"
-                th:formaction="'/inventory/' + ${item.id} + '/delete'"
-                formnovalidate
-                class="btn btn-outline-danger btn-sm"
-                onclick="return confirm('Delete this item?')">Delete</button>
+    <div class="d-flex justify-content-end">
         <button type="submit" class="btn btn-success">Save</button>
     </div>
 </form>

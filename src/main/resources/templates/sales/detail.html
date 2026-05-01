@@ -68,14 +68,16 @@
 
 <div class="mb-4">
     <span class="month-pill section-pill d-inline-block mb-2">Attached Items</span>
-    <p th:if="${sale.items == null or sale.items.isEmpty()}" class="text-muted small mb-0">
-        <span th:if="${sale.status == 'CONFIRMED'}">No items attached. <a th:href="'/sales/' + ${sale.id} + '/confirm'">Attach from inventory</a>.</span>
-        <span th:if="${sale.status == 'STAGED'}">Confirm this sale to attach inventory items.</span>
-        <span th:if="${sale.status != 'CONFIRMED' and sale.status != 'STAGED'}">No items attached.</span>
-    </p>
+    <div th:if="${sale.items == null or sale.items.isEmpty()}" class="card">
+        <div class="card-body text-center text-muted py-4">
+            <span th:if="${sale.status == 'CONFIRMED'}">No items attached. <a th:href="'/sales/' + ${sale.id} + '/confirm'">Attach from inventory</a>.</span>
+            <span th:if="${sale.status == 'STAGED'}">Confirm this sale to attach inventory items.</span>
+            <span th:if="${sale.status != 'CONFIRMED' and sale.status != 'STAGED'}">No items attached.</span>
+        </div>
+    </div>
     <table th:if="${sale.items != null and !sale.items.isEmpty()}" class="table table-sm table-hover bg-white mb-0">
         <thead class="table-light">
-        <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-end text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th></tr>
+        <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th></tr>
         </thead>
         <tbody>
         <tr th:each="item : ${sale.items}">
@@ -85,7 +87,7 @@
             <td class="text-center align-middle text-nowrap ps-4">
                 <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
             </td>
-            <td class="text-end align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+            <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
             <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
         </tr>
         </tbody>

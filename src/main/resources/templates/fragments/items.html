@@ -42,14 +42,14 @@
               class="fw-medium" th:text="${item.sealedProduct.name}"></span>
         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
               class="text-muted fst-italic">Unnamed</span>
-        <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
-             th:text="${item.pokemonCard.setName}"></div>
-        <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
-             class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
         <div class="text-muted inv-subtext">
-            <span th:if="${item.acquisitionDate != null}" th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span>
-            <span th:if="${item.lotPurchase != null}"> &middot; <a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
-            <span th:if="${item.gradingSubmission != null}"> &middot; <a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
+            <span th:if="${item.pokemonCard != null}" th:text="${item.pokemonCard.setName}"></span>
+            <span th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></span>
+            <span th:if="${item.acquisitionDate != null}"> &middot; <span th:text="${#temporals.format(item.acquisitionDate, 'MMM d, yyyy')}"></span></span>
+        </div>
+        <div th:if="${item.lotPurchase != null or item.gradingSubmission != null}" class="text-muted inv-subtext">
+            <span th:if="${item.lotPurchase != null}"><a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+            <span th:if="${item.gradingSubmission != null}"><span th:if="${item.lotPurchase != null}"> &middot; </span><a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
         </div>
     </div>
 </div>

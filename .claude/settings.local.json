@@ -39,7 +39,10 @@
       "Bash(git checkout *)",
       "Bash(git remote *)",
       "PowerShell(./mvnw compile -q 2>&1 | Select-Object -Last 10)",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Read(//mnt/c/Users/pruit/Desktop/dev/**)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 *)"
     ]
   },
   "model": "claude-opus-4-6"

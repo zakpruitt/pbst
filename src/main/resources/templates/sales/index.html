@@ -108,24 +108,27 @@
                         <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
                     </div>
                     <div class="table-responsive">
-                    <table class="table table-sm table-hover bg-white mb-0">
+                    <table class="table table-hover bg-white mb-0">
                         <thead class="table-light">
                         <tr>
-                            <th class="text-nowrap">Date</th>
-                            <th class="text-nowrap">Type</th>
-                            <th class="text-end text-nowrap ps-4" style="width:100%">Amount</th>
-                            <th></th>
+                            <th class="pe-4">Date</th>
+                            <th class="text-center text-nowrap px-4">Type</th>
+                            <th class="ps-4" style="width:100%">Note</th>
+                            <th class="text-center text-nowrap ps-4">Amount</th>
+                            <th class="text-center text-nowrap ps-4"></th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="p : ${group.items}" th:title="${p.description}">
-                            <td class="align-middle text-nowrap" th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
-                            <td class="align-middle text-nowrap">
+                        <tr th:each="p : ${group.items}">
+                            <td class="align-middle text-nowrap pe-4" th:text="${#temporals.format(p.paymentDate, 'MMM d, yyyy')}"></td>
+                            <td class="text-center align-middle text-nowrap px-4">
                                 <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
                                       th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
                             </td>
-                            <td class="text-end align-middle text-nowrap ps-4 fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
-                            <td class="text-end align-middle">
+                            <td class="align-middle text-muted small ps-4" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                                th:title="${p.description}" th:text="${p.description != null and !p.description.isEmpty() ? p.description : '—'}"></td>
+                            <td class="text-center align-middle text-nowrap ps-4 fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
+                            <td class="text-center align-middle text-nowrap ps-4">
                                 <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline">
                                     <button type="submit" class="btn btn-outline-danger btn-sm"
                                             onclick="return confirm('Delete this payment?')">Delete</button>

@@ -19,7 +19,7 @@
         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
               class="text-muted fst-italic">Unnamed</span>
         <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
-             th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+             th:text="${item.pokemonCard.setName}"></div>
         <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
              class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
     </div>
@@ -43,7 +43,7 @@
         <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
               class="text-muted fst-italic">Unnamed</span>
         <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
-             th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+             th:text="${item.pokemonCard.setName}"></div>
         <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
              class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
         <div class="text-muted inv-subtext">

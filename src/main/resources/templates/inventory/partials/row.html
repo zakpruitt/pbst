@@ -40,7 +40,6 @@
                 <div class="text-muted text-truncate flex-grow-1 lot-row-meta"
                      th:if="${preset.setName != null and !preset.setName.isEmpty()}">
                     <span th:text="${preset.setName}"></span>
-                    <span th:if="${preset.cardNumber != null and !preset.cardNumber.isEmpty()}" th:text="' #' + ${preset.cardNumber}"></span>
                 </div>
 
                 <template x-if="isGraded">

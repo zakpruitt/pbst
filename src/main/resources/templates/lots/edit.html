@@ -56,7 +56,7 @@
                             <button type="button" class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent" @click="pick(c)">
                                 <template x-if="c.imageUrl"><img :src="c.imageUrl" style="height:48px;width:auto;border-radius:4px;flex-shrink:0"></template>
                                 <template x-if="!c.imageUrl"><div style="width:34px"></div></template>
-                                <span><strong class="d-block" x-text="c.name"></strong><span class="text-muted small" x-text="c.setName + ' #' + c.cardNumber"></span><br><span class="text-success small" x-text="c.marketPrice ? '$' + c.marketPrice.toFixed(2) : ''"></span></span>
+                                <span><strong class="d-block" x-text="c.name"></strong><span class="text-muted small" x-text="c.setName"></span><br><span class="text-success small" x-text="c.marketPrice ? '$' + c.marketPrice.toFixed(2) : ''"></span></span>
                             </button>
                         </template>
                     </div>

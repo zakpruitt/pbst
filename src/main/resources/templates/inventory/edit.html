@@ -24,7 +24,7 @@
                     <label class="form-label small text-muted mb-1">Name</label>
                     <th:block th:if="${item.pokemonCard != null}">
                         <input class="form-control form-control-sm" th:value="${item.pokemonCard.name}" disabled>
-                        <div class="form-text small" th:text="${item.pokemonCard.setName + ' · #' + item.pokemonCard.cardNumber}"></div>
+                        <div class="form-text small" th:text="${item.pokemonCard.setName}"></div>
                     </th:block>
                     <th:block th:if="${item.pokemonCard == null and item.sealedProduct != null}">
                         <input class="form-control form-control-sm" th:value="${item.sealedProduct.name}" disabled>

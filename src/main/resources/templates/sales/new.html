@@ -11,31 +11,58 @@
 <form method="POST" action="/sales">
     <div class="card mb-3">
         <div class="card-body">
-            <h6 class="card-title mb-3">Sale Details</h6>
-            <div class="row g-2">
-                <div class="col-12"><input name="title" class="form-control form-control-sm" placeholder="Item name / title" required></div>
-                <div class="col-sm-6"><label class="form-label small text-muted mb-1">Sale date</label><input name="saleDate" type="date" class="form-control form-control-sm" required></div>
-                <div class="col-sm-6"><label class="form-label small text-muted mb-1">Origin</label>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label small text-muted mb-1">Title</label>
+                    <input name="title" class="form-control form-control-sm" placeholder="e.g. Charizard VMAX Alt Art" required>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Sale Date</label>
+                    <input name="saleDate" type="date" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Origin</label>
                     <select name="origin" class="form-select form-select-sm">
-                        <option value="EBAY">eBay</option><option value="FACEBOOK">Facebook</option><option value="OTHER">Other</option>
+                        <option value="EBAY">eBay</option>
+                        <option value="FACEBOOK">Facebook</option>
+                        <option value="OTHER">Other</option>
                     </select>
                 </div>
-                <div class="col-sm-6"><input name="buyerUsername" class="form-control form-control-sm" placeholder="Buyer username (optional)"></div>
-                <div class="col-sm-6"><input name="ebayOrderId" class="form-control form-control-sm" placeholder="Order ID (optional)"></div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Buyer Username</label>
+                    <input name="buyerUsername" class="form-control form-control-sm" placeholder="Optional">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small text-muted mb-1">Order ID</label>
+                    <input name="ebayOrderId" class="form-control form-control-sm" placeholder="Optional">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Sold For</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input name="grossAmount" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" required>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Fees</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input name="ebayFees" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" value="0">
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted mb-1">Shipping</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input name="shippingCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" value="0">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="card-title mb-3">Amounts</h6>
-            <div class="row g-2">
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Sold for</label><input name="grossAmount" type="number" step="0.01" min="0" class="form-control form-control-sm" required></div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Fees</label><input name="ebayFees" type="number" step="0.01" min="0" class="form-control form-control-sm" value="0"></div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Shipping</label><input name="shippingCost" type="number" step="0.01" min="0" class="form-control form-control-sm" value="0"></div>
-            </div>
-        </div>
+    <div class="text-end">
+        <button type="submit" class="btn btn-success btn-sm">Save Sale</button>
     </div>
-    <button type="submit" class="btn btn-success btn-sm">Save Sale</button>
 </form>
 
 </div>

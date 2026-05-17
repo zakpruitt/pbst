@@ -1,1 +1,0 @@
-UPDATE tracked_items SET purpose = 'INVENTORY' WHERE purpose IN ('GRADED_INVENTORY', 'PERSONAL_COLLECTION');

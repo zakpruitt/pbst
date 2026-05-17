@@ -125,6 +125,15 @@ public class SaleController {
         return "redirect:/sales/staging";
     }
 
+    @PatchMapping("/{id}/amounts")
+    @ResponseBody
+    public ResponseEntity<String> updateAmounts(@PathVariable Long id,
+                                                @RequestParam("grossAmount") double grossAmount,
+                                                @RequestParam("netAmount") double netAmount) {
+        saleService.updateAmounts(id, grossAmount, netAmount);
+        return ResponseEntity.ok("");
+    }
+
     @PostMapping("/{id}/unstage")
     public String unstage(@PathVariable Long id) {
         saleService.unstage(id);

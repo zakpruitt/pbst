@@ -40,6 +40,10 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("UPDATE Sale s SET s.status = :status, s.attributedTo = :attributedTo WHERE s.id = :id")
     void updateStatusAndAttribution(Long id, String status, String attributedTo);
 
+    @Modifying
+    @Query("UPDATE Sale s SET s.grossAmount = :grossAmount, s.netAmount = :netAmount WHERE s.id = :id")
+    void updateAmounts(Long id, double grossAmount, double netAmount);
+
     default List<Sale> findConfirmed() {
         return findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED.name());
     }

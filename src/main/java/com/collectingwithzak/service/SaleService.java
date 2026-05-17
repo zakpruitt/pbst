@@ -121,6 +121,10 @@ public class SaleService {
         saleRepo.updateStatusAndAttribution(saleId, SaleStatus.IGNORED.name(), "vince");
     }
 
+    public void updateAmounts(Long saleId, double grossAmount, double netAmount) {
+        saleRepo.updateAmounts(saleId, grossAmount, netAmount);
+    }
+
     public void unstage(Long saleId) {
         itemRepo.detachFromSale(saleId);
         saleRepo.updateStatusAndAttribution(saleId, SaleStatus.STAGED.name(), "");

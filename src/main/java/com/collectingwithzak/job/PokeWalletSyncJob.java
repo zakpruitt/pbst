@@ -482,7 +482,7 @@ public class PokeWalletSyncJob {
             "23965", // XYF: Golduck BREAK + Palkia-EX Combo Deck
             "23968", // XYG: Zygarde-EX Perfect Battle Deck
             "23969", // XYH: M Audino-EX Mega Battle Deck
-            "23971" // Yveltal Half Deck
+            "23971"  // Yveltal Half Deck
     );
 
     private final PokeWalletClient pokeWalletClient;

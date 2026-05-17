@@ -40,8 +40,10 @@
                   th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
         </td>
         <td class="text-center align-middle text-nowrap ps-4">
-            <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
-            <div class="fw-semibold text-success" th:text="'Net: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+            <div class="small text-muted editable-amount" th:data-sale-id="${s.id}" data-field="gross"
+                 th:data-value="${s.grossAmount}" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
+            <div class="fw-semibold text-success editable-amount" th:data-sale-id="${s.id}" data-field="net"
+                 th:data-value="${s.netAmount}" th:text="'Net: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
         </td>
         <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
             <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
@@ -58,6 +60,64 @@
     </tbody>
 </table>
 
+<style>
+.editable-amount { cursor: default; border-bottom: 1px dashed transparent; }
+.editable-amount:hover { border-bottom-color: #6c757d; }
+.editable-amount input {
+    width: 5rem; text-align: center; font-size: inherit; padding: 0 .25rem;
+    border: 1px solid #0d6efd; border-radius: .25rem; outline: none;
+}
+</style>
+
+<script>
+document.querySelectorAll('.editable-amount').forEach(function(el) {
+    el.addEventListener('dblclick', function() {
+        if (el.querySelector('input')) return;
+        var value = el.dataset.value;
+        var label = el.dataset.field === 'gross' ? 'Sold' : 'Net';
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.value = parseFloat(value).toFixed(2);
+        el.textContent = label + ': $';
+        el.appendChild(input);
+        input.focus();
+        input.select();
+
+        function commit() {
+            var newValue = parseFloat(input.value);
+            if (isNaN(newValue)) {
+                revert();
+                return;
+            }
+            el.dataset.value = newValue.toFixed(2);
+            el.textContent = label + ': $' + newValue.toFixed(2);
+
+            var saleId = el.dataset.saleId;
+            var row = el.closest('td');
+            var grossEl = row.querySelector('[data-field="gross"]');
+            var netEl = row.querySelector('[data-field="net"]');
+
+            fetch('/sales/' + saleId + '/amounts?grossAmount=' + grossEl.dataset.value + '&netAmount=' + netEl.dataset.value, {
+                method: 'PATCH'
+            });
+        }
+
+        function revert() {
+            var label = el.dataset.field === 'gross' ? 'Sold' : 'Net';
+            el.textContent = label + ': $' + parseFloat(el.dataset.value).toFixed(2);
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+        });
+        input.addEventListener('blur', commit);
+    });
+});
+</script>
+
 </div>
+
 </body>
 </html>

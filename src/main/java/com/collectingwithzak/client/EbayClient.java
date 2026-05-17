@@ -1,10 +1,9 @@
 package com.collectingwithzak.client;
 
-import com.collectingwithzak.dto.ebay.EbayOrderData;
+import com.collectingwithzak.dto.ebay.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -26,14 +25,24 @@ import java.util.Map;
 public class EbayClient {
 
     private static final int WINDOW_DAYS = 90;
+    private static final int ORDERS_PAGE_SIZE = 50;
+    private static final int TRANSACTIONS_PAGE_SIZE = 200;
     private static final DateTimeFormatter EBAY_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-    private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE = new ParameterizedTypeReference<>() {};
 
     private final RestTemplate restTemplate;
 
-    @Value("${ebay.client-id}") private String clientId;
-    @Value("${ebay.client-secret}") private String clientSecret;
-    @Value("${ebay.refresh-token}") private String refreshToken;
+    @Value("${ebay.client-id}")
+    private String clientId;
+    @Value("${ebay.client-secret}")
+    private String clientSecret;
+    @Value("${ebay.refresh-token}")
+    private String refreshToken;
+    @Value("${ebay.url.orders}")
+    private String ordersUrl;
+    @Value("${ebay.url.transactions}")
+    private String transactionsUrl;
+    @Value("${ebay.url.token}")
+    private String tokenUrl;
 
     private String accessToken;
     private ZonedDateTime tokenExpiry;
@@ -43,19 +52,17 @@ public class EbayClient {
     }
 
     public List<EbayOrderData> fetchOrderData(ZonedDateTime since) {
-        List<Map<String, Object>> orders = fetchWindowed(since,
-                "https://api.ebay.com/sell/fulfillment/v1/order", "creationdate", "orders", 50);
-        List<Map<String, Object>> transactions = fetchWindowed(since,
-                "https://apiz.ebay.com/sell/finances/v1/transaction", "transactionDate", "transactions", 200);
+        List<EbayOrder> orders = fetchOrders(since);
+        List<EbayTransaction> transactions = fetchTransactions(since);
 
-        Map<String, Double> fees = collectFees(transactions);
+        Map<String, Double> transactionData = aggregateTransactions(transactions);
         List<EbayOrderData> results = new ArrayList<>();
 
-        for (Map<String, Object> order : orders) {
+        for (EbayOrder order : orders) {
             try {
-                results.add(extractOrderData(order, fees));
+                results.add(toOrderData(order, transactionData));
             } catch (Exception e) {
-                log.warn("Skipping order {}: {}", order.get("orderId"), e.getMessage());
+                log.warn("Skipping order {}: {}", order.getOrderId(), e.getMessage());
             }
         }
 
@@ -63,102 +70,143 @@ public class EbayClient {
         return results;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Double> collectFees(List<Map<String, Object>> transactions) {
-        Map<String, Double> fees = new HashMap<>();
+    // --- Transaction aggregation ---
 
-        for (Map<String, Object> txn : transactions) {
-            String orderId = (String) txn.get("orderId");
+    private Map<String, Double> aggregateTransactions(List<EbayTransaction> transactions) {
+        Map<String, Double> data = new HashMap<>();
+
+        for (EbayTransaction txn : transactions) {
+            String orderId = txn.getOrderId();
             if (orderId == null || orderId.isBlank()) continue;
 
-            String type = (String) txn.get("transactionType");
-            if ("SALE".equals(type)) {
-                double fee = parseAmount((Map<String, String>) txn.get("totalFeeAmount"));
-                if (fee != 0) fees.merge(orderId + ":fees", fee, Double::sum);
-            } else if ("SHIPPING_LABEL".equals(type) || "NON_SALE_CHARGE".equals(type)) {
-                double label = Math.abs(parseAmount((Map<String, String>) txn.get("amount")));
-                if (label != 0) fees.merge(orderId + ":shipping", label, Double::sum);
-            } else if ("REFUND".equals(type)) {
-                double refund = Math.abs(parseAmount((Map<String, String>) txn.get("amount")));
-                if (refund != 0) fees.merge(orderId + ":refund", refund, Double::sum);
+            switch (txn.getTransactionType()) {
+                case "SALE" -> {
+                    data.merge(orderId + ":payout", amountOrZero(txn.getAmount()), Double::sum);
+                    data.merge(orderId + ":fees", amountOrZero(txn.getTotalFeeAmount()), Double::sum);
+                }
+                case "SHIPPING_LABEL" -> {
+                    data.merge(orderId + ":shipping", Math.abs(amountOrZero(txn.getAmount())), Double::sum);
+                }
+                case "NON_SALE_CHARGE", "ADJUSTMENT" -> {
+                    data.merge(orderId + ":fees", Math.abs(amountOrZero(txn.getAmount())), Double::sum);
+                }
+                case "REFUND" -> {
+                    data.merge(orderId + ":refund", Math.abs(amountOrZero(txn.getAmount())), Double::sum);
+                }
+                default -> log.debug("Unhandled eBay transaction type '{}' for order {} amount={}",
+                        txn.getTransactionType(), orderId, amountOrZero(txn.getAmount()));
             }
         }
 
-        return fees;
-    }
-
-    @SuppressWarnings("unchecked")
-    private EbayOrderData extractOrderData(Map<String, Object> order, Map<String, Double> fees) {
-        String orderId = (String) order.get("orderId");
-        var pricing = (Map<String, Object>) order.get("pricingSummary");
-        var lineItems = (List<Map<String, Object>>) order.get("lineItems");
-        var buyer = (Map<String, Object>) order.get("buyer");
-
-        double subtotal = parseAmount((Map<String, String>) pricing.get("priceSubtotal"));
-        double buyerShipping = parseAmount((Map<String, String>) pricing.get("deliveryCost"));
-        double refund = fees.getOrDefault(orderId + ":refund", 0.0);
-
-        EbayOrderData data = new EbayOrderData();
-        data.setEbayOrderId(orderId);
-        data.setSaleDate(ZonedDateTime.parse((String) order.get("creationDate")).toLocalDate());
-        data.setTitle(lineItems != null && !lineItems.isEmpty() ? (String) lineItems.getFirst().get("title") : "");
-        data.setBuyerUsername(buyer != null ? (String) buyer.get("username") : "");
-        data.setGrossAmount(subtotal + buyerShipping - refund);
-        data.setEbayFees(fees.getOrDefault(orderId + ":fees", 0.0));
-        data.setShippingCost(fees.getOrDefault(orderId + ":shipping", 0.0));
-        data.setOrderStatus((String) order.get("orderFulfillmentStatus"));
         return data;
     }
 
-    private double parseAmount(Map<String, String> amount) {
-        if (amount == null || amount.get("value") == null) return 0;
-        try {
-            return Double.parseDouble(amount.get("value"));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+    // --- Order mapping ---
+    // grossAmount = payout + fees (actual money collected, not listed prices)
+    // netAmount is computed downstream: grossAmount - ebayFees - shippingCost
+
+    private EbayOrderData toOrderData(EbayOrder order, Map<String, Double> transactionData) {
+        String orderId = order.getOrderId();
+
+        double payout = transactionData.getOrDefault(orderId + ":payout", 0.0);
+        double fees = transactionData.getOrDefault(orderId + ":fees", 0.0);
+        double refund = transactionData.getOrDefault(orderId + ":refund", 0.0);
+
+        return EbayOrderData.builder()
+                .ebayOrderId(orderId)
+                .saleDate(ZonedDateTime.parse(order.getCreationDate()).toLocalDate())
+                .title(firstLineItemTitle(order.getLineItems()))
+                .buyerUsername(order.getBuyer() != null ? order.getBuyer().getUsername() : "")
+                .grossAmount(payout + fees - refund)
+                .ebayFees(fees)
+                .shippingCost(transactionData.getOrDefault(orderId + ":shipping", 0.0))
+                .orderStatus(order.getOrderFulfillmentStatus())
+                .build();
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> fetchWindowed(ZonedDateTime since, String baseUrl,
-                                                     String filterField, String listKey, int limit) {
-        List<Map<String, Object>> all = new ArrayList<>();
-        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    private String firstLineItemTitle(List<EbayLineItem> lineItems) {
+        if (lineItems == null || lineItems.isEmpty()) return "";
+        return lineItems.getFirst().getTitle();
+    }
 
-        for (ZonedDateTime start = since; start.isBefore(now); start = start.plusDays(WINDOW_DAYS)) {
-            ZonedDateTime end = start.plusDays(WINDOW_DAYS);
-            if (end.isAfter(now)) end = now;
+    private double amountOrZero(EbayAmount amount) {
+        return amount != null ? amount.toDouble() : 0;
+    }
 
-            String filter = filterField + ":[" + start.format(EBAY_FMT) + ".." + end.format(EBAY_FMT) + "]";
+    // --- Paginated fetch ---
 
-            for (int offset = 0; ; offset += limit) {
-                String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
-                        .queryParam("limit", limit).queryParam("offset", offset)
-                        .queryParam("filter", filter).toUriString();
+    private List<EbayOrder> fetchOrders(ZonedDateTime since) {
+        List<EbayOrder> all = new ArrayList<>();
 
-                ResponseEntity<Map<String, Object>> response = authenticatedGet(url);
+        for (String filter : buildTimeWindowFilters(since, "creationdate")) {
+            for (int offset = 0; ; offset += ORDERS_PAGE_SIZE) {
+                String url = buildPageUrl(ordersUrl, ORDERS_PAGE_SIZE, offset, filter);
+
+                ResponseEntity<EbayOrdersResponse> response = authenticatedGet(url, EbayOrdersResponse.class);
                 if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
 
-                var page = (List<Map<String, Object>>) response.getBody().get(listKey);
+                List<EbayOrder> page = response.getBody().getOrders();
                 if (page == null || page.isEmpty()) break;
 
                 all.addAll(page);
-                if (page.size() < limit) break;
+                if (page.size() < ORDERS_PAGE_SIZE) break;
             }
         }
         return all;
     }
 
-    private ResponseEntity<Map<String, Object>> authenticatedGet(String url) {
+    private List<EbayTransaction> fetchTransactions(ZonedDateTime since) {
+        List<EbayTransaction> all = new ArrayList<>();
+
+        for (String filter : buildTimeWindowFilters(since, "transactionDate")) {
+            for (int offset = 0; ; offset += TRANSACTIONS_PAGE_SIZE) {
+                String url = buildPageUrl(transactionsUrl, TRANSACTIONS_PAGE_SIZE, offset, filter);
+
+                ResponseEntity<EbayTransactionsResponse> response = authenticatedGet(url, EbayTransactionsResponse.class);
+                if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
+
+                List<EbayTransaction> page = response.getBody().getTransactions();
+                if (page == null || page.isEmpty()) break;
+
+                all.addAll(page);
+                if (page.size() < TRANSACTIONS_PAGE_SIZE) break;
+            }
+        }
+        return all;
+    }
+
+    private List<String> buildTimeWindowFilters(ZonedDateTime since, String filterField) {
+        List<String> filters = new ArrayList<>();
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+
+        for (ZonedDateTime windowStart = since; windowStart.isBefore(now); windowStart = windowStart.plusDays(WINDOW_DAYS)) {
+            ZonedDateTime windowEnd = windowStart.plusDays(WINDOW_DAYS);
+            if (windowEnd.isAfter(now)) windowEnd = now;
+            filters.add(filterField + ":[" + windowStart.format(EBAY_FMT) + ".." + windowEnd.format(EBAY_FMT) + "]");
+        }
+        return filters;
+    }
+
+    private String buildPageUrl(String baseUrl, int limit, int offset, String filter) {
+        return UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("limit", limit)
+                .queryParam("offset", offset)
+                .queryParam("filter", filter)
+                .toUriString();
+    }
+
+    // --- Authentication ---
+
+    private <T> ResponseEntity<T> authenticatedGet(String url, Class<T> responseType) {
         refreshTokenIfNeeded();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
-        return restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), MAP_TYPE);
+        return restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), responseType);
     }
 
-    @SuppressWarnings("unchecked")
     private synchronized void refreshTokenIfNeeded() {
-        if (accessToken != null && tokenExpiry != null && ZonedDateTime.now(ZoneOffset.UTC).isBefore(tokenExpiry)) return;
+        if (accessToken != null && tokenExpiry != null && ZonedDateTime.now(ZoneOffset.UTC).isBefore(tokenExpiry))
+            return;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -168,11 +216,11 @@ public class EbayClient {
         body.add("grant_type", "refresh_token");
         body.add("refresh_token", refreshToken);
 
-        var response = restTemplate.postForObject(
-                "https://api.ebay.com/identity/v1/oauth2/token", new HttpEntity<>(body, headers), Map.class);
-        if (response == null) throw new RuntimeException("eBay token response was null");
+        EbayTokenResponse token = restTemplate.postForObject(
+                tokenUrl, new HttpEntity<>(body, headers), EbayTokenResponse.class);
+        if (token == null) throw new RuntimeException("eBay token response was null");
 
-        accessToken = (String) response.get("access_token");
-        tokenExpiry = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds((int) response.get("expires_in") - 60);
+        accessToken = token.getAccessToken();
+        tokenExpiry = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(token.getExpiresIn() - 60);
     }
 }

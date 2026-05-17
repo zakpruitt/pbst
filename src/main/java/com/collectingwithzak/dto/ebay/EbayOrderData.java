@@ -1,10 +1,12 @@
 package com.collectingwithzak.dto.ebay;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
+@Builder
 public class EbayOrderData {
     private String ebayOrderId;
     private LocalDate saleDate;

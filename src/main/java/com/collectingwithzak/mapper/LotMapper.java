@@ -2,7 +2,6 @@ package com.collectingwithzak.mapper;
 
 import com.collectingwithzak.dto.request.CreateLotRequest;
 import com.collectingwithzak.dto.request.UpdateLotRequest;
-import com.collectingwithzak.dto.response.LotPurchaseSummary;
 import com.collectingwithzak.dto.response.LotResponse;
 import com.collectingwithzak.entity.LotPurchase;
 import org.mapstruct.Mapper;
@@ -20,8 +19,6 @@ public interface LotMapper {
     LotResponse toResponse(LotPurchase entity);
 
     List<LotResponse> toResponseList(List<LotPurchase> entities);
-
-    LotPurchaseSummary toSummary(LotPurchase entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", constant = "PENDING")

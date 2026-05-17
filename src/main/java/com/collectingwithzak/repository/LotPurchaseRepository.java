@@ -1,6 +1,6 @@
 package com.collectingwithzak.repository;
 
-import com.collectingwithzak.dto.response.LotStatusCount;
+import com.collectingwithzak.dto.response.StatusCount;
 import com.collectingwithzak.dto.response.MonthlySpend;
 import com.collectingwithzak.entity.LotPurchase;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +13,6 @@ import java.util.List;
 public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
 
     // ---------- Business logic ----------
-
-    List<LotPurchase> findAllByOrderByPurchaseDateDesc();
 
     @Query("SELECT DISTINCT l FROM LotPurchase l LEFT JOIN FETCH l.trackedItems ORDER BY l.purchaseDate DESC")
     List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
@@ -32,13 +30,13 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
 
     @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', purchase_date), 'YYYY-MM') AS month, " +
                    "COALESCE(SUM(total_cost), 0) AS spend, COUNT(*) AS count " +
-                   "FROM lot_purchases WHERE status != 'REJECTED' AND deleted_at IS NULL " +
+                   "FROM lot_purchases WHERE status != 'REJECTED' " +
                    "AND purchase_date >= NOW() - make_interval(months => :months) " +
                    "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlySpendRaw(int months);
 
-    @Query(value = "SELECT status, COUNT(*) FROM lot_purchases WHERE deleted_at IS NULL GROUP BY status", nativeQuery = true)
-    List<Object[]> countByStatusRaw();
+    @Query("SELECT new com.collectingwithzak.dto.response.StatusCount(l.status, COUNT(l)) FROM LotPurchase l GROUP BY l.status")
+    List<StatusCount> countByStatus();
 
     default List<MonthlySpend> getMonthlySpend(int months) {
         return getMonthlySpendRaw(months).stream()
@@ -46,12 +44,6 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
                         (String) row[0],
                         ((Number) row[1]).doubleValue(),
                         ((Number) row[2]).longValue()))
-                .toList();
-    }
-
-    default List<LotStatusCount> countByStatus() {
-        return countByStatusRaw().stream()
-                .map(row -> new LotStatusCount((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
     }
 }

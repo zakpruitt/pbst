@@ -7,6 +7,7 @@ import com.collectingwithzak.entity.Sale;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
@@ -41,4 +42,17 @@ public interface SaleMapper {
     @Mapping(target = "attributedTo", ignore = true)
     @Mapping(target = "notes", ignore = true)
     Sale fromEbayOrder(EbayOrderData data);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "items", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "origin", ignore = true)
+    @Mapping(target = "saleDate", ignore = true)
+    @Mapping(target = "ebayOrderId", ignore = true)
+    @Mapping(target = "attributedTo", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    void updateFromEbay(Sale source, @MappingTarget Sale target);
 }

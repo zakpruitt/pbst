@@ -1,10 +1,9 @@
 package com.collectingwithzak.mapper;
 
+import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.dto.response.*;
 import com.collectingwithzak.entity.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -23,4 +22,19 @@ public interface TrackedItemMapper {
     GradingSubmissionSummary toGradingSummary(GradingSubmission entity);
 
     GradedDetailsResponse toGradedDetailsResponse(GradedDetails entity);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "name", target = "manualNameOverride")
+    @Mapping(source = "marketValue", target = "marketValueAtPurchase")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "itemType", ignore = true)
+    @Mapping(target = "lotPurchase", ignore = true)
+    @Mapping(target = "pokemonCard", ignore = true)
+    @Mapping(target = "sealedProduct", ignore = true)
+    @Mapping(target = "gradingSubmission", ignore = true)
+    @Mapping(target = "sale", ignore = true)
+    @Mapping(target = "gradedDetails", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntity(UpdateInventoryRequest request, @MappingTarget TrackedItem entity);
 }

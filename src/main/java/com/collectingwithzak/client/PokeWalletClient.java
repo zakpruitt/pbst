@@ -22,8 +22,10 @@ public class PokeWalletClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${pokewallet.api-key}") private String apiKey;
-    @Value("${pokewallet.base-url}") private String baseUrl;
+    @Value("${pokewallet.api-key}")
+    private String apiKey;
+    @Value("${pokewallet.base-url}")
+    private String baseUrl;
 
     public boolean isConfigured() {
         return apiKey != null && !apiKey.isBlank() && baseUrl != null && !baseUrl.isBlank();
@@ -65,7 +67,10 @@ public class PokeWalletClient {
     }
 
     private void sleep(long ms) {
-        try { Thread.sleep(ms); }
-        catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

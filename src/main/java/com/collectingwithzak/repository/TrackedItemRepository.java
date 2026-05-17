@@ -54,12 +54,12 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
 
     @Query(value = "SELECT item_type, COUNT(*), " +
                    "COALESCE(SUM(market_value_at_purchase), 0), COALESCE(SUM(cost_basis), 0) " +
-                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL AND deleted_at IS NULL " +
+                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL " +
                    "GROUP BY item_type", nativeQuery = true)
     List<Object[]> countByItemTypeRaw();
 
     @Query(value = "SELECT COALESCE(SUM(cost_basis), 0), COALESCE(SUM(market_value_at_purchase), 0) " +
-                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL AND deleted_at IS NULL", nativeQuery = true)
+                   "FROM tracked_items WHERE purpose = 'INVENTORY' AND sale_id IS NULL", nativeQuery = true)
     List<Object[]> getInventoryTotalsRaw();
 
     default List<ItemTypeCount> countByItemType() {

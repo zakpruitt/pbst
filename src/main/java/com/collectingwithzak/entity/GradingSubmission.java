@@ -1,10 +1,7 @@
 package com.collectingwithzak.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,8 +11,9 @@ import java.util.List;
 @Table(name = "grading_submissions")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE grading_submissions SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class GradingSubmission extends BaseEntity {
 
     @Column(name = "submission_name")
@@ -23,6 +21,7 @@ public class GradingSubmission extends BaseEntity {
 
     private String company;
 
+    @Builder.Default
     private String status = "PREPPING";
 
     @Column(name = "submission_method")
@@ -48,6 +47,7 @@ public class GradingSubmission extends BaseEntity {
     @Column(name = "upcharge_total", columnDefinition = "numeric(10,2)")
     private double upchargeTotal;
 
+    @Builder.Default
     @OneToMany(mappedBy = "gradingSubmission", fetch = FetchType.LAZY)
     private List<TrackedItem> items = new ArrayList<>();
 

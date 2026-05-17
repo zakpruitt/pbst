@@ -7,8 +7,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -17,8 +15,6 @@ import java.time.LocalDateTime;
 @Table(name = "pokemon_cards")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE pokemon_cards SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class PokemonCard {
 
     @Id

@@ -32,21 +32,26 @@ public class LotService {
     private final PokemonCardRepository cardRepo;
     private final LotMapper lotMapper;
 
+    // ---------- Create ----------
+
     public Long create(CreateLotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
         return lotRepo.save(lot).getId();
     }
 
-    @Transactional(readOnly = true)
+    // ---------- Read ----------
+
     public LotResponse getById(Long id) {
         LotPurchase lot = findById(id);
         return lotMapper.toResponse(lot);
     }
 
-    @Transactional(readOnly = true)
+
     public List<LotResponse> getAll() {
         return lotMapper.toResponseList(lotRepo.findAllWithItemsOrderByPurchaseDateDesc());
     }
+
+    // ---------- Update ----------
 
     public void update(Long id, UpdateLotRequest request) {
         LotPurchase lot = findById(id);
@@ -70,10 +75,14 @@ public class LotService {
         lotRepo.updateStatus(id, LotStatus.REJECTED.name());
     }
 
+    // ---------- Delete ----------
+
     public void delete(Long id) {
         itemRepo.deleteByLotPurchaseId(id);
         lotRepo.deleteById(id);
     }
+
+    // ---------- Helpers ----------
 
     private LotPurchase findById(Long id) {
         return lotRepo.findById(id)
@@ -82,33 +91,30 @@ public class LotService {
 
     private TrackedItem snapshotToTrackedItem(LotPurchase lot, SnapshotItem item) {
         int qty = item.getQty() <= 0 ? 1 : item.getQty();
-        String purpose = item.getPurpose();
-        if (!StringUtils.hasText(purpose) && item.isTracked()) {
-            purpose = Purpose.INVENTORY.name();
-        }
-        String itemType = item.getItemType();
-        if (!StringUtils.hasText(itemType)) {
-            itemType = ItemType.RAW_CARD.name();
-        }
+        String purpose = StringUtils.hasText(item.getPurpose()) ? item.getPurpose() : Purpose.INVENTORY.name();
+        String itemType = StringUtils.hasText(item.getItemType()) ? item.getItemType() : ItemType.RAW_CARD.name();
 
-        TrackedItem trackedItem = new TrackedItem();
-        trackedItem.setLotPurchase(lot);
-        trackedItem.setAcquisitionDate(lot.getPurchaseDate());
-        trackedItem.setCostBasis(item.getOffered() / qty);
-        trackedItem.setMarketValueAtPurchase(item.getMarketPrice());
-        trackedItem.setPurpose(purpose);
-        trackedItem.setItemType(itemType);
-        trackedItem.setManualNameOverride(item.getName());
+        var builder = TrackedItem.builder()
+                .lotPurchase(lot)
+                .acquisitionDate(lot.getPurchaseDate())
+                .costBasis(item.getOffered() / qty)
+                .marketValueAtPurchase(item.getMarketPrice())
+                .purpose(purpose)
+                .itemType(itemType)
+                .manualNameOverride(item.getName());
 
         if (StringUtils.hasText(item.getPokemonCardId())) {
-            cardRepo.findById(item.getPokemonCardId()).ifPresent(trackedItem::setPokemonCard);
+            builder.pokemonCard(cardRepo.findById(item.getPokemonCardId()).orElse(null));
         }
 
         if (ItemType.GRADED_CARD.name().equals(item.getItemType())
                 && StringUtils.hasText(item.getGradingCompany())) {
-            trackedItem.setGradedDetails(new GradedDetails(item.getGradingCompany(), item.getGrade(), 0));
+            builder.gradedDetails(GradedDetails.builder()
+                    .gradingCompany(item.getGradingCompany())
+                    .grade(item.getGrade())
+                    .build());
         }
 
-        return trackedItem;
+        return builder.build();
     }
 }

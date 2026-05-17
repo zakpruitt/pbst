@@ -26,6 +26,8 @@ public class VincePaymentService {
     private final SaleRepository saleRepo;
     private final VincePaymentMapper paymentMapper;
 
+    // ---------- Create ----------
+
     public void create(CreateVincePaymentRequest request) {
         VincePayment payment = paymentMapper.toEntity(request);
         if (payment.getPaymentDate() == null) {
@@ -37,17 +39,19 @@ public class VincePaymentService {
         paymentRepo.save(payment);
     }
 
-    @Transactional(readOnly = true)
+    // ---------- Read ----------
+
     public List<VincePaymentResponse> getAll() {
         return paymentMapper.toResponseList(paymentRepo.findAllByOrderByPaymentDateDescIdDesc());
     }
 
-    @Transactional(readOnly = true)
     public VinceLedger getLedger() {
         RangeTotals salesTotals = saleRepo.getVinceTotals();
         double[] paymentTotals = paymentRepo.getTotals();
         return VinceLedger.from(salesTotals, paymentTotals[0], paymentTotals[1]);
     }
+
+    // ---------- Delete ----------
 
     public void delete(Long id) {
         paymentRepo.deleteById(id);

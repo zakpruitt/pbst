@@ -62,27 +62,26 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query(value = "SELECT COUNT(*), COALESCE(SUM(gross_amount), 0), COALESCE(SUM(net_amount), 0), " +
                    "COALESCE(SUM(ebay_fees + shipping_cost), 0) " +
-                   "FROM sales WHERE status = 'CONFIRMED' AND deleted_at IS NULL", nativeQuery = true)
+                   "FROM sales WHERE status = 'CONFIRMED'", nativeQuery = true)
     List<Object[]> getConfirmedTotalsRaw();
 
     @Query(value = "SELECT COUNT(*), COALESCE(SUM(gross_amount), 0), COALESCE(SUM(net_amount), 0) " +
-                   "FROM sales WHERE attributed_to = 'vince' AND deleted_at IS NULL", nativeQuery = true)
+                   "FROM sales WHERE attributed_to = 'vince'", nativeQuery = true)
     List<Object[]> getVinceTotalsRaw();
 
     @Query(value = "SELECT COUNT(*), COALESCE(SUM(gross_amount), 0), COALESCE(SUM(net_amount), 0) " +
-                   "FROM sales WHERE status = 'CONFIRMED' AND sale_date >= :since AND deleted_at IS NULL", nativeQuery = true)
+                   "FROM sales WHERE status = 'CONFIRMED' AND sale_date >= :since", nativeQuery = true)
     List<Object[]> getTotalsSinceRaw(LocalDate since);
 
     @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', sale_date), 'YYYY-MM') AS month, " +
                    "COALESCE(SUM(gross_amount), 0) AS gross, COALESCE(SUM(net_amount), 0) AS net, " +
-                   "COUNT(*) AS count FROM sales WHERE status = 'CONFIRMED' AND deleted_at IS NULL " +
+                   "COUNT(*) AS count FROM sales WHERE status = 'CONFIRMED' " +
                    "AND sale_date >= NOW() - make_interval(months => :months) " +
                    "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlyRevenueRaw(int months);
 
-    @Query(value = "SELECT origin, COUNT(*), COALESCE(SUM(net_amount), 0) " +
-                   "FROM sales WHERE status = 'CONFIRMED' AND deleted_at IS NULL GROUP BY origin", nativeQuery = true)
-    List<Object[]> countByOriginRaw();
+    @Query("SELECT new com.collectingwithzak.dto.response.OriginCount(s.origin, COUNT(s), COALESCE(SUM(s.netAmount), 0.0)) FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
+    List<OriginCount> countByOrigin();
 
     default double[] getConfirmedTotals() {
         Object[] row = getConfirmedTotalsRaw().getFirst();
@@ -114,9 +113,4 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
                 .toList();
     }
 
-    default List<OriginCount> countByOrigin() {
-        return countByOriginRaw().stream()
-                .map(row -> new OriginCount((String) row[0], ((Number) row[1]).longValue(), ((Number) row[2]).doubleValue()))
-                .toList();
-    }
 }

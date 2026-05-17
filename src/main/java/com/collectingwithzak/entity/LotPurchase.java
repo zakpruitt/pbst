@@ -6,8 +6,6 @@ import com.collectingwithzak.dto.SnapshotItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,8 +15,6 @@ import java.util.List;
 @Table(name = "lot_purchases")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE lot_purchases SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class LotPurchase extends BaseEntity {
 
     @Column(name = "seller_name")

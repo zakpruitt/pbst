@@ -1,19 +1,16 @@
 package com.collectingwithzak.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
+import lombok.*;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "tracked_items")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE tracked_items SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TrackedItem extends BaseEntity {
 
     @Column(name = "acquisition_date")
@@ -30,8 +27,10 @@ public class TrackedItem extends BaseEntity {
 
     private String notes;
 
+    @Builder.Default
     private String purpose = "INVENTORY";
 
+    @Builder.Default
     @Column(name = "item_type")
     private String itemType = "RAW_CARD";
 

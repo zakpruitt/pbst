@@ -35,21 +35,22 @@ public class GradingService {
     private final GradingMapper gradingMapper;
     private final TrackedItemMapper trackedItemMapper;
 
+    // ---------- Create ----------
+
     public Long createWithItems(CreateGradingRequest request) {
         List<Long> itemIds = request.getItemIds() != null ? request.getItemIds() : List.of();
         long count = gradingRepo.countByCompany(request.getCompany());
         double costPerCard = itemIds.isEmpty() ? 0 : request.getSubmissionCost() / itemIds.size();
 
-        GradingSubmission submission = new GradingSubmission();
-        submission.setSubmissionName(String.format("%s Submission #%d", request.getCompany(), count + 1));
-        submission.setCompany(request.getCompany());
-        submission.setSubmissionMethod(request.getSubmissionMethod());
-        submission.setStatus(GradingStatus.PREPPING.name());
-        submission.setCostPerCard(costPerCard);
-        submission.setSubmissionCost(request.getSubmissionCost());
-        submission.setNotes(request.getNotes());
-
-        submission = gradingRepo.save(submission);
+        GradingSubmission submission = gradingRepo.save(GradingSubmission.builder()
+                .submissionName(String.format("%s Submission #%d", request.getCompany(), count + 1))
+                .company(request.getCompany())
+                .submissionMethod(request.getSubmissionMethod())
+                .status(GradingStatus.PREPPING.name())
+                .costPerCard(costPerCard)
+                .submissionCost(request.getSubmissionCost())
+                .notes(request.getNotes())
+                .build());
 
         if (!itemIds.isEmpty()) {
             itemRepo.attachToSubmission(itemIds, submission.getId());
@@ -59,19 +60,19 @@ public class GradingService {
         return submission.getId();
     }
 
-    @Transactional(readOnly = true)
+    // ---------- Read ----------
+
+
     public List<GradingSubmissionResponse> getAll() {
         return gradingMapper.toResponseList(gradingRepo.findAllWithItemsOrderByCreatedAtDesc());
     }
 
-    @Transactional(readOnly = true)
     public GradingSubmissionResponse getByIdWithItems(Long id) {
         GradingSubmission submission = gradingRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));
         return gradingMapper.toResponse(submission);
     }
 
-    @Transactional(readOnly = true)
     public GradingFormData getNewFormData() {
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(
                 itemRepo.findByPurpose(Purpose.INVENTORY.name()));
@@ -82,7 +83,6 @@ public class GradingService {
                 Set.of());
     }
 
-    @Transactional(readOnly = true)
     public GradingFormData getEditFormData(Long id) {
         GradingSubmission submission = gradingRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));
@@ -102,6 +102,8 @@ public class GradingService {
                 attachedIds);
     }
 
+    // ---------- Update ----------
+
     public void update(UpdateGradingRequest request, Long id) {
         GradingSubmission submission = findById(id);
         List<Long> itemIds = request.getItemIds() != null ? request.getItemIds() : List.of();
@@ -113,19 +115,10 @@ public class GradingService {
             itemRepo.updatePurposeBySubmission(id, Purpose.IN_GRADING.name());
         }
 
-        double costPerCard = itemIds.isEmpty() ? 0 : request.getSubmissionCost() / itemIds.size();
-        submission.setCompany(request.getCompany());
-        submission.setSubmissionMethod(request.getSubmissionMethod());
-        submission.setSubmissionCost(request.getSubmissionCost());
-        submission.setCostPerCard(costPerCard);
-        submission.setNotes(request.getNotes());
+        gradingMapper.updateEntity(request, submission);
+        submission.setCostPerCard(itemIds.isEmpty() ? 0 : request.getSubmissionCost() / itemIds.size());
 
         gradingRepo.save(submission);
-    }
-
-    public void delete(Long id) {
-        itemRepo.detachFromSubmission(id);
-        gradingRepo.deleteById(id);
     }
 
     public void advanceStatus(Long id, String newStatus) {
@@ -140,7 +133,11 @@ public class GradingService {
 
         double totalUpcharge = 0;
         for (ItemGradeRequest g : grades) {
-            GradedDetails details = new GradedDetails(submission.getCompany(), g.getGrade(), g.getUpcharge());
+            GradedDetails details = GradedDetails.builder()
+                    .gradingCompany(submission.getCompany())
+                    .grade(g.getGrade())
+                    .gradingUpcharge(g.getUpcharge())
+                    .build();
             var item = itemRepo.findById(g.getItemId())
                     .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", g.getItemId()));
             item.setGradedDetails(details);
@@ -153,6 +150,15 @@ public class GradingService {
         gradingRepo.updateReturnDetails(submissionId, totalUpcharge, LocalDate.now());
         gradingRepo.updateStatus(submissionId, GradingStatus.RETURNED.name());
     }
+
+    // ---------- Delete ----------
+
+    public void delete(Long id) {
+        itemRepo.detachFromSubmission(id);
+        gradingRepo.deleteById(id);
+    }
+
+    // ---------- Helpers ----------
 
     private GradingSubmission findById(Long id) {
         return gradingRepo.findById(id)

@@ -22,11 +22,29 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
+    // ---------- Create ----------
+
+    @GetMapping("/new")
+    public String newForm(Model model) {
+
+        return "inventory/new";
+    }
+
+    @PostMapping
+    public String create(CreateInventoryRequest request) {
+        if (!StringUtils.hasText(request.getPurpose())) {
+            request.setPurpose(Purpose.INVENTORY.name());
+        }
+        inventoryService.createItems(request);
+        return "redirect:/inventory?purpose=" + request.getPurpose();
+    }
+
+    // ---------- Read ----------
+
     @GetMapping
     public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
                         HttpServletRequest request, Model model) {
         InventorySplitResponse split = inventoryService.getByPurpose(purpose);
-
 
         List<TrackedItemResponse> allItems = split.getAllItems();
         model.addAttribute("items", allItems);
@@ -55,26 +73,21 @@ public class InventoryController {
                              @RequestParam(value = "sealed_id", defaultValue = "") String sealedProductId,
                              @RequestParam(value = "grading_company", defaultValue = "") String gradingCompany,
                              Model model) {
-        model.addAttribute("preset", new InventoryRowPreset(
-                name, type, 0, market, pokemonCardId, sealedProductId,
-                setName, cardNumber, imageUrl, gradingCompany));
+        model.addAttribute("preset", InventoryRowPreset.builder()
+                .name(name)
+                .itemType(type)
+                .marketPrice(market)
+                .pokemonCardId(pokemonCardId)
+                .sealedProductId(sealedProductId)
+                .setName(setName)
+                .cardNumber(cardNumber)
+                .imageUrl(imageUrl)
+                .gradingCompany(gradingCompany)
+                .build());
         return "inventory/partials/row :: inventory-row";
     }
 
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "inventory/new";
-    }
-
-    @PostMapping
-    public String create(CreateInventoryRequest request) {
-        if (!StringUtils.hasText(request.getPurpose())) {
-            request.setPurpose(Purpose.INVENTORY.name());
-        }
-        inventoryService.createItems(request);
-        return "redirect:/inventory?purpose=" + request.getPurpose();
-    }
+    // ---------- Update ----------
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
@@ -90,10 +103,11 @@ public class InventoryController {
         return "redirect:/inventory?purpose=" + purpose;
     }
 
+    // ---------- Delete ----------
+
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
-        String purpose = inventoryService.getItemPurpose(id);
-        inventoryService.delete(id);
+        String purpose = inventoryService.delete(id);
         return "redirect:/inventory?purpose=" + purpose;
     }
 }

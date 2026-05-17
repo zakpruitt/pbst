@@ -22,13 +22,7 @@ public class GradingController {
 
     private final GradingService gradingService;
 
-    @GetMapping
-    public String index(Model model) {
-        List<GradingSubmissionResponse> submissions = gradingService.getAll();
-
-        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
-        return "grading/index";
-    }
+    // ---------- Create ----------
 
     @GetMapping("/new")
     public String newForm(Model model) {
@@ -45,6 +39,16 @@ public class GradingController {
         return "redirect:/grading/" + id;
     }
 
+    // ---------- Read ----------
+
+    @GetMapping
+    public String index(Model model) {
+        List<GradingSubmissionResponse> submissions = gradingService.getAll();
+
+        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
+        return "grading/index";
+    }
+
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
@@ -52,6 +56,8 @@ public class GradingController {
         model.addAttribute("submission", submission);
         return "grading/detail";
     }
+
+    // ---------- Update ----------
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
@@ -82,6 +88,8 @@ public class GradingController {
         gradingService.recordReturn(id, request.getGrades());
         return ResponseEntity.ok().build();
     }
+
+    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

@@ -22,6 +22,21 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
+    // ---------- Create ----------
+
+    @GetMapping("/new")
+    public String newExpense() {
+        return "expenses/new";
+    }
+
+    @PostMapping
+    public String create(CreateExpenseRequest request) {
+        expenseService.create(request);
+        return "redirect:/expenses";
+    }
+
+    // ---------- Read ----------
+
     @GetMapping
     public String index(Model model) {
         List<ExpenseResponse> expenses = expenseService.getAll();
@@ -51,16 +66,7 @@ public class ExpenseController {
         return "expenses/index";
     }
 
-    @GetMapping("/new")
-    public String newExpense() {
-        return "expenses/new";
-    }
-
-    @PostMapping
-    public String create(CreateExpenseRequest request) {
-        expenseService.create(request);
-        return "redirect:/expenses";
-    }
+    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

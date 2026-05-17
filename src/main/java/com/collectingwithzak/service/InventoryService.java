@@ -35,6 +35,8 @@ public class InventoryService {
     private final TrackedItemMapper trackedItemMapper;
     private final ObjectMapper objectMapper;
 
+    // ---------- Create ----------
+
     public void createItems(CreateInventoryRequest request) {
         List<Map<String, Object>> rows;
         try {
@@ -46,48 +48,35 @@ public class InventoryService {
         String purpose = request.getPurpose() != null ? request.getPurpose() : Purpose.INVENTORY.name();
 
         for (Map<String, Object> row : rows) {
-            TrackedItem item = new TrackedItem();
-            item.setPurpose(purpose);
-            item.setAcquisitionDate(request.getAcquisitionDate());
-            item.setItemType((String) row.getOrDefault("item_type", ItemType.RAW_CARD.name()));
-
             String name = (String) row.get("name");
-            if (StringUtils.hasText(name)) {
-                item.setManualNameOverride(name);
-            }
-
             Number cost = (Number) row.get("cost_basis");
-            if (cost != null) item.setCostBasis(cost.doubleValue());
-
             Number market = (Number) row.get("market_value");
-            if (market != null) item.setMarketValueAtPurchase(market.doubleValue());
-
             String cardId = (String) row.get("pokemon_card_id");
-            if (StringUtils.hasText(cardId)) {
-                cardRepo.findById(cardId).ifPresent(item::setPokemonCard);
-            }
-
             String sealedId = (String) row.get("sealed_product_id");
-            if (StringUtils.hasText(sealedId)) {
-                sealedRepo.findById(sealedId).ifPresent(item::setSealedProduct);
-            }
 
-            itemRepo.save(item);
+            var builder = TrackedItem.builder()
+                    .purpose(purpose)
+                    .acquisitionDate(request.getAcquisitionDate())
+                    .itemType((String) row.getOrDefault("item_type", ItemType.RAW_CARD.name()));
+
+            if (StringUtils.hasText(name)) builder.manualNameOverride(name);
+            if (cost != null) builder.costBasis(cost.doubleValue());
+            if (market != null) builder.marketValueAtPurchase(market.doubleValue());
+            if (StringUtils.hasText(cardId)) builder.pokemonCard(cardRepo.findById(cardId).orElse(null));
+            if (StringUtils.hasText(sealedId)) builder.sealedProduct(sealedRepo.findById(sealedId).orElse(null));
+
+            itemRepo.save(builder.build());
         }
     }
 
-    @Transactional(readOnly = true)
+    // ---------- Read ----------
+
     public TrackedItemResponse getById(Long id) {
         TrackedItem item = findById(id);
         return trackedItemMapper.toResponse(item);
     }
 
-    @Transactional(readOnly = true)
-    public String getItemPurpose(Long id) {
-        return findById(id).getPurpose();
-    }
 
-    @Transactional(readOnly = true)
     public InventorySplitResponse getByPurpose(String purpose) {
         List<TrackedItem> items = itemRepo.findByPurpose(purpose);
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(items);
@@ -109,37 +98,35 @@ public class InventoryService {
         return new InventorySplitResponse(all, raw, graded, sealed, other);
     }
 
+    // ---------- Update ----------
+
     public String update(Long id, UpdateInventoryRequest request) {
         TrackedItem item = findById(id);
-
-        if (StringUtils.hasText(request.getName())) {
-            item.setManualNameOverride(request.getName());
-        }
-        item.setCostBasis(request.getCostBasis());
-        item.setMarketValueAtPurchase(request.getMarketValue());
-        if (request.getAcquisitionDate() != null) {
-            item.setAcquisitionDate(request.getAcquisitionDate());
-        }
-        item.setNotes(request.getNotes());
-        if (StringUtils.hasText(request.getPurpose())) {
-            item.setPurpose(request.getPurpose());
-        }
+        trackedItemMapper.updateEntity(request, item);
 
         if (ItemType.GRADED_CARD.name().equals(item.getItemType())) {
-            if (item.getGradedDetails() == null) {
-                item.setGradedDetails(new GradedDetails());
-            }
-            item.getGradedDetails().setGradingCompany(request.getGradingCompany());
-            item.getGradedDetails().setGrade(request.getGrade());
+            item.setGradedDetails(GradedDetails.builder()
+                    .gradingCompany(request.getGradingCompany())
+                    .grade(request.getGrade())
+                    .gradingUpcharge(item.getGradedDetails() != null ? item.getGradedDetails().getGradingUpcharge() : 0)
+                    .build());
         }
 
         itemRepo.save(item);
         return item.getPurpose();
     }
 
-    public void delete(Long id) {
-        itemRepo.deleteById(id);
+    // ---------- Delete ----------
+
+    public String delete(Long id) {
+        TrackedItem item = findById(id);
+        String purpose = item.getPurpose();
+        item.setPurpose(Purpose.ARCHIVED.name());
+        itemRepo.save(item);
+        return purpose;
     }
+
+    // ---------- Helpers ----------
 
     private TrackedItem findById(Long id) {
         return itemRepo.findById(id)

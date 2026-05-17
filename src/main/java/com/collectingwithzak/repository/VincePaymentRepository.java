@@ -12,7 +12,7 @@ public interface VincePaymentRepository extends JpaRepository<VincePayment, Long
 
     @Query(value = "SELECT COALESCE(SUM(CASE WHEN type = 'PAYOUT' THEN amount ELSE 0 END), 0), " +
                    "COALESCE(SUM(CASE WHEN type = 'RECEIVABLE' THEN amount ELSE 0 END), 0) " +
-                   "FROM vince_payments WHERE deleted_at IS NULL", nativeQuery = true)
+                   "FROM vince_payments", nativeQuery = true)
     List<Object[]> getTotalsRaw();
 
     default double[] getTotals() {

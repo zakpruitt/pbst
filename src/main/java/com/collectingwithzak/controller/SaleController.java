@@ -25,6 +25,28 @@ public class SaleController {
     private final SaleService saleService;
     private final VincePaymentService vincePaymentService;
 
+    // ---------- Create ----------
+
+    @GetMapping("/new")
+    public String newForm(Model model) {
+
+        return "sales/new";
+    }
+
+    @PostMapping
+    public String create(CreateSaleRequest request) {
+        saleService.create(request);
+        return "redirect:/sales";
+    }
+
+    @PostMapping("/vince/payments")
+    public String createVincePayment(CreateVincePaymentRequest request) {
+        vincePaymentService.create(request);
+        return "redirect:/sales?view=vince";
+    }
+
+    // ---------- Read ----------
+
     @GetMapping
     public String index(@RequestParam(defaultValue = "mine") String view, Model model) {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
@@ -33,7 +55,6 @@ public class SaleController {
 
         List<SaleResponse> sales = saleService.getAll(view);
         long stagedCount = saleService.countStaged();
-
 
         List<MonthGroup<SaleResponse>> groups = MonthGroup.groupByMonth(sales, SaleResponse::getSaleDate);
         MonthGroup.computeSubtotals(groups, SaleResponse::getNetAmount);
@@ -52,23 +73,11 @@ public class SaleController {
         return "sales/index";
     }
 
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "sales/new";
-    }
-
     @GetMapping("/staging")
     public String staging(Model model) {
 
         model.addAttribute("sales", saleService.getStaged());
         return "sales/staging";
-    }
-
-    @PostMapping
-    public String create(CreateSaleRequest request) {
-        saleService.create(request);
-        return "redirect:/sales";
     }
 
     @GetMapping("/{id}")
@@ -90,6 +99,8 @@ public class SaleController {
         model.addAttribute("from", from != null ? from : "");
         return "sales/confirm";
     }
+
+    // ---------- Update ----------
 
     @PostMapping("/{id}/confirm")
     public String confirm(@PathVariable Long id,
@@ -140,16 +151,12 @@ public class SaleController {
         return "redirect:/sales/staging";
     }
 
+    // ---------- Delete ----------
+
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
         saleService.delete(id);
         return "redirect:/sales";
-    }
-
-    @PostMapping("/vince/payments")
-    public String createVincePayment(CreateVincePaymentRequest request) {
-        vincePaymentService.create(request);
-        return "redirect:/sales?view=vince";
     }
 
     @PostMapping("/vince/payments/{id}/delete")

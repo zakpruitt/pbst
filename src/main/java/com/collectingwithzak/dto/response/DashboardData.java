@@ -30,8 +30,8 @@ public class DashboardData {
 
     private List<OriginCount> originCounts;
     private List<ItemTypeCount> itemTypeCounts;
-    private List<GradingStatusCount> gradingStatuses;
-    private List<LotStatusCount> lotStatuses;
+    private List<StatusCount> gradingStatuses;
+    private List<StatusCount> lotStatuses;
 
     private List<SaleResponse> topSales;
     private List<SaleResponse> recentSales;

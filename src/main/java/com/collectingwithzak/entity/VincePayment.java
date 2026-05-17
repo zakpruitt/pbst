@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 
@@ -14,8 +12,6 @@ import java.time.LocalDate;
 @Table(name = "vince_payments")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE vince_payments SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class VincePayment extends BaseEntity {
 
     @Column(columnDefinition = "numeric(10,2)")

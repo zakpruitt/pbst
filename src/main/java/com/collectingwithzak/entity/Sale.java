@@ -3,8 +3,6 @@ package com.collectingwithzak.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,8 +12,6 @@ import java.util.List;
 @Table(name = "sales")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE sales SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class Sale extends BaseEntity {
 
     @Column(name = "ebay_order_id", unique = true)

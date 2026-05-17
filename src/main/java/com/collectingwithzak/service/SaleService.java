@@ -42,6 +42,8 @@ public class SaleService {
     @Lazy
     private SaleService self;
 
+    // ---------- Create ----------
+
     public void create(CreateSaleRequest request) {
         Sale sale = saleMapper.toEntity(request);
         if (!StringUtils.hasText(sale.getOrigin())) {
@@ -50,14 +52,41 @@ public class SaleService {
         saleRepo.save(sale);
     }
 
-    @Transactional(readOnly = true)
+    public void syncFromEbay(List<EbayOrderData> orders) {
+        int upserted = 0;
+        for (EbayOrderData order : orders) {
+            try {
+                self.upsertFromEbay(saleMapper.fromEbayOrder(order));
+                upserted++;
+            } catch (Exception e) {
+                log.warn("Skipping order {}: {}", order.getEbayOrderId(), e.getMessage());
+            }
+        }
+        log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void upsertFromEbay(Sale sale) {
+        Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
+        if (existing != null) {
+            saleMapper.updateFromEbay(sale, existing);
+            saleRepo.save(existing);
+        } else {
+            sale.setStatus(SaleStatus.STAGED.name());
+            saleRepo.save(sale);
+        }
+    }
+
+    // ---------- Read ----------
+
+
     public SaleResponse getByIdWithItems(Long id) {
         Sale sale = saleRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
         return saleMapper.toResponse(sale);
     }
 
-    @Transactional(readOnly = true)
+
     public List<SaleResponse> getAll(String view) {
         List<Sale> sales = switch (view) {
             case "vince" -> saleRepo.findVince();
@@ -67,17 +96,17 @@ public class SaleService {
         return saleMapper.toResponseList(sales);
     }
 
-    @Transactional(readOnly = true)
+
     public List<SaleResponse> getStaged() {
         return saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED.name()));
     }
 
-    @Transactional(readOnly = true)
+
     public long countStaged() {
         return saleRepo.countByStatus(SaleStatus.STAGED.name());
     }
 
-    @Transactional(readOnly = true)
+
     public SaleConfirmFormData getConfirmFormData(Long id) {
         Sale sale = saleRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
@@ -102,6 +131,8 @@ public class SaleService {
                 TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
                 attachedIds);
     }
+
+    // ---------- Update ----------
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
         itemRepo.detachFromSale(saleId);
@@ -130,40 +161,11 @@ public class SaleService {
         saleRepo.updateStatusAndAttribution(saleId, SaleStatus.STAGED.name(), "");
     }
 
+    // ---------- Delete ----------
+
     public void delete(Long saleId) {
         itemRepo.detachFromSale(saleId);
         saleRepo.deleteById(saleId);
-    }
-
-    public void syncFromEbay(List<EbayOrderData> orders) {
-        int upserted = 0;
-        for (EbayOrderData order : orders) {
-            try {
-                self.upsertFromEbay(saleMapper.fromEbayOrder(order));
-                upserted++;
-            } catch (Exception e) {
-                log.warn("Skipping order {}: {}", order.getEbayOrderId(), e.getMessage());
-            }
-        }
-        log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void upsertFromEbay(Sale sale) {
-        Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
-        if (existing != null) {
-            existing.setGrossAmount(sale.getGrossAmount());
-            existing.setEbayFees(sale.getEbayFees());
-            existing.setShippingCost(sale.getShippingCost());
-            existing.setNetAmount(sale.getNetAmount());
-            existing.setOrderStatus(sale.getOrderStatus());
-            existing.setTitle(sale.getTitle());
-            existing.setBuyerUsername(sale.getBuyerUsername());
-            saleRepo.save(existing);
-        } else {
-            sale.setStatus(SaleStatus.STAGED.name());
-            saleRepo.save(sale);
-        }
     }
 
 }

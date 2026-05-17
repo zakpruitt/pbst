@@ -20,6 +20,22 @@ public class LotController {
 
     private final LotService lotService;
 
+    // ---------- Create ----------
+
+    @GetMapping("/new")
+    public String newForm(Model model) {
+
+        return "lots/new";
+    }
+
+    @PostMapping
+    public String create(CreateLotRequest request) {
+        Long id = lotService.create(request);
+        return "redirect:/lots/" + id;
+    }
+
+    // ---------- Read ----------
+
     @GetMapping
     public String index(Model model) {
         List<LotResponse> lots = lotService.getAll();
@@ -39,32 +55,20 @@ public class LotController {
                              @RequestParam(value = "img", defaultValue = "") String imageUrl,
                              @RequestParam(value = "card_id", defaultValue = "") String cardId,
                              Model model) {
-        SnapshotItem item = new SnapshotItem();
-        item.setName(name);
-        item.setItemType(type);
-        item.setSetName(setName);
-        item.setCardNumber(cardNumber);
-        item.setRarity(rarity);
-        item.setMarketPrice(market);
-        item.setImageUrl(imageUrl);
-        item.setPokemonCardId(cardId);
-        item.setQty(1);
-        item.setPercentage(60);
-        item.setTracked(false);
-        model.addAttribute("item", item);
+        model.addAttribute("item", SnapshotItem.builder()
+                .name(name)
+                .itemType(type)
+                .setName(setName)
+                .cardNumber(cardNumber)
+                .rarity(rarity)
+                .marketPrice(market)
+                .imageUrl(imageUrl)
+                .pokemonCardId(cardId)
+                .qty(1)
+                .percentage(60)
+                .isTracked(false)
+                .build());
         return "lots/partials/row :: lot-row";
-    }
-
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "lots/new";
-    }
-
-    @PostMapping
-    public String create(CreateLotRequest request) {
-        Long id = lotService.create(request);
-        return "redirect:/lots/" + id;
     }
 
     @GetMapping("/{id}")
@@ -85,6 +89,8 @@ public class LotController {
         return "lots/edit";
     }
 
+    // ---------- Update ----------
+
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, UpdateLotRequest request) {
         lotService.update(id, request);
@@ -100,6 +106,8 @@ public class LotController {
         }
         return "redirect:/lots/" + id;
     }
+
+    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

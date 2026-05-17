@@ -5,5 +5,6 @@ public enum Purpose {
     IN_GRADING,
     SOLD,
     PERSONAL_COLLECTION,
-    PENDING_GRADE
+    PENDING_GRADE,
+    ARCHIVED
 }

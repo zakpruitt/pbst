@@ -20,6 +20,8 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepo;
     private final ExpenseMapper expenseMapper;
 
+    // ---------- Create ----------
+
     public void create(CreateExpenseRequest request) {
         Expense expense = expenseMapper.toEntity(request);
         if (expense.getExpenseDate() == null) {
@@ -28,10 +30,13 @@ public class ExpenseService {
         expenseRepo.save(expense);
     }
 
-    @Transactional(readOnly = true)
+    // ---------- Read ----------
+
     public List<ExpenseResponse> getAll() {
         return expenseMapper.toResponseList(expenseRepo.findAllByOrderByExpenseDateDescIdDesc());
     }
+
+    // ---------- Delete ----------
 
     public void delete(Long id) {
         expenseRepo.deleteById(id);

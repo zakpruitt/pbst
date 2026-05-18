@@ -17,6 +17,8 @@ import java.util.List;
 @Setter
 public class LotPurchase extends BaseEntity {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Column(name = "seller_name")
     private String sellerName;
 
@@ -44,8 +46,7 @@ public class LotPurchase extends BaseEntity {
             return List.of();
         }
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(lotContentSnapshot, new TypeReference<>() {});
+            return MAPPER.readValue(lotContentSnapshot, new TypeReference<>() {});
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse lot snapshot", e);
         }

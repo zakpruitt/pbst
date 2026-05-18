@@ -1,5 +1,6 @@
 package com.collectingwithzak.repository;
 
+import com.collectingwithzak.dto.response.InventoryTotals;
 import com.collectingwithzak.dto.response.ItemTypeCount;
 import com.collectingwithzak.entity.TrackedItem;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -72,8 +73,10 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
                 .toList();
     }
 
-    default double[] getInventoryTotals() {
-        Object[] row = getInventoryTotalsRaw().getFirst();
-        return new double[]{((Number) row[0]).doubleValue(), ((Number) row[1]).doubleValue()};
+    default InventoryTotals getInventoryTotals() {
+        List<Object[]> results = getInventoryTotalsRaw();
+        if (results.isEmpty()) return new InventoryTotals(0, 0);
+        Object[] row = results.getFirst();
+        return new InventoryTotals(((Number) row[0]).doubleValue(), ((Number) row[1]).doubleValue());
     }
 }

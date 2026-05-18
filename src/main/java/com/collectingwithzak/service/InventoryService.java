@@ -2,6 +2,7 @@ package com.collectingwithzak.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.collectingwithzak.dto.InventorySnapshotRow;
 import com.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.dto.response.InventorySplitResponse;
@@ -22,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ public class InventoryService {
     // ---------- Create ----------
 
     public void createItems(CreateInventoryRequest request) {
-        List<Map<String, Object>> rows;
+        List<InventorySnapshotRow> rows;
         try {
             rows = objectMapper.readValue(request.getItemsSnapshot(), new TypeReference<>() {});
         } catch (Exception e) {
@@ -47,23 +47,17 @@ public class InventoryService {
 
         String purpose = request.getPurpose() != null ? request.getPurpose() : Purpose.INVENTORY.name();
 
-        for (Map<String, Object> row : rows) {
-            String name = (String) row.get("name");
-            Number cost = (Number) row.get("cost_basis");
-            Number market = (Number) row.get("market_value");
-            String cardId = (String) row.get("pokemon_card_id");
-            String sealedId = (String) row.get("sealed_product_id");
-
+        for (InventorySnapshotRow row : rows) {
             var builder = TrackedItem.builder()
                     .purpose(purpose)
                     .acquisitionDate(request.getAcquisitionDate())
-                    .itemType((String) row.getOrDefault("item_type", ItemType.RAW_CARD.name()));
+                    .itemType(StringUtils.hasText(row.getItemType()) ? row.getItemType() : ItemType.RAW_CARD.name());
 
-            if (StringUtils.hasText(name)) builder.manualNameOverride(name);
-            if (cost != null) builder.costBasis(cost.doubleValue());
-            if (market != null) builder.marketValueAtPurchase(market.doubleValue());
-            if (StringUtils.hasText(cardId)) builder.pokemonCard(cardRepo.findById(cardId).orElse(null));
-            if (StringUtils.hasText(sealedId)) builder.sealedProduct(sealedRepo.findById(sealedId).orElse(null));
+            if (StringUtils.hasText(row.getName())) builder.manualNameOverride(row.getName());
+            if (row.getCostBasis() != null) builder.costBasis(row.getCostBasis());
+            if (row.getMarketValue() != null) builder.marketValueAtPurchase(row.getMarketValue());
+            if (StringUtils.hasText(row.getPokemonCardId())) builder.pokemonCard(cardRepo.findById(row.getPokemonCardId()).orElse(null));
+            if (StringUtils.hasText(row.getSealedProductId())) builder.sealedProduct(sealedRepo.findById(row.getSealedProductId()).orElse(null));
 
             itemRepo.save(builder.build());
         }

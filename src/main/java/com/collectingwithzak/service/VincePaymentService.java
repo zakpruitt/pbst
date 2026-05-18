@@ -1,6 +1,7 @@
 package com.collectingwithzak.service;
 
 import com.collectingwithzak.dto.request.CreateVincePaymentRequest;
+import com.collectingwithzak.dto.response.PaymentTotals;
 import com.collectingwithzak.dto.response.RangeTotals;
 import com.collectingwithzak.dto.response.VinceLedger;
 import com.collectingwithzak.dto.response.VincePaymentResponse;
@@ -47,8 +48,8 @@ public class VincePaymentService {
 
     public VinceLedger getLedger() {
         RangeTotals salesTotals = saleRepo.getVinceTotals();
-        double[] paymentTotals = paymentRepo.getTotals();
-        return VinceLedger.from(salesTotals, paymentTotals[0], paymentTotals[1]);
+        PaymentTotals paymentTotals = paymentRepo.getTotals();
+        return VinceLedger.from(salesTotals, paymentTotals.getPaidOut(), paymentTotals.getReceivable());
     }
 
     // ---------- Delete ----------

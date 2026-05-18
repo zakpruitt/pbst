@@ -17,11 +17,8 @@ import com.collectingwithzak.repository.SaleRepository;
 import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -37,10 +34,7 @@ public class SaleService {
     private final TrackedItemRepository itemRepo;
     private final SaleMapper saleMapper;
     private final TrackedItemMapper trackedItemMapper;
-
-    @Autowired
-    @Lazy
-    private SaleService self;
+    private final EbaySaleUpsertService ebaySaleUpsertService;
 
     // ---------- Create ----------
 
@@ -56,25 +50,13 @@ public class SaleService {
         int upserted = 0;
         for (EbayOrderData order : orders) {
             try {
-                self.upsertFromEbay(saleMapper.fromEbayOrder(order));
+                ebaySaleUpsertService.upsertFromEbay(saleMapper.fromEbayOrder(order));
                 upserted++;
             } catch (Exception e) {
                 log.warn("Skipping order {}: {}", order.getEbayOrderId(), e.getMessage());
             }
         }
         log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void upsertFromEbay(Sale sale) {
-        Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
-        if (existing != null) {
-            saleMapper.updateFromEbay(sale, existing);
-            saleRepo.save(existing);
-        } else {
-            sale.setStatus(SaleStatus.STAGED.name());
-            saleRepo.save(sale);
-        }
     }
 
     // ---------- Read ----------
@@ -143,13 +125,11 @@ public class SaleService {
     }
 
     public void ignore(Long saleId) {
-        itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.IGNORED.name(), "");
+        changeStatus(saleId, SaleStatus.IGNORED.name(), "");
     }
 
     public void markAsVince(Long saleId) {
-        itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.IGNORED.name(), "vince");
+        changeStatus(saleId, SaleStatus.IGNORED.name(), "vince");
     }
 
     public void updateAmounts(Long saleId, double grossAmount, double netAmount) {
@@ -157,8 +137,12 @@ public class SaleService {
     }
 
     public void unstage(Long saleId) {
+        changeStatus(saleId, SaleStatus.STAGED.name(), "");
+    }
+
+    private void changeStatus(Long saleId, String status, String attributedTo) {
         itemRepo.detachFromSale(saleId);
-        saleRepo.updateStatusAndAttribution(saleId, SaleStatus.STAGED.name(), "");
+        saleRepo.updateStatusAndAttribution(saleId, status, attributedTo);
     }
 
     // ---------- Delete ----------

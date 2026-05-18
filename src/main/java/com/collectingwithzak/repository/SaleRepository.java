@@ -1,5 +1,6 @@
 package com.collectingwithzak.repository;
 
+import com.collectingwithzak.dto.response.ConfirmedSaleTotals;
 import com.collectingwithzak.dto.response.MonthlyRevenue;
 import com.collectingwithzak.dto.response.OriginCount;
 import com.collectingwithzak.dto.response.RangeTotals;
@@ -83,23 +84,29 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT new com.collectingwithzak.dto.response.OriginCount(s.origin, COUNT(s), COALESCE(SUM(s.netAmount), 0.0)) FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
     List<OriginCount> countByOrigin();
 
-    default double[] getConfirmedTotals() {
-        Object[] row = getConfirmedTotalsRaw().getFirst();
-        return new double[]{
-                ((Number) row[0]).doubleValue(),
+    default ConfirmedSaleTotals getConfirmedTotals() {
+        List<Object[]> results = getConfirmedTotalsRaw();
+        if (results.isEmpty()) return new ConfirmedSaleTotals(0, 0, 0, 0);
+        Object[] row = results.getFirst();
+        return new ConfirmedSaleTotals(
+                ((Number) row[0]).longValue(),
                 ((Number) row[1]).doubleValue(),
                 ((Number) row[2]).doubleValue(),
                 ((Number) row[3]).doubleValue()
-        };
+        );
     }
 
     default RangeTotals getVinceTotals() {
-        Object[] row = getVinceTotalsRaw().getFirst();
+        List<Object[]> results = getVinceTotalsRaw();
+        if (results.isEmpty()) return new RangeTotals(0, 0, 0);
+        Object[] row = results.getFirst();
         return new RangeTotals(((Number) row[0]).longValue(), ((Number) row[1]).doubleValue(), ((Number) row[2]).doubleValue());
     }
 
     default RangeTotals getTotalsSince(LocalDate since) {
-        Object[] row = getTotalsSinceRaw(since).getFirst();
+        List<Object[]> results = getTotalsSinceRaw(since);
+        if (results.isEmpty()) return new RangeTotals(0, 0, 0);
+        Object[] row = results.getFirst();
         return new RangeTotals(((Number) row[0]).longValue(), ((Number) row[1]).doubleValue(), ((Number) row[2]).doubleValue());
     }
 

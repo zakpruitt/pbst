@@ -1,5 +1,6 @@
 package com.collectingwithzak.repository;
 
+import com.collectingwithzak.dto.response.PaymentTotals;
 import com.collectingwithzak.entity.VincePayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,8 +16,10 @@ public interface VincePaymentRepository extends JpaRepository<VincePayment, Long
                    "FROM vince_payments", nativeQuery = true)
     List<Object[]> getTotalsRaw();
 
-    default double[] getTotals() {
-        Object[] row = getTotalsRaw().getFirst();
-        return new double[]{((Number) row[0]).doubleValue(), ((Number) row[1]).doubleValue()};
+    default PaymentTotals getTotals() {
+        List<Object[]> results = getTotalsRaw();
+        if (results.isEmpty()) return new PaymentTotals(0, 0);
+        Object[] row = results.getFirst();
+        return new PaymentTotals(((Number) row[0]).doubleValue(), ((Number) row[1]).doubleValue());
     }
 }

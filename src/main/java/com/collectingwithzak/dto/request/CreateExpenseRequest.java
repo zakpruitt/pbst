@@ -7,6 +7,6 @@ import java.time.LocalDate;
 @Data
 public class CreateExpenseRequest {
     private String name;
-    private LocalDate expenseDate;
+    private LocalDate expenseDate = LocalDate.now();
     private double cost;
 }

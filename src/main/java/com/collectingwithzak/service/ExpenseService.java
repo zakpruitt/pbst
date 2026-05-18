@@ -25,11 +25,7 @@ public class ExpenseService {
     // ---------- Create ----------
 
     public void create(CreateExpenseRequest request) {
-        Expense expense = expenseMapper.toEntity(request);
-        if (expense.getExpenseDate() == null) {
-            expense.setExpenseDate(LocalDate.now());
-        }
-        expenseRepo.save(expense);
+        expenseRepo.save(expenseMapper.toEntity(request));
     }
 
     // ---------- Read ----------
@@ -52,9 +48,16 @@ public class ExpenseService {
                 .filter(e -> !e.getExpenseDate().isBefore(firstOfMonth))
                 .toList();
 
-        return new ExpensePageData(groups, total, expenses.size(), avg,
-                last30.stream().mapToDouble(ExpenseResponse::getCost).sum(), last30.size(),
-                thisMonth.stream().mapToDouble(ExpenseResponse::getCost).sum(), thisMonth.size());
+        return ExpensePageData.builder()
+                .groups(groups)
+                .total(total)
+                .count(expenses.size())
+                .avg(avg)
+                .total30(last30.stream().mapToDouble(ExpenseResponse::getCost).sum())
+                .count30(last30.size())
+                .totalMonth(thisMonth.stream().mapToDouble(ExpenseResponse::getCost).sum())
+                .countMonth(thisMonth.size())
+                .build();
     }
 
     // ---------- Delete ----------

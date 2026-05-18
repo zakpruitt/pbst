@@ -13,6 +13,7 @@ import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.Purpose;
 import org.springframework.util.StringUtils;
 import com.collectingwithzak.exception.ResourceNotFoundException;
+import com.collectingwithzak.mapper.GradedDetailsMapper;
 import com.collectingwithzak.mapper.TrackedItemMapper;
 import com.collectingwithzak.repository.PokemonCardRepository;
 import com.collectingwithzak.repository.SealedProductRepository;
@@ -33,6 +34,7 @@ public class InventoryService {
     private final PokemonCardRepository cardRepo;
     private final SealedProductRepository sealedRepo;
     private final TrackedItemMapper trackedItemMapper;
+    private final GradedDetailsMapper gradedDetailsMapper;
     private final ObjectMapper objectMapper;
 
     // ---------- Create ----------
@@ -45,21 +47,17 @@ public class InventoryService {
             throw new IllegalArgumentException("Invalid items snapshot JSON", e);
         }
 
-        String purpose = request.getPurpose() != null ? request.getPurpose() : Purpose.INVENTORY.name();
-
         for (InventorySnapshotRow row : rows) {
-            var builder = TrackedItem.builder()
-                    .purpose(purpose)
-                    .acquisitionDate(request.getAcquisitionDate())
-                    .itemType(StringUtils.hasText(row.getItemType()) ? row.getItemType() : ItemType.RAW_CARD.name());
-
-            if (StringUtils.hasText(row.getName())) builder.manualNameOverride(row.getName());
-            if (row.getCostBasis() != null) builder.costBasis(row.getCostBasis());
-            if (row.getMarketValue() != null) builder.marketValueAtPurchase(row.getMarketValue());
-            if (StringUtils.hasText(row.getPokemonCardId())) builder.pokemonCard(cardRepo.findById(row.getPokemonCardId()).orElse(null));
-            if (StringUtils.hasText(row.getSealedProductId())) builder.sealedProduct(sealedRepo.findById(row.getSealedProductId()).orElse(null));
-
-            itemRepo.save(builder.build());
+            TrackedItem item = trackedItemMapper.fromSnapshotRow(row);
+            item.setPurpose(request.getPurpose());
+            item.setAcquisitionDate(request.getAcquisitionDate());
+            if (StringUtils.hasText(row.getPokemonCardId())) {
+                item.setPokemonCard(cardRepo.findById(row.getPokemonCardId()).orElse(null));
+            }
+            if (StringUtils.hasText(row.getSealedProductId())) {
+                item.setSealedProduct(sealedRepo.findById(row.getSealedProductId()).orElse(null));
+            }
+            itemRepo.save(item);
         }
     }
 
@@ -89,7 +87,13 @@ public class InventoryService {
             }
         }
 
-        return new InventorySplitResponse(all, raw, graded, sealed, other);
+        return new InventorySplitResponse(
+                all,
+                raw,
+                graded,
+                sealed,
+                other
+        );
     }
 
     // ---------- Update ----------
@@ -99,11 +103,10 @@ public class InventoryService {
         trackedItemMapper.updateEntity(request, item);
 
         if (ItemType.GRADED_CARD.name().equals(item.getItemType())) {
-            item.setGradedDetails(GradedDetails.builder()
-                    .gradingCompany(request.getGradingCompany())
-                    .grade(request.getGrade())
-                    .gradingUpcharge(item.getGradedDetails() != null ? item.getGradedDetails().getGradingUpcharge() : 0)
-                    .build());
+            double existingUpcharge = item.getGradedDetails() != null ? item.getGradedDetails().getGradingUpcharge() : 0;
+            GradedDetails details = gradedDetailsMapper.fromUpdateRequest(request);
+            details.setGradingUpcharge(existingUpcharge);
+            item.setGradedDetails(details);
         }
 
         itemRepo.save(item);

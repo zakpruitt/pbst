@@ -22,52 +22,46 @@ public class GradingController {
 
     private final GradingService gradingService;
 
-    // ---------- Create ----------
+    // ---------- Pages ----------
+
+    @GetMapping
+    public String index(Model model) {
+        List<GradingSubmissionResponse> submissions = gradingService.getAll();
+        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
+        return "grading/index";
+    }
 
     @GetMapping("/new")
     public String newForm(Model model) {
         GradingFormData formData = gradingService.getNewFormData();
-
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
         return "grading/new";
     }
 
-    @PostMapping
-    public String create(CreateGradingRequest request) {
-        Long id = gradingService.createWithItems(request);
-        return "redirect:/grading/" + id;
-    }
-
-    // ---------- Read ----------
-
-    @GetMapping
-    public String index(Model model) {
-        List<GradingSubmissionResponse> submissions = gradingService.getAll();
-
-        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
-        return "grading/index";
-    }
-
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
-
         model.addAttribute("submission", submission);
         return "grading/detail";
     }
 
-    // ---------- Update ----------
-
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         GradingFormData formData = gradingService.getEditFormData(id);
-
         model.addAttribute("submission", formData.getSubmission());
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
         model.addAttribute("attachedIds", formData.getAttachedIds());
         return "grading/edit";
+    }
+
+    // ---------- Actions ----------
+
+    @PostMapping
+    public String create(CreateGradingRequest request) {
+        Long id = gradingService.createWithItems(request);
+        return "redirect:/grading/" + id;
     }
 
     @PostMapping("/{id}")
@@ -88,8 +82,6 @@ public class GradingController {
         gradingService.recordReturn(id, request.getGrades());
         return ResponseEntity.noContent().build();
     }
-
-    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

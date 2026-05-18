@@ -86,7 +86,12 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     default ConfirmedSaleTotals getConfirmedTotals() {
         List<Object[]> results = getConfirmedTotalsRaw();
-        if (results.isEmpty()) return new ConfirmedSaleTotals(0, 0, 0, 0);
+        if (results.isEmpty()) return new ConfirmedSaleTotals(
+                0,
+                0,
+                0,
+                0
+        );
         Object[] row = results.getFirst();
         return new ConfirmedSaleTotals(
                 ((Number) row[0]).longValue(),

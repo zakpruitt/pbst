@@ -8,7 +8,7 @@ import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.Sale;
 import com.collectingwithzak.entity.TrackedItem;
 import com.collectingwithzak.entity.enums.ItemType;
-import com.collectingwithzak.entity.enums.Origin;
+import com.collectingwithzak.entity.enums.SaleAction;
 import com.collectingwithzak.entity.enums.SaleStatus;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.SaleMapper;
@@ -18,7 +18,6 @@ import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -39,11 +38,7 @@ public class SaleService {
     // ---------- Create ----------
 
     public void create(CreateSaleRequest request) {
-        Sale sale = saleMapper.toEntity(request);
-        if (!StringUtils.hasText(sale.getOrigin())) {
-            sale.setOrigin(Origin.EBAY.name());
-        }
-        saleRepo.save(sale);
+        saleRepo.save(saleMapper.toEntity(request));
     }
 
     public void syncFromEbay(List<EbayOrderData> orders) {
@@ -118,26 +113,22 @@ public class SaleService {
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
         itemRepo.detachFromSale(saleId);
-        if (itemIds != null && !itemIds.isEmpty()) {
+        if (!itemIds.isEmpty()) {
             itemRepo.attachToSale(itemIds, saleId);
         }
         saleRepo.updateStatus(saleId, SaleStatus.CONFIRMED.name());
     }
 
-    public void ignore(Long saleId) {
-        changeStatus(saleId, SaleStatus.IGNORED.name(), "");
-    }
-
-    public void markAsVince(Long saleId) {
-        changeStatus(saleId, SaleStatus.IGNORED.name(), "vince");
+    public void updateStatus(Long saleId, SaleAction action) {
+        switch (action) {
+            case IGNORE -> changeStatus(saleId, SaleStatus.IGNORED.name(), "");
+            case VINCE -> changeStatus(saleId, SaleStatus.IGNORED.name(), "vince");
+            case UNSTAGE -> changeStatus(saleId, SaleStatus.STAGED.name(), "");
+        }
     }
 
     public void updateAmounts(Long saleId, double grossAmount, double netAmount) {
         saleRepo.updateAmounts(saleId, grossAmount, netAmount);
-    }
-
-    public void unstage(Long saleId) {
-        changeStatus(saleId, SaleStatus.STAGED.name(), "");
     }
 
     private void changeStatus(Long saleId, String status, String attributedTo) {

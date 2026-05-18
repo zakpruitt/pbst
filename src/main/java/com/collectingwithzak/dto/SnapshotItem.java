@@ -25,7 +25,7 @@ public class SnapshotItem {
 
     private String rarity;
 
-    private int qty;
+    private int qty = 1;
 
     @JsonProperty("market_price")
     private double marketPrice;

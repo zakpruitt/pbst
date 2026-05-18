@@ -2,6 +2,7 @@ package com.collectingwithzak.dto.request;
 
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -10,5 +11,5 @@ public class CreateGradingRequest {
     private String submissionMethod;
     private double submissionCost;
     private String notes;
-    private List<Long> itemIds;
+    private List<Long> itemIds = new ArrayList<>();
 }

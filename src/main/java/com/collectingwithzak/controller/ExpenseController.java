@@ -18,25 +18,11 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
-    // ---------- Create ----------
-
-    @GetMapping("/new")
-    public String newExpense() {
-        return "expenses/new";
-    }
-
-    @PostMapping
-    public String create(CreateExpenseRequest request) {
-        expenseService.create(request);
-        return "redirect:/expenses";
-    }
-
-    // ---------- Read ----------
+    // ---------- Pages ----------
 
     @GetMapping
     public String index(Model model) {
         ExpensePageData data = expenseService.getPageData();
-
         model.addAttribute("groups", data.getGroups());
         model.addAttribute("total", data.getTotal());
         model.addAttribute("count", data.getCount());
@@ -48,7 +34,18 @@ public class ExpenseController {
         return "expenses/index";
     }
 
-    // ---------- Delete ----------
+    @GetMapping("/new")
+    public String newExpense() {
+        return "expenses/new";
+    }
+
+    // ---------- Actions ----------
+
+    @PostMapping
+    public String create(CreateExpenseRequest request) {
+        expenseService.create(request);
+        return "redirect:/expenses";
+    }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

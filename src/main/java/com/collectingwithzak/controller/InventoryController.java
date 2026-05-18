@@ -5,9 +5,7 @@ import com.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.dto.response.InventorySplitResponse;
 import com.collectingwithzak.dto.response.TrackedItemResponse;
-import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.service.InventoryService;
-import org.springframework.util.StringUtils;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -22,24 +20,7 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    // ---------- Create ----------
-
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "inventory/new";
-    }
-
-    @PostMapping
-    public String create(CreateInventoryRequest request) {
-        if (!StringUtils.hasText(request.getPurpose())) {
-            request.setPurpose(Purpose.INVENTORY.name());
-        }
-        inventoryService.createItems(request);
-        return "redirect:/inventory?purpose=" + request.getPurpose();
-    }
-
-    // ---------- Read ----------
+    // ---------- Pages ----------
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
@@ -61,6 +42,11 @@ public class InventoryController {
             return "inventory/index :: inventory-page";
         }
         return "inventory/index";
+    }
+
+    @GetMapping("/new")
+    public String newForm(Model model) {
+        return "inventory/new";
     }
 
     @GetMapping("/partials/row")
@@ -88,14 +74,19 @@ public class InventoryController {
         return "inventory/partials/row :: inventory-row";
     }
 
-    // ---------- Update ----------
-
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         TrackedItemResponse item = inventoryService.getById(id);
-
         model.addAttribute("item", item);
         return "inventory/edit";
+    }
+
+    // ---------- Actions ----------
+
+    @PostMapping
+    public String create(CreateInventoryRequest request) {
+        inventoryService.createItems(request);
+        return "redirect:/inventory?purpose=" + request.getPurpose();
     }
 
     @PostMapping("/{id}")
@@ -103,8 +94,6 @@ public class InventoryController {
         String purpose = inventoryService.update(id, request);
         return "redirect:/inventory?purpose=" + purpose;
     }
-
-    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

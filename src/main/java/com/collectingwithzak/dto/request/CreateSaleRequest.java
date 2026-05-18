@@ -1,5 +1,6 @@
 package com.collectingwithzak.dto.request;
 
+import com.collectingwithzak.entity.enums.Origin;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -13,5 +14,5 @@ public class CreateSaleRequest {
     private double grossAmount;
     private double ebayFees;
     private double shippingCost;
-    private String origin;
+    private String origin = Origin.EBAY.name();
 }

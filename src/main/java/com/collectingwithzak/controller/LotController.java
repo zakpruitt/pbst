@@ -20,21 +20,7 @@ public class LotController {
 
     private final LotService lotService;
 
-    // ---------- Create ----------
-
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "lots/new";
-    }
-
-    @PostMapping
-    public String create(CreateLotRequest request) {
-        Long id = lotService.create(request);
-        return "redirect:/lots/" + id;
-    }
-
-    // ---------- Read ----------
+    // ---------- Pages ----------
 
     @GetMapping
     public String index(Model model) {
@@ -43,6 +29,11 @@ public class LotController {
         MonthGroup.computeSubtotals(groups, LotResponse::getTotalCost);
         model.addAttribute("groups", groups);
         return "lots/index";
+    }
+
+    @GetMapping("/new")
+    public String newForm(Model model) {
+        return "lots/new";
     }
 
     @GetMapping("/partials/row")
@@ -74,7 +65,6 @@ public class LotController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         LotResponse lot = lotService.getById(id);
-
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/detail";
@@ -83,13 +73,18 @@ public class LotController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         LotResponse lot = lotService.getById(id);
-
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";
     }
 
-    // ---------- Update ----------
+    // ---------- Actions ----------
+
+    @PostMapping
+    public String create(CreateLotRequest request) {
+        Long id = lotService.create(request);
+        return "redirect:/lots/" + id;
+    }
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, UpdateLotRequest request) {
@@ -102,8 +97,6 @@ public class LotController {
         lotService.updateStatus(id, action);
         return "redirect:/lots/" + id;
     }
-
-    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

@@ -6,8 +6,6 @@ import com.collectingwithzak.dto.response.RangeTotals;
 import com.collectingwithzak.dto.response.VinceLedger;
 import com.collectingwithzak.dto.response.VincePaymentResponse;
 import com.collectingwithzak.entity.VincePayment;
-import com.collectingwithzak.entity.enums.PaymentType;
-import org.springframework.util.StringUtils;
 import com.collectingwithzak.mapper.VincePaymentMapper;
 import com.collectingwithzak.repository.SaleRepository;
 import com.collectingwithzak.repository.VincePaymentRepository;
@@ -15,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -30,14 +27,7 @@ public class VincePaymentService {
     // ---------- Create ----------
 
     public void create(CreateVincePaymentRequest request) {
-        VincePayment payment = paymentMapper.toEntity(request);
-        if (payment.getPaymentDate() == null) {
-            payment.setPaymentDate(LocalDate.now());
-        }
-        if (!StringUtils.hasText(payment.getType())) {
-            payment.setType(PaymentType.PAYOUT.name());
-        }
-        paymentRepo.save(payment);
+        paymentRepo.save(paymentMapper.toEntity(request));
     }
 
     // ---------- Read ----------

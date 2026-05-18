@@ -6,6 +6,7 @@ import com.collectingwithzak.dto.response.MonthGroup;
 import com.collectingwithzak.dto.response.SaleConfirmFormData;
 import com.collectingwithzak.dto.response.SaleResponse;
 import com.collectingwithzak.dto.response.VincePaymentResponse;
+import com.collectingwithzak.entity.enums.SaleAction;
 import com.collectingwithzak.service.SaleService;
 import com.collectingwithzak.service.VincePaymentService;
 import lombok.RequiredArgsConstructor;
@@ -25,27 +26,7 @@ public class SaleController {
     private final SaleService saleService;
     private final VincePaymentService vincePaymentService;
 
-    // ---------- Create ----------
-
-    @GetMapping("/new")
-    public String newForm(Model model) {
-
-        return "sales/new";
-    }
-
-    @PostMapping
-    public String create(CreateSaleRequest request) {
-        saleService.create(request);
-        return "redirect:/sales";
-    }
-
-    @PostMapping("/vince/payments")
-    public String createVincePayment(CreateVincePaymentRequest request) {
-        vincePaymentService.create(request);
-        return "redirect:/sales?view=vince";
-    }
-
-    // ---------- Read ----------
+    // ---------- Pages ----------
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "mine") String view, Model model) {
@@ -73,9 +54,13 @@ public class SaleController {
         return "sales/index";
     }
 
+    @GetMapping("/new")
+    public String newForm(Model model) {
+        return "sales/new";
+    }
+
     @GetMapping("/staging")
     public String staging(Model model) {
-
         model.addAttribute("sales", saleService.getStaged());
         return "sales/staging";
     }
@@ -83,7 +68,6 @@ public class SaleController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         SaleResponse sale = saleService.getByIdWithItems(id);
-
         model.addAttribute("sale", sale);
         return "sales/detail";
     }
@@ -91,7 +75,6 @@ public class SaleController {
     @GetMapping("/{id}/confirm")
     public String confirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
         SaleConfirmFormData formData = saleService.getConfirmFormData(id);
-
         model.addAttribute("sale", formData.getSale());
         model.addAttribute("rawItems", formData.getRawItems());
         model.addAttribute("gradedItems", formData.getGradedItems());
@@ -100,7 +83,19 @@ public class SaleController {
         return "sales/confirm";
     }
 
-    // ---------- Update ----------
+    // ---------- Actions ----------
+
+    @PostMapping
+    public String create(CreateSaleRequest request) {
+        saleService.create(request);
+        return "redirect:/sales";
+    }
+
+    @PostMapping("/vince/payments")
+    public String createVincePayment(CreateVincePaymentRequest request) {
+        vincePaymentService.create(request);
+        return "redirect:/sales?view=vince";
+    }
 
     @PostMapping("/{id}/confirm")
     public String confirm(@PathVariable Long id,
@@ -113,25 +108,16 @@ public class SaleController {
         return "redirect:/sales/" + id;
     }
 
-    @PostMapping("/{id}/ignore")
-    public Object ignore(@PathVariable Long id,
-                         @RequestHeader(value = "HX-Request", required = false) String hx) {
-        saleService.ignore(id);
+    @PostMapping("/{id}/status")
+    public Object updateStatus(@PathVariable Long id,
+                               @RequestParam("action") SaleAction action,
+                               @RequestParam(name = "from", required = false) String from,
+                               @RequestHeader(value = "HX-Request", required = false) String hx) {
+        saleService.updateStatus(id, action);
         if (hx != null) {
             return ResponseEntity.noContent().build();
         }
-        return "redirect:/sales/staging";
-    }
-
-    @PostMapping("/{id}/vince")
-    public Object vince(@PathVariable Long id,
-                        @RequestParam(name = "from", required = false) String from,
-                        @RequestHeader(value = "HX-Request", required = false) String hx) {
-        saleService.markAsVince(id);
-        if (hx != null) {
-            return ResponseEntity.noContent().build();
-        }
-        if ("detail".equals(from)) {
+        if (action == SaleAction.VINCE && "detail".equals(from)) {
             return "redirect:/sales?view=vince";
         }
         return "redirect:/sales/staging";
@@ -145,14 +131,6 @@ public class SaleController {
         saleService.updateAmounts(id, grossAmount, netAmount);
         return ResponseEntity.noContent().build();
     }
-
-    @PostMapping("/{id}/unstage")
-    public String unstage(@PathVariable Long id) {
-        saleService.unstage(id);
-        return "redirect:/sales/staging";
-    }
-
-    // ---------- Delete ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {

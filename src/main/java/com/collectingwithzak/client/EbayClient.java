@@ -140,7 +140,12 @@ public class EbayClient {
 
         for (String filter : buildTimeWindowFilters(since, "creationdate")) {
             for (int offset = 0; ; offset += ORDERS_PAGE_SIZE) {
-                String url = buildPageUrl(ordersUrl, ORDERS_PAGE_SIZE, offset, filter);
+                String url = buildPageUrl(
+                        ordersUrl,
+                        ORDERS_PAGE_SIZE,
+                        offset,
+                        filter
+                );
 
                 ResponseEntity<EbayOrdersResponse> response = authenticatedGet(url, EbayOrdersResponse.class);
                 if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
@@ -160,7 +165,12 @@ public class EbayClient {
 
         for (String filter : buildTimeWindowFilters(since, "transactionDate")) {
             for (int offset = 0; ; offset += TRANSACTIONS_PAGE_SIZE) {
-                String url = buildPageUrl(transactionsUrl, TRANSACTIONS_PAGE_SIZE, offset, filter);
+                String url = buildPageUrl(
+                        transactionsUrl,
+                        TRANSACTIONS_PAGE_SIZE,
+                        offset,
+                        filter
+                );
 
                 ResponseEntity<EbayTransactionsResponse> response = authenticatedGet(url, EbayTransactionsResponse.class);
                 if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
@@ -187,7 +197,12 @@ public class EbayClient {
         return filters;
     }
 
-    private String buildPageUrl(String baseUrl, int limit, int offset, String filter) {
+    private String buildPageUrl(
+            String baseUrl,
+            int limit,
+            int offset,
+            String filter
+    ) {
         return UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .queryParam("limit", limit)
                 .queryParam("offset", offset)

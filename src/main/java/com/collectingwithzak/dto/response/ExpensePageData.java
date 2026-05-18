@@ -1,12 +1,14 @@
 package com.collectingwithzak.dto.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class ExpensePageData {
     private List<MonthGroup<ExpenseResponse>> groups;
     private double total;

@@ -1,5 +1,6 @@
 package com.collectingwithzak.dto;
 
+import com.collectingwithzak.entity.enums.ItemType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,5 +24,5 @@ public class InventorySnapshotRow {
     private String sealedProductId;
 
     @JsonProperty("item_type")
-    private String itemType;
+    private String itemType = ItemType.RAW_CARD.name();
 }

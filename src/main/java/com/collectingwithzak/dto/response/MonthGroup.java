@@ -31,7 +31,13 @@ public class MonthGroup<T> {
             String label = date.format(MONTH_FMT);
             if (!label.equals(current)) {
                 String mc = "month-" + date.getMonth().name().toLowerCase();
-                groups.add(new MonthGroup<>(label, date, mc, new ArrayList<>(), 0));
+                groups.add(new MonthGroup<>(
+                        label,
+                        date,
+                        mc,
+                        new ArrayList<>(),
+                        0
+                ));
                 current = label;
             }
             groups.getLast().getItems().add(item);

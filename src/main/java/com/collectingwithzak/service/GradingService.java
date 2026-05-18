@@ -13,6 +13,7 @@ import com.collectingwithzak.entity.enums.GradingStatus;
 import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.exception.ResourceNotFoundException;
+import com.collectingwithzak.mapper.GradedDetailsMapper;
 import com.collectingwithzak.mapper.GradingMapper;
 import com.collectingwithzak.mapper.TrackedItemMapper;
 import com.collectingwithzak.repository.GradingSubmissionRepository;
@@ -33,24 +34,21 @@ public class GradingService {
     private final GradingSubmissionRepository gradingRepo;
     private final TrackedItemRepository itemRepo;
     private final GradingMapper gradingMapper;
+    private final GradedDetailsMapper gradedDetailsMapper;
     private final TrackedItemMapper trackedItemMapper;
 
     // ---------- Create ----------
 
     public Long createWithItems(CreateGradingRequest request) {
-        List<Long> itemIds = request.getItemIds() != null ? request.getItemIds() : List.of();
+        List<Long> itemIds = request.getItemIds();
         long count = gradingRepo.countByCompany(request.getCompany());
-        double costPerCard = itemIds.isEmpty() ? 0 : request.getSubmissionCost() / itemIds.size();
 
-        GradingSubmission submission = gradingRepo.save(GradingSubmission.builder()
-                .submissionName(String.format("%s Submission #%d", request.getCompany(), count + 1))
-                .company(request.getCompany())
-                .submissionMethod(request.getSubmissionMethod())
-                .status(GradingStatus.PREPPING.name())
-                .costPerCard(costPerCard)
-                .submissionCost(request.getSubmissionCost())
-                .notes(request.getNotes())
-                .build());
+        GradingSubmission submission = gradingMapper.toEntity(request);
+        submission.setSubmissionName(String.format("%s Submission #%d", request.getCompany(), count + 1));
+        submission.setStatus(GradingStatus.PREPPING.name());
+        submission.setCostPerCard(itemIds.isEmpty() ? 0 : request.getSubmissionCost() / itemIds.size());
+
+        submission = gradingRepo.save(submission);
 
         if (!itemIds.isEmpty()) {
             itemRepo.attachToSubmission(itemIds, submission.getId());
@@ -106,7 +104,7 @@ public class GradingService {
 
     public void update(Long id, UpdateGradingRequest request) {
         GradingSubmission submission = findById(id);
-        List<Long> itemIds = request.getItemIds() != null ? request.getItemIds() : List.of();
+        List<Long> itemIds = request.getItemIds();
 
         itemRepo.detachFromSubmission(id);
 
@@ -133,11 +131,9 @@ public class GradingService {
 
         double totalUpcharge = 0;
         for (ItemGradeRequest g : grades) {
-            GradedDetails details = GradedDetails.builder()
-                    .gradingCompany(submission.getCompany())
-                    .grade(g.getGrade())
-                    .gradingUpcharge(g.getUpcharge())
-                    .build();
+            GradedDetails details = gradedDetailsMapper.fromGradeRequest(g);
+            details.setGradingCompany(submission.getCompany());
+
             var item = itemRepo.findById(g.getItemId())
                     .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", g.getItemId()));
             item.setGradedDetails(details);

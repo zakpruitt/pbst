@@ -1,377 +1,241 @@
-# PBST Code Review — Controllers & Services
+# Code Review — PBST (May 2026)
 
-## Table of Contents
-- [LoginController](#logincontroller)
-- [DashboardController / DashboardService](#dashboardcontroller--dashboardservice)
-- [InventoryController / InventoryService](#inventorycontroller--inventoryservice)
-- [GradingController / GradingService](#gradingcontroller--gradingservice)
-- [LotController / LotService](#lotcontroller--lotservice)
-- [SaleController / SaleService](#salecontroller--saleservice)
-- [ExpenseController / ExpenseService](#expensecontroller--expenseservice)
-- [SearchController / SearchService](#searchcontroller--searchservice)
-- [VincePaymentService (no dedicated controller)](#vincepaymentservice)
-- [Cross-Cutting Issues](#cross-cutting-issues)
-- [Suggestions](#suggestions)
+Fresh review of the full codebase after the recent controller/entity/mapper/service overhaul.
 
 ---
 
-## LoginController
+## Bugs
 
-**File:** `controller/LoginController.java`
+### 1. `getFirst()` on potentially empty query results
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `login()` | `GET /login` | None — returns view |
+`SaleRepository:87`, `SaleRepository:97`, `SaleRepository:102`, `VincePaymentRepository:19`, `TrackedItemRepository:76`
 
-**Notes:** Clean, nothing to change.
+All the `default` methods in repositories call `.getFirst()` on native query results without checking emptiness. Aggregate queries with `COALESCE` will always return a row in Postgres, so this won't blow up *today* — but if you ever add a `WHERE` clause that filters everything out, or switch databases, you get a `NoSuchElementException` with no useful context.
 
----
+**Fix:** Guard with an empty check:
+```java
+default double[] getConfirmedTotals() {
+    List<Object[]> results = getConfirmedTotalsRaw();
+    if (results.isEmpty()) return new double[]{0, 0, 0, 0};
+    Object[] row = results.getFirst();
+    // ...
+}
+```
 
-## DashboardController / DashboardService
+### 2. `LotPurchase.parseSnapshot()` creates a new `ObjectMapper` every call
 
-**File:** `controller/DashboardController.java`, `service/DashboardService.java`
+`LotPurchase.java:47`
 
-### Controller
+```java
+ObjectMapper mapper = new ObjectMapper();
+return mapper.readValue(lotContentSnapshot, new TypeReference<>() {});
+```
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `dashboard(model)` | `GET /` | `dashboardService.getDashboardData()` |
+`ObjectMapper` is expensive to construct and this gets called per lot. `InventoryService` already injects a shared `ObjectMapper` — this should do the same.
 
-Clean 1:1 mapping. Controller is thin.
+**Fix:** Move parsing to `LotService` where you can inject the shared `ObjectMapper`, or make it a `private static final` on the entity.
 
-### Service — `getDashboardData()`
+### 3. `attachToSubmission` / `attachToSale` use non-spec JPQL path updates
 
-This is a large aggregation method that makes **14 separate database calls** in one shot:
+`TrackedItemRepository:27`, `TrackedItemRepository:40`
 
-1. `lotRepo.getTotalCostNonRejected()`
-2. `saleRepo.getConfirmedTotals()`
-3. `itemRepo.countByPurpose("IN_GRADING")`
-4. `itemRepo.countByPurpose("INVENTORY")`
-5. `itemRepo.getInventoryTotals()`
-6. `saleRepo.getTotalsSince(7d)`
-7. `saleRepo.getTotalsSince(30d)`
-8. `vincePaymentService.getLedger()` — itself makes 2 more queries
-9. `lotRepo.getMonthlySpend(12)`
-10. `saleRepo.getMonthlyRevenue(12)`
-11. `saleRepo.countByOrigin()`
-12. `itemRepo.countByItemType()`
-13. `gradingRepo.countByStatus()`
-14. `lotRepo.countByStatus()`
-15. `saleRepo.findTopByNet(5)`
-16. `saleRepo.findRecent(5)`
-17. `lotRepo.findByOrderByPurchaseDateDesc(5)`
+```java
+UPDATE TrackedItem t SET t.gradingSubmission.id = :submissionId WHERE t.id IN :itemIds
+UPDATE TrackedItem t SET t.sale.id = :saleId, t.purpose = 'SOLD' WHERE t.id IN :itemIds
+```
 
-> **CALLOUT — Performance:** 17+ queries per page load. Works fine now but will get slow. If dashboard latency becomes noticeable, consider: (a) a single native query that returns multiple aggregates, (b) a materialized view, or (c) caching the result for a few minutes with `@Cacheable`.
+Setting `t.gradingSubmission.id` (a nested path through a `@ManyToOne`) in a JPQL `UPDATE` is Hibernate-specific behavior, not guaranteed by the JPA spec. Hibernate 6 happens to translate this to a direct FK column update, but a version bump or provider swap could break it silently.
 
-> **CALLOUT — Two separate `countByPurpose` calls (lines 44-45):** These could be combined into a single `GROUP BY purpose` query that returns all counts at once, similar to `countByItemType()`.
+**Fix:** Use native queries:
+```java
+@Query(value = "UPDATE tracked_items SET grading_submission_id = :submissionId WHERE id IN :itemIds", nativeQuery = true)
+void attachToSubmission(List<Long> itemIds, Long submissionId);
+```
 
-The `buildMonthLabels()` and `fillSeries()` helper methods are only used inside `getDashboardData()` — this is fine, they belong here.
+### 4. Grading submission name race condition
 
----
+`GradingService:42-46`
 
-## InventoryController / InventoryService
+```java
+long count = gradingRepo.countByCompany(request.getCompany());
+// ...
+.submissionName(String.format("%s Submission #%d", request.getCompany(), count + 1))
+```
 
-**File:** `controller/InventoryController.java`, `service/InventoryService.java`
+Two concurrent creates for the same company will get the same count and produce duplicate names. Not a data integrity issue (no unique constraint), but confusing for the user.
 
-### Controller
-
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `index(purpose, request, model)` | `GET /inventory` | `inventoryService.getByPurpose(purpose)` |
-| `rowPartial(...)` | `GET /inventory/partials/row` | None — builds DTO in controller |
-| `newForm(model)` | `GET /inventory/new` | None |
-| `create(request)` | `POST /inventory` | `inventoryService.createItems(request)` |
-| `editForm(id, model)` | `GET /inventory/{id}/edit` | `inventoryService.getById(id)` |
-| `update(id, request)` | `POST /inventory/{id}` | `inventoryService.update(id, request)` |
-| `delete(id)` | `POST /inventory/{id}/delete` | `inventoryService.delete(id)` |
-
-### Service
-
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `createItems(request)` | `InventoryController.create()` | Parses JSON snapshot, creates TrackedItems |
-| `getById(id)` | `InventoryController.editForm()` | Single item lookup |
-| `getByPurpose(purpose)` | `InventoryController.index()` | Gets items and splits by type |
-| `update(id, request)` | `InventoryController.update()` | Uses MapStruct `updateEntity` + manual graded details |
-| `delete(id)` | `InventoryController.delete()` | Returns purpose for redirect |
-| `findById(id)` | (private) | Shared lookup helper |
-
-> **CALLOUT — `index()` has logic that belongs in the service (line 30-39):** The controller unpacks `InventorySplitResponse` into individual model attributes and computes `totalCost`/`totalMarket`. The `sumCost`/`sumMarket` calls are view logic that's fine in the controller, but the manual unpacking of every field from the split response is boilerplate. Consider just passing the `InventorySplitResponse` directly as a single model attribute (`model.addAttribute("split", split)`) and accessing fields in the template with `split.rawItems`, etc.
-
-> **CALLOUT — `rowPartial()` builds an `InventoryRowPreset` with 10 params:** This is purely view scaffolding. Fine for now but getting bloated. If more params get added, consider accepting a flat request DTO instead of 10 `@RequestParam`s.
-
-> **CALLOUT — `createItems()` uses raw `Map<String, Object>` for JSON parsing (line 41):** The snapshot JSON is parsed into `List<Map<String, Object>>` and then manually pulled apart with string keys like `"cost_basis"`, `"market_value"`, etc. This is fragile — one key typo silently breaks things. The lot side already has `SnapshotItem` for this purpose. Consider reusing or creating a typed DTO for inventory snapshots.
+**Fix:** Generate the name after save using the auto-assigned ID, e.g. `"PSA Submission #42"`.
 
 ---
 
-## GradingController / GradingService
+## Design Issues
 
-**File:** `controller/GradingController.java`, `service/GradingService.java`
+### 5. `double[]` and `Object[]` as return types from repositories
 
-### Controller
+`SaleRepository:86-94`, `TrackedItemRepository:75-78`, `VincePaymentRepository:18-21`
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `index(model)` | `GET /grading` | `gradingService.getAll()` |
-| `newForm(model)` | `GET /grading/new` | `gradingService.getNewFormData()` |
-| `create(request)` | `POST /grading` | `gradingService.createWithItems(request)` |
-| `detail(id, model)` | `GET /grading/{id}` | `gradingService.getByIdWithItems(id)` |
-| `editForm(id, model)` | `GET /grading/{id}/edit` | `gradingService.getEditFormData(id)` |
-| `update(id, request)` | `POST /grading/{id}` | `gradingService.update(request, id)` |
-| `advanceStatus(id, newStatus)` | `POST /grading/{id}/advance` | `gradingService.advanceStatus(id, newStatus)` |
-| `recordReturn(id, request)` | `POST /grading/{id}/return` | `gradingService.recordReturn(id, request.getGrades())` |
-| `delete(id)` | `POST /grading/{id}/delete` | `gradingService.delete(id)` |
+The dashboard unpacks magic indices (`confirmed[0]`, `confirmed[3]`) with no type safety. One wrong index = silent data corruption.
 
-Clean 1:1 mapping throughout. Controller is thin.
+**Fix:** Return typed records:
+```java
+record ConfirmedTotals(long count, double gross, double net, double fees) {}
+```
 
-### Service
+### 6. All `TrackedItem` relationships are `FetchType.EAGER`
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `createWithItems(request)` | `GradingController.create()` | Creates submission, attaches items |
-| `getAll()` | `GradingController.index()` | |
-| `getByIdWithItems(id)` | `GradingController.detail()` | |
-| `getNewFormData()` | `GradingController.newForm()` | Returns available items for form |
-| `getEditFormData(id)` | `GradingController.editForm()` | Returns submission + available items |
-| `update(request, id)` | `GradingController.update()` | Uses MapStruct `updateEntity` |
-| `delete(id)` | `GradingController.delete()` | |
-| `advanceStatus(id, newStatus)` | `GradingController.advanceStatus()` | |
-| `recordReturn(submissionId, grades)` | `GradingController.recordReturn()` | |
-| `findById(id)` | (private) | |
+`TrackedItem.java:37-55`
 
-> **CALLOUT — `advanceStatus()` does no validation on `newStatus` (service line 131):** The controller passes the raw string from the form. There's no check that `newStatus` is a valid `GradingStatus` value, or that the transition is valid (e.g. you could go from RETURNED back to PREPPING). Consider validating against the enum and enforcing allowed transitions.
+Every `TrackedItem` load eagerly fetches `lotPurchase`, `pokemonCard`, `sealedProduct`, `gradingSubmission`, and `sale` — 5 joins. The `findByPurpose` query already does `LEFT JOIN FETCH` for 4 of these, making the EAGER annotations redundant there but actively harmful everywhere else (like `findById`, `findAvailableInventory`, etc.).
 
-> **CALLOUT — `getNewFormData()` and `getEditFormData()` share the item-splitting logic (lines 76-82, 94-101):** Both methods fetch inventory items, filter by RAW_CARD and GRADED_CARD, and build a `GradingFormData`. The filtering pattern (`TrackedItemResponse.filterByType(all, RAW_CARD)` / `filterByType(all, GRADED_CARD)`) is duplicated. This same pattern also appears in `SaleService.getConfirmFormData()`. If you add more item types or form data shapes, this will spread further.
+**Fix:** Switch all to `FetchType.LAZY`. Existing `JOIN FETCH` queries already handle the cases where you need related data. This is probably the single biggest easy performance win.
 
-> **CALLOUT — Parameter order inconsistency: `update(request, id)` vs convention `update(id, request)`:** Every other service method puts `id` first, but `GradingService.update()` puts `request` first. The controller calls it as `gradingService.update(request, id)`. Minor but inconsistent.
+### 7. Self-injection in `SaleService`
 
----
+`SaleService:41-43`
 
-## LotController / LotService
+```java
+@Autowired @Lazy
+private SaleService self;
+```
 
-**File:** `controller/LotController.java`, `service/LotService.java`
+Used for `REQUIRES_NEW` propagation on `upsertFromEbay`. Works fine but is a known anti-pattern that confuses anyone who sees it for the first time.
 
-### Controller
+**Fix:** Extract `upsertFromEbay` into a small `EbaySaleUpsertService` that `SaleService` calls normally.
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `index(model)` | `GET /lots` | `lotService.getAll()` |
-| `rowPartial(...)` | `GET /lots/partials/row` | None — builds SnapshotItem in controller |
-| `newForm(model)` | `GET /lots/new` | None |
-| `create(request)` | `POST /lots` | `lotService.create(request)` |
-| `detail(id, model)` | `GET /lots/{id}` | `lotService.getById(id)` |
-| `editForm(id, model)` | `GET /lots/{id}/edit` | `lotService.getById(id)` |
-| `update(id, request)` | `POST /lots/{id}` | `lotService.update(id, request)` |
-| `updateStatus(id, action)` | `POST /lots/{id}/status` | `lotService.accept(id)` or `lotService.reject(id)` |
-| `delete(id)` | `POST /lots/{id}/delete` | `lotService.delete(id)` |
+### 8. CSRF disabled globally
 
-### Service
+`SecurityConfig.java:26`
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `create(request)` | `LotController.create()` | MapStruct `toEntity` |
-| `getById(id)` | `LotController.detail()`, `editForm()` | |
-| `getAll()` | `LotController.index()` | |
-| `update(id, request)` | `LotController.update()` | MapStruct `updateEntity` |
-| `accept(id)` | `LotController.updateStatus()` | Parses snapshot, creates TrackedItems |
-| `reject(id)` | `LotController.updateStatus()` | |
-| `delete(id)` | `LotController.delete()` | |
-| `snapshotToTrackedItem(lot, item)` | (private) | Converts snapshot to entity |
-| `findById(id)` | (private) | |
+CSRF is off for the entire app, but most endpoints are Thymeleaf form POSTs, not a stateless API. This leaves every authenticated POST vulnerable to cross-site forgery.
 
-> **CALLOUT — `updateStatus()` violates 1:1 rule (controller line 95-102):** The controller has an if/else that dispatches to `accept()` or `reject()` based on the `action` param. This decision should live in the service. A single `lotService.updateStatus(id, action)` that handles the branching internally would be cleaner.
+**Fix:** Re-enable CSRF. Thymeleaf's `th:action` auto-includes the token. For HTMX requests, add a meta tag + `hx-headers` config to send the token as a header.
 
-> **CALLOUT — `rowPartial()` builds a `SnapshotItem` manually with 12 setter calls (lines 42-54):** Same issue as InventoryController's `rowPartial()`. Both controllers have HTMX row-partial endpoints that manually assemble a DTO from many `@RequestParam`s. These are parallel patterns that could share a consistent approach.
+### 9. No input validation on request DTOs
 
-> **CALLOUT — `detail()` and `editForm()` make the exact same service call (lines 71, 80):** Both call `lotService.getById(id)` and add `lot` + `snapshotItems` to the model. The only difference is the returned view. If the templates diverge that's fine, but note the duplication.
+No controller uses `@Valid`, no DTOs appear to have JSR-303 annotations.
+
+- `SaleController:37` — `CreateSaleRequest` could have null title, negative amounts
+- `GradingController:37` — `CreateGradingRequest` could have null company
+- `SaleController:142-144` — `grossAmount`/`netAmount` accept any double (negatives, NaN)
+- `GradingController:80` — `newStatus` is a raw string, not validated against `GradingStatus` values
+
+**Fix:** Add `@NotBlank`, `@Min(0)`, etc. to DTOs; add `@Valid` to controller params.
+
+### 10. `advanceStatus` accepts any string
+
+`GradingController:80`, `GradingService:124`
+
+No validation that `newStatus` is a real `GradingStatus`, and no enforcement of valid transitions (you could go from RETURNED back to PREPPING). Same problem exists with `LotService` status changes via the controller.
+
+**Fix:** Accept the enum type, validate allowed transitions:
+```java
+private static final Map<GradingStatus, Set<GradingStatus>> TRANSITIONS = Map.of(
+    PREPPING, Set.of(IN_GRADING),
+    IN_GRADING, Set.of(RETURNED),
+    // ...
+);
+```
 
 ---
 
-## SaleController / SaleService
+## Performance
 
-**File:** `controller/SaleController.java`, `service/SaleService.java`
+### 11. Dashboard fires 17+ separate queries
 
-### Controller
+`DashboardService:38-89`
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `index(view, model)` | `GET /sales` | `saleService.getAll(view)`, `saleService.countStaged()`, conditionally `vincePaymentService.getLedger()`, `vincePaymentService.getAll()` |
-| `newForm(model)` | `GET /sales/new` | None |
-| `staging(model)` | `GET /sales/staging` | `saleService.getStaged()` |
-| `create(request)` | `POST /sales` | `saleService.create(request)` |
-| `detail(id, model)` | `GET /sales/{id}` | `saleService.getByIdWithItems(id)` |
-| `confirmForm(id, from, model)` | `GET /sales/{id}/confirm` | `saleService.getConfirmFormData(id)` |
-| `confirm(id, itemIds, from)` | `POST /sales/{id}/confirm` | `saleService.confirmWithItems(id, itemIds)` |
-| `ignore(id, hx)` | `POST /sales/{id}/ignore` | `saleService.ignore(id)` |
-| `vince(id, from, hx)` | `POST /sales/{id}/vince` | `saleService.markAsVince(id)` |
-| `updateAmounts(id, gross, net)` | `PATCH /sales/{id}/amounts` | `saleService.updateAmounts(id, gross, net)` |
-| `unstage(id)` | `POST /sales/{id}/unstage` | `saleService.unstage(id)` |
-| `delete(id)` | `POST /sales/{id}/delete` | `saleService.delete(id)` |
-| `createVincePayment(request)` | `POST /sales/vince/payments` | `vincePaymentService.create(request)` |
-| `deleteVincePayment(id)` | `POST /sales/vince/payments/{id}/delete` | `vincePaymentService.delete(id)` |
+A single dashboard page load runs:
+- `getTotalCostNonRejected`, `getConfirmedTotals`, `countByPurpose` x2, `getInventoryTotals`
+- `getTotalsSince` x2, `getLedger` (2 inner queries)
+- `getMonthlySpend`, `getMonthlyRevenue`, `countByOrigin`, `countByItemType`
+- `countByStatus` x2, `findTopByNet`, `findRecent`, `findByOrderByPurchaseDateDesc`
 
-### Service
+Fine at current scale, but this will degrade as data grows.
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `create(request)` | `SaleController.create()` | |
-| `getByIdWithItems(id)` | `SaleController.detail()` | |
-| `getAll(view)` | `SaleController.index()` | Routes to confirmed/ignored/vince |
-| `getStaged()` | `SaleController.staging()` | |
-| `countStaged()` | `SaleController.index()` | |
-| `getConfirmFormData(id)` | `SaleController.confirmForm()` | |
-| `confirmWithItems(saleId, itemIds)` | `SaleController.confirm()` | |
-| `ignore(saleId)` | `SaleController.ignore()` | |
-| `markAsVince(saleId)` | `SaleController.vince()` | |
-| `updateAmounts(saleId, gross, net)` | `SaleController.updateAmounts()` | |
-| `unstage(saleId)` | `SaleController.unstage()` | |
-| `delete(saleId)` | `SaleController.delete()` | |
-| `syncFromEbay(orders)` | eBay sync job | |
-| `upsertFromEbay(sale)` | `syncFromEbay()` | Uses MapStruct `updateFromEbay` |
+**Short-term fix:** Add `@Transactional(readOnly = true)` to skip dirty-checking. The class already has `@Transactional` but not `readOnly`, so Hibernate tracks every loaded entity for changes it'll never flush.
 
-This is the biggest controller/service pair and the most complex.
+**Longer-term:** Consolidate the aggregate queries into fewer calls, or cache the result.
 
-> **CALLOUT — `index()` calls 4 different service methods (lines 34-49):** `getAll(view)`, `countStaged()`, `vincePaymentService.getLedger()`, `vincePaymentService.getAll()`. The vince calls are conditional which is fine, but `getAll` + `countStaged` always run together. Consider bundling them — the service could return a wrapper with both the sale list and the staged count.
+### 12. LIKE with leading wildcard on search
 
-> **CALLOUT — SaleController owns Vince payment routes (lines 149-159):** `POST /sales/vince/payments` and `POST /sales/vince/payments/{id}/delete` are Vince-specific CRUD operations living inside SaleController. If VincePayment grows more endpoints (edit, list, detail), this will get messy. Consider a dedicated `VincePaymentController` or at minimum acknowledge that SaleController is doing double duty.
+`PokemonCardRepository` / `SealedProductRepository` search queries use `LIKE '%query%'`. Leading `%` forces a full table scan regardless of indexes.
 
-> **CALLOUT — `ignore()` and `vince()` return `Object` (lines 106, 114):** These methods return either `ResponseEntity` (for HTMX) or a `String` redirect. Returning `Object` from a controller method works but loses type clarity. Consider using `ResponseEntity<?>` or splitting into two separate endpoints (one for HTMX, one for full-page).
+**Fix (if needed):** PostgreSQL `pg_trgm` trigram index, or full-text search with `to_tsvector`.
 
-> **CALLOUT — `ignore`, `markAsVince`, `unstage` all follow the same pattern:** Each one calls `itemRepo.detachFromSale(saleId)` then `saleRepo.updateStatusAndAttribution(...)` with different params. These could share a private `changeStatus(saleId, status, attribution)` helper in the service.
+### 13. `DashboardService` is read-write `@Transactional` but only reads
 
-> **CALLOUT — `self` injection for `@Transactional(propagation = REQUIRES_NEW)` (line 41-43):** `SaleService` injects itself lazily to allow `syncFromEbay()` to call `upsertFromEbay()` in a new transaction. This is the standard Spring workaround but it's worth knowing about — it means `upsertFromEbay` must stay `public` even though it's only called internally.
+`DashboardService:23`
+
+Class-level `@Transactional` defaults to read-write. Every entity loaded during dashboard builds gets dirty-checked on flush — wasteful since nothing is modified.
+
+**Fix:** `@Transactional(readOnly = true)` on the class.
 
 ---
 
-## ExpenseController / ExpenseService
+## Inconsistencies & Cleanup
 
-**File:** `controller/ExpenseController.java`, `service/ExpenseService.java`
+### 14. Enum values stored as strings without `@Enumerated`
 
-### Controller
+`TrackedItem`, `Sale`, `LotPurchase` store `purpose`, `status`, `itemType`, `origin` as plain `String` fields. Enums exist (`GradingStatus`, `SaleStatus`, `LotStatus`, `Purpose`, `ItemType`, `Origin`) but are only used for `.name()` calls. Some code uses `SaleStatus.CONFIRMED.name()`, other code uses `"CONFIRMED"` directly in JPQL queries.
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `index(model)` | `GET /expenses` | `expenseService.getAll()` |
-| `newExpense()` | `GET /expenses/new` | None |
-| `create(request)` | `POST /expenses` | `expenseService.create(request)` |
-| `delete(id)` | `POST /expenses/{id}/delete` | `expenseService.delete(id)` |
+This is the single biggest source of potential silent bugs — a typo compiles fine and silently fails at runtime.
 
-### Service
+### 15. `InventoryService.createItems()` uses raw `Map<String, Object>` for JSON
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `create(request)` | `ExpenseController.create()` | Defaults date to today |
-| `getAll()` | `ExpenseController.index()` | |
-| `delete(id)` | `ExpenseController.delete()` | |
+`InventoryService:41-46`
 
-> **CALLOUT — `index()` has heavy computation in the controller (lines 30-50):** The controller computes `total`, `avg`, `last30`, `thisMonth`, `total30`, `totalMonth`, `count30`, `countMonth` — all from the full expense list. This is business/view logic that should live in the service. A dedicated `getExpensePageData()` method that returns a wrapper DTO with all these computed values would make the controller thin and testable.
+```java
+rows = objectMapper.readValue(request.getItemsSnapshot(), new TypeReference<List<Map<String, Object>>>() {});
+```
 
-> **CALLOUT — Fetches ALL expenses to compute stats:** `getAll()` loads every expense ever, then the controller filters in-memory for last-30-days and this-month. If the expense table grows, this won't scale. Consider adding repo methods like `findSince(date)` or computing stats via aggregate queries.
+Then manually pulls out `"cost_basis"`, `"market_value"`, etc. by string key. The lot side already has a typed `SnapshotItem` for the same concept.
 
----
+**Fix:** Create a typed DTO or reuse `SnapshotItem`.
 
-## SearchController / SearchService
+### 16. `GradingService.update()` parameter order
 
-**File:** `controller/SearchController.java`, `service/SearchService.java`
+`GradingService:107` — `update(UpdateGradingRequest request, Long id)` puts request first, but every other service method puts `id` first. Minor but inconsistent.
 
-### Controller
+### 17. `ignore`, `markAsVince`, `unstage` are near-identical
 
-| Method | Route | Service Call |
-|--------|-------|-------------|
-| `searchCards(q)` | `GET /api/v1/cards/search` | `searchService.searchCards(q)` |
-| `searchSealed(q)` | `GET /api/v1/sealed/search` | `searchService.searchSealed(q)` |
+`SaleService:145-162`
 
-### Service
+All three: detach items from sale, then update status/attribution. Could share a private helper:
+```java
+private void changeStatus(Long saleId, String status, String attribution) {
+    itemRepo.detachFromSale(saleId);
+    saleRepo.updateStatusAndAttribution(saleId, status, attribution);
+}
+```
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `searchCards(query)` | `SearchController.searchCards()` | Empty check + repo + mapper |
-| `searchSealed(query)` | `SearchController.searchSealed()` | Same pattern |
+### 18. ExpenseController computes stats in the controller
 
-Clean and simple. No issues.
+`ExpenseController:30-50` (approx)
 
----
+The controller fetches all expenses, then computes totals, averages, last-30-day stats, this-month stats in-memory. This is business logic that belongs in the service. Also loads the entire expense history to compute stats that could be aggregate queries.
 
-## VincePaymentService
+### 19. SaleController owns VincePayment routes
 
-**File:** `service/VincePaymentService.java` — **No dedicated controller**
+`SaleController:42-46`, `SaleController:163-167`
 
-| Method | Called From | Notes |
-|--------|------------|-------|
-| `create(request)` | `SaleController.createVincePayment()` | Defaults date/type |
-| `getAll()` | `SaleController.index()` (vince view) | |
-| `getLedger()` | `SaleController.index()` (vince view), `DashboardService.getDashboardData()` | |
-| `delete(id)` | `SaleController.deleteVincePayment()` | |
+Vince payment CRUD lives inside `SaleController`. If VincePayment grows more endpoints this will get crowded. Worth extracting to its own controller.
 
-> **CALLOUT — Called from 2 different places:** `getLedger()` is used by both `SaleController` and `DashboardService`. This is one of the few genuinely shared service methods, which is fine — it's reused logic computing a real domain concept.
+### 20. `SaleController.ignore()` and `vince()` return `Object`
+
+`SaleController:117`, `SaleController:127`
+
+These return either `ResponseEntity` (HTMX) or `String` (redirect). The `Object` return type works but loses all type safety. Consider splitting HTMX vs full-page endpoints, or standardizing on one approach.
 
 ---
 
-## Cross-Cutting Issues
+## What's Good
 
-### 1. Inconsistent HTMX handling
-
-`InventoryController.index()` checks for `HX-Request` header and returns a fragment. `SaleController.ignore()` and `vince()` check for `HX-Request` and return `ResponseEntity.ok("")`. No other controllers do any HTMX-aware response handling. If the app is HTMX-driven, this should be consistent — either all list endpoints support partial responses, or none do.
-
-### 2. Status values are stringly-typed
-
-All statuses are stored and compared as raw strings (`"PREPPING"`, `"CONFIRMED"`, `"ACCEPTED"`, etc.) even though enums exist (`GradingStatus`, `SaleStatus`, `LotStatus`). The enums are only used for `.name()` calls to get the string. The entities, repositories, and services all pass strings around. This means:
-- No compile-time safety on status transitions
-- Typos in status strings would silently fail
-- `advanceStatus(id, newStatus)` accepts any string
-
-Consider using the enum types in entities and letting JPA handle the conversion with `@Enumerated(EnumType.STRING)`.
-
-### 3. The "detach then re-attach" pattern is repeated everywhere
-
-- `GradingService.update()`: `detachFromSubmission` → `attachToSubmission`
-- `SaleService.confirmWithItems()`: `detachFromSale` → `attachToSale`
-- `SaleService.ignore/markAsVince/unstage()`: `detachFromSale` → update status
-
-These all follow the same delete-all-then-reinsert pattern for many-to-one relationships. This works but generates unnecessary DELETE + INSERT queries when the set hasn't changed. Not urgent, but worth knowing.
-
-### 4. `SnapshotItem` vs raw `Map<String, Object>` for JSON parsing
-
-`LotService.accept()` uses the typed `SnapshotItem` class to parse JSON (via `lot.parseSnapshot()`). `InventoryService.createItems()` uses raw `Map<String, Object>` with string keys. These are doing the same conceptual thing — parsing a JSON snapshot of items into tracked entities. The inventory side should use a typed DTO too.
-
-### 5. No edit/update for expenses
-
-You can create and delete expenses, but there's no edit. Every other entity (inventory, grading, lots, sales) supports editing. If this is intentional (delete and re-create), fine. Otherwise it's a missing feature.
-
-### 6. Delete methods don't validate existence
-
-`ExpenseService.delete()`, `SaleService.delete()`, `LotService.delete()` all call `repo.deleteById(id)` without checking if the entity exists. Spring's `deleteById` silently does nothing if the ID doesn't exist. This is probably fine for your use case but means the user gets a successful redirect even if the ID was bogus.
-
-### 7. `rowPartial` duplication between Inventory and Lot controllers
-
-Both `InventoryController.rowPartial()` and `LotController.rowPartial()` build a form-row DTO from many `@RequestParam`s for HTMX insertion. The approach is identical, the param lists overlap heavily. These could share a pattern — or at minimum, both should use a flat request DTO instead of 8-10 individual params.
-
----
-
-## Suggestions
-
-### Quick Wins (low effort, high clarity)
-
-1. **Move ExpenseController stats into service:** Pull the `total`/`avg`/`last30`/`thisMonth` computation out of `ExpenseController.index()` into a `getExpensePageData()` service method.
-
-2. **Consolidate lot accept/reject into one service method:** `LotController.updateStatus()` should call a single `lotService.updateStatus(id, action)` instead of branching in the controller.
-
-3. **Fix `GradingService.update()` parameter order:** Change from `update(request, id)` to `update(id, request)` to match every other service.
-
-4. **Type the inventory snapshot:** Replace the `Map<String, Object>` JSON parsing in `InventoryService.createItems()` with a typed DTO (like `SnapshotItem` or a new `InventorySnapshotRow`).
-
-### Medium Effort
-
-5. **Bundle `SaleController.index()` service calls:** Create a `SaleService.getIndexData(view)` method that returns the sale list + staged count together (and optionally the vince data if view=vince).
-
-6. **Use enums in entities instead of strings for statuses:** Switch entity fields from `String status` to `GradingStatus status` (etc.) with `@Enumerated(EnumType.STRING)`. Eliminates the stringly-typed comparison problem.
-
-7. **Add status transition validation:** `GradingService.advanceStatus()` should validate that the new status is a legal transition from the current status.
-
-8. **Extract a `VincePaymentController`:** Move the `/sales/vince/payments` routes to their own controller since they're operating on a different domain entity.
-
-### Larger Redesigns
-
-9. **Dashboard query optimization:** The dashboard makes 17+ queries per load. If latency matters, explore combining some into fewer queries or adding a cache layer.
-
-10. **Consistent HTMX response strategy:** Decide on a pattern (fragment returns? empty 200s? HX-Trigger headers?) and apply it uniformly across all controllers.
+- **Thin controllers** — almost all business logic lives in services
+- **Consistent patterns** — every domain follows the same CRUD structure
+- **MapStruct usage** — clean separation of entity ↔ DTO mapping, update methods avoid manual field copies
+- **`@Modifying` queries** — bulk updates via JPQL instead of load-modify-save loops
+- **`MonthGroup` utility** — reusable month-grouping abstraction used across sales, grading, expenses
+- **HTMX integration** — fragment returns (`:: inventory-page`) are clean
+- **Exception handling** — `GlobalExceptionHandler` with proper HTTP status codes, no stack traces in responses
+- **Builder pattern** — consistent use across entities and DTOs
+- **`findById` helpers** — private methods with `ResourceNotFoundException` in every service, no duplicated orElseThrow logic

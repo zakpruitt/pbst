@@ -17,10 +17,12 @@
     </div>
     <div class="flex-shrink-0 d-flex flex-column align-items-end gap-3">
         <div class="d-flex gap-2">
-            <form th:if="${sale.status == 'CONFIRMED' or sale.status == 'IGNORED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/unstage'" class="d-inline">
+            <form th:if="${sale.status == 'CONFIRMED' or sale.status == 'IGNORED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/status'" class="d-inline">
+                <input type="hidden" name="action" value="UNSTAGE">
                 <button type="submit" class="btn btn-outline-warning btn-sm" th:text="${sale.status == 'CONFIRMED' ? '&#8634; Unstage' : '&#8634; Restore'}"></button>
             </form>
-            <form th:if="${sale.status == 'STAGED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/ignore'" class="d-inline">
+            <form th:if="${sale.status == 'STAGED'}" method="POST" th:action="'/sales/' + ${sale.id} + '/status'" class="d-inline">
+                <input type="hidden" name="action" value="IGNORE">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">&#8212; Ignore</button>
             </form>
             <a th:if="${sale.status == 'STAGED' or sale.status == 'CONFIRMED'}" th:href="'/sales/' + ${sale.id} + '/confirm'" class="btn btn-outline-secondary btn-sm">Edit</a>

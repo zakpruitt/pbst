@@ -66,7 +66,7 @@
             </tbody>
         </table>
         <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn btn-primary btn-sm" onclick="recordReturn()">&#128203; Record Return</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="recordReturn(submissionId)">&#128203; Record Return</button>
         </div>
     </div>
 </div>
@@ -102,24 +102,12 @@
     </form>
 </div>
 
-<script th:if="${submission.status == 'IN_GRADING'}" th:inline="javascript">
+<th:block th:if="${submission.status == 'IN_GRADING'}">
+<script src="/static/js/grading-return.js"></script>
+<script th:inline="javascript">
 var submissionId = /*[[${submission.id}]]*/ 0;
-function recordReturn() {
-    const grades = [];
-    document.querySelectorAll('tr[data-item-id]').forEach(row => {
-        grades.push({
-            itemId: parseInt(row.dataset.itemId),
-            grade: row.querySelector('.grade-input').value.trim(),
-            upcharge: parseFloat(row.querySelector('.upcharge-input').value) || 0
-        });
-    });
-    fetch('/grading/' + submissionId + '/return', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ grades: grades })
-    }).then(r => { if (r.ok || r.redirected) window.location.reload(); else alert('Error recording return'); });
-}
 </script>
+</th:block>
 
 </div>
 </body>

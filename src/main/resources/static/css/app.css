@@ -454,6 +454,14 @@ footer {
     color: var(--text-secondary);
 }
 
+/* Editable amounts (staging) */
+.editable-amount { cursor: default; border-bottom: 1px dashed transparent; }
+.editable-amount:hover { border-bottom-color: #6c757d; }
+.editable-amount input {
+    width: 5rem; text-align: center; font-size: inherit; padding: 0 .25rem;
+    border: 1px solid #0d6efd; border-radius: .25rem; outline: none;
+}
+
 /* Chart.js canvas in dark mode */
 [data-bs-theme="dark"] .card canvas {
     filter: brightness(0.9);

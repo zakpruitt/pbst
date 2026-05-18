@@ -43,7 +43,7 @@
                            x-model="query" @input.debounce.300ms="search()"
                            @keydown.enter.prevent="onEnter()" @keydown.escape="clear()">
                     <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
-                         style="z-index:100;max-height:280px;overflow-y:auto;display:none"
+                         style="z-index:100;max-height:280px;overflow-y:auto"
                          x-show="results.length > 0" @click.outside="clear()">
                         <template x-for="c in results" :key="c.id">
                             <button type="button" class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent" @click="pick(c)">
@@ -72,6 +72,7 @@
     </div>
 </form>
 
+<script src="/static/js/item-form-common.js"></script>
 <script src="/static/js/lot-form.js"></script>
 
 </div>

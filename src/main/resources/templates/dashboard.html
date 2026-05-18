@@ -160,59 +160,17 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="/static/js/dashboard.js"></script>
 <script th:inline="javascript">
-(function () {
-    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const accent = isDark ? '#2ecc71' : '#27ae60', muted = isDark ? '#9ca3af' : '#536471', danger = '#dc3545', blue = '#0d6efd';
-    const amber = '#ffc107', purple = '#6f42c1', teal = '#20c997', border = isDark ? '#2c3034' : '#e1e8ed';
-    const surface = isDark ? '#1a1d21' : '#ffffff';
-    const palette = [blue, accent, amber, danger, purple, teal, '#fd7e14', '#0dcaf0'];
-
-    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    Chart.defaults.font.size = 12;
-    Chart.defaults.color = muted;
-
-    const money = v => '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-
-    new Chart(document.getElementById('monthlyChart'), {
-        type: 'line',
-        data: {
-            labels: /*[[${data.monthLabels}]]*/ [],
-            datasets: [
-                { label: 'Spent', data: /*[[${data.monthlySpend}]]*/ [], borderColor: danger, backgroundColor: 'rgba(220,53,69,0.08)', tension: 0.3, fill: true, pointRadius: 3 },
-                { label: 'Gross', data: /*[[${data.monthlyGross}]]*/ [], borderColor: blue, backgroundColor: 'rgba(13,110,253,0.08)', tension: 0.3, fill: false, pointRadius: 3 },
-                { label: 'Net', data: /*[[${data.monthlyNet}]]*/ [], borderColor: accent, backgroundColor: 'rgba(39,174,96,0.12)', tension: 0.3, fill: true, pointRadius: 3 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } }, tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + money(ctx.parsed.y) } } },
-            scales: { x: { grid: { color: border } }, y: { grid: { color: border }, ticks: { callback: money } } }
-        }
-    });
-
-    function doughnut(canvasId, labels, data, colors) {
-        if (!labels.length) { const ctx = document.getElementById(canvasId); if (ctx) ctx.parentElement.innerHTML = '<span class="text-muted small">No data yet.</span>'; return; }
-        const total = data.reduce((a, b) => a + b, 0);
-        new Chart(document.getElementById(canvasId), {
-            type: 'doughnut',
-            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: surface, borderWidth: 2, hoverOffset: 6 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0; return ` ${ctx.parsed} (${pct}%)`; } } } } }
-        });
-    }
-
-    const itemTypeRows = /*[[${data.itemTypeCounts}]]*/ [];
-    const itemTypeLabelMap = { RAW_CARD: 'Raw', GRADED_CARD: 'Graded', SEALED_PRODUCT: 'Sealed', OTHER: 'Other' };
-    doughnut('itemTypeChart', itemTypeRows.map(r => itemTypeLabelMap[r.itemType] || r.itemType), itemTypeRows.map(r => r.count), palette);
-
-    const originRows = /*[[${data.originCounts}]]*/ [];
-    const originLabelMap = { EBAY: 'eBay', FACEBOOK: 'Facebook', OTHER: 'Other' };
-    doughnut('originChart', originRows.map(r => originLabelMap[r.origin] || r.origin || 'Unknown'), originRows.map(r => r.count), palette);
-
-    const gradingRows = /*[[${data.gradingStatuses}]]*/ [];
-    doughnut('gradingChart', gradingRows.map(r => r.status), gradingRows.map(r => r.count), palette);
-})();
+initDashboard({
+    monthLabels:    /*[[${data.monthLabels}]]*/ [],
+    monthlySpend:   /*[[${data.monthlySpend}]]*/ [],
+    monthlyGross:   /*[[${data.monthlyGross}]]*/ [],
+    monthlyNet:     /*[[${data.monthlyNet}]]*/ [],
+    itemTypeCounts: /*[[${data.itemTypeCounts}]]*/ [],
+    originCounts:   /*[[${data.originCounts}]]*/ [],
+    gradingStatuses:/*[[${data.gradingStatuses}]]*/ []
+});
 </script>
 
 </div>

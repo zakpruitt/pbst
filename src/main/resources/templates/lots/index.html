@@ -68,30 +68,7 @@
         </div>
     </div>
 
-    <script>
-    function lotFilter() {
-        return {
-            query: "", status: "", summary: "",
-            apply() {
-                const q = this.query.trim().toLowerCase();
-                const status = this.status;
-                let shown = 0;
-                document.querySelectorAll(".lot-month-group").forEach(group => {
-                    let groupShown = 0;
-                    group.querySelectorAll(".lot-row").forEach(row => {
-                        const seller = (row.dataset.seller || "").toLowerCase();
-                        const rowStatus = row.dataset.status || "";
-                        const visible = (!q || seller.includes(q)) && (!status || rowStatus === status);
-                        row.style.display = visible ? "" : "none";
-                        if (visible) { groupShown++; shown++; }
-                    });
-                    group.style.display = groupShown === 0 ? "none" : "";
-                });
-                this.summary = (q || status) ? `${shown} match${shown === 1 ? "" : "es"}` : "";
-            },
-        };
-    }
-    </script>
+    <script src="/static/js/list-filter.js"></script>
 </div>
 
 </div>

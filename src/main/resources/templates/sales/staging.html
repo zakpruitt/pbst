@@ -47,10 +47,10 @@
             <div class="d-flex flex-column gap-1 align-items-stretch" style="min-width:80px">
                 <a th:href="'/sales/' + ${s.id} + '/confirm?from=staging'" class="btn btn-success btn-sm">Confirm</a>
                 <button type="button" class="btn btn-outline-info btn-sm w-100"
-                        th:attr="hx-post='/sales/' + ${s.id} + '/vince'"
+                        th:attr="hx-post='/sales/' + ${s.id} + '/status?action=VINCE'"
                         hx-target="closest tr" hx-swap="delete swap:150ms">&#8594; Vince</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm w-100"
-                        th:attr="hx-post='/sales/' + ${s.id} + '/ignore'"
+                        th:attr="hx-post='/sales/' + ${s.id} + '/status?action=IGNORE'"
                         hx-target="closest tr" hx-swap="delete swap:150ms">&#8212; Ignore</button>
             </div>
         </td>
@@ -58,62 +58,7 @@
     </tbody>
 </table>
 
-<style>
-.editable-amount { cursor: default; border-bottom: 1px dashed transparent; }
-.editable-amount:hover { border-bottom-color: #6c757d; }
-.editable-amount input {
-    width: 5rem; text-align: center; font-size: inherit; padding: 0 .25rem;
-    border: 1px solid #0d6efd; border-radius: .25rem; outline: none;
-}
-</style>
-
-<script>
-document.querySelectorAll('.editable-amount').forEach(function(el) {
-    el.addEventListener('dblclick', function() {
-        if (el.querySelector('input')) return;
-        var value = el.dataset.value;
-        var label = el.dataset.field === 'gross' ? 'Sold' : 'Net';
-        var input = document.createElement('input');
-        input.type = 'number';
-        input.step = '0.01';
-        input.value = parseFloat(value).toFixed(2);
-        el.textContent = label + ': $';
-        el.appendChild(input);
-        input.focus();
-        input.select();
-
-        function commit() {
-            var newValue = parseFloat(input.value);
-            if (isNaN(newValue)) {
-                revert();
-                return;
-            }
-            el.dataset.value = newValue.toFixed(2);
-            el.textContent = label + ': $' + newValue.toFixed(2);
-
-            var saleId = el.dataset.saleId;
-            var row = el.closest('td');
-            var grossEl = row.querySelector('[data-field="gross"]');
-            var netEl = row.querySelector('[data-field="net"]');
-
-            fetch('/sales/' + saleId + '/amounts?grossAmount=' + grossEl.dataset.value + '&netAmount=' + netEl.dataset.value, {
-                method: 'PATCH'
-            });
-        }
-
-        function revert() {
-            var label = el.dataset.field === 'gross' ? 'Sold' : 'Net';
-            el.textContent = label + ': $' + parseFloat(el.dataset.value).toFixed(2);
-        }
-
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); commit(); }
-            if (e.key === 'Escape') { e.preventDefault(); revert(); }
-        });
-        input.addEventListener('blur', commit);
-    });
-});
-</script>
+<script src="/static/js/staging.js"></script>
 
 </div>
 

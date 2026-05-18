@@ -25,9 +25,6 @@ public class SaleController {
 
     private final SaleService saleService;
     private final VincePaymentService vincePaymentService;
-
-    // ---------- Pages ----------
-
     @GetMapping
     public String index(@RequestParam(defaultValue = "mine") String view, Model model) {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
@@ -82,9 +79,6 @@ public class SaleController {
         model.addAttribute("from", from != null ? from : "");
         return "sales/confirm";
     }
-
-    // ---------- Actions ----------
-
     @PostMapping
     public String create(CreateSaleRequest request) {
         saleService.create(request);

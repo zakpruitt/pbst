@@ -10,9 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> {
-
-    // ---------- Business logic ----------
-
     @Query("SELECT t FROM TrackedItem t " +
            "LEFT JOIN FETCH t.pokemonCard LEFT JOIN FETCH t.sealedProduct " +
            "LEFT JOIN FETCH t.lotPurchase LEFT JOIN FETCH t.gradingSubmission " +
@@ -46,9 +43,6 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
     void detachFromSale(Long saleId);
 
     void deleteByLotPurchaseId(Long lotPurchaseId);
-
-    // ---------- Dashboard / KPI ----------
-
     @Query("SELECT COUNT(t) FROM TrackedItem t WHERE t.purpose = :purpose " +
            "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
     long countByPurpose(String purpose);

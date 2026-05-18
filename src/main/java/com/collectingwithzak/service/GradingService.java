@@ -36,9 +36,6 @@ public class GradingService {
     private final GradingMapper gradingMapper;
     private final GradedDetailsMapper gradedDetailsMapper;
     private final TrackedItemMapper trackedItemMapper;
-
-    // ---------- Create ----------
-
     public Long createWithItems(CreateGradingRequest request) {
         List<Long> itemIds = request.getItemIds();
         long count = gradingRepo.countByCompany(request.getCompany());
@@ -57,9 +54,6 @@ public class GradingService {
 
         return submission.getId();
     }
-
-    // ---------- Read ----------
-
 
     public List<GradingSubmissionResponse> getAll() {
         return gradingMapper.toResponseList(gradingRepo.findAllWithItemsOrderByCreatedAtDesc());
@@ -99,9 +93,6 @@ public class GradingService {
                 TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
                 attachedIds);
     }
-
-    // ---------- Update ----------
-
     public void update(Long id, UpdateGradingRequest request) {
         GradingSubmission submission = findById(id);
         List<Long> itemIds = request.getItemIds();
@@ -146,16 +137,10 @@ public class GradingService {
         gradingRepo.updateReturnDetails(submissionId, totalUpcharge, LocalDate.now());
         gradingRepo.updateStatus(submissionId, GradingStatus.RETURNED.name());
     }
-
-    // ---------- Delete ----------
-
     public void delete(Long id) {
         itemRepo.detachFromSubmission(id);
         gradingRepo.deleteById(id);
     }
-
-    // ---------- Helpers ----------
-
     private GradingSubmission findById(Long id) {
         return gradingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));

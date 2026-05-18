@@ -34,9 +34,6 @@ public class SaleService {
     private final SaleMapper saleMapper;
     private final TrackedItemMapper trackedItemMapper;
     private final EbaySaleUpsertService ebaySaleUpsertService;
-
-    // ---------- Create ----------
-
     public void create(CreateSaleRequest request) {
         saleRepo.save(saleMapper.toEntity(request));
     }
@@ -54,16 +51,11 @@ public class SaleService {
         log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
     }
 
-    // ---------- Read ----------
-
-
     public SaleResponse getByIdWithItems(Long id) {
         Sale sale = saleRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
         return saleMapper.toResponse(sale);
     }
-
-
     public List<SaleResponse> getAll(String view) {
         List<Sale> sales = switch (view) {
             case "vince" -> saleRepo.findVince();
@@ -72,18 +64,12 @@ public class SaleService {
         };
         return saleMapper.toResponseList(sales);
     }
-
-
     public List<SaleResponse> getStaged() {
         return saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED.name()));
     }
-
-
     public long countStaged() {
         return saleRepo.countByStatus(SaleStatus.STAGED.name());
     }
-
-
     public SaleConfirmFormData getConfirmFormData(Long id) {
         Sale sale = saleRepo.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
@@ -108,9 +94,6 @@ public class SaleService {
                 TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
                 attachedIds);
     }
-
-    // ---------- Update ----------
-
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
         itemRepo.detachFromSale(saleId);
         if (!itemIds.isEmpty()) {
@@ -135,9 +118,6 @@ public class SaleService {
         itemRepo.detachFromSale(saleId);
         saleRepo.updateStatusAndAttribution(saleId, status, attributedTo);
     }
-
-    // ---------- Delete ----------
-
     public void delete(Long saleId) {
         itemRepo.detachFromSale(saleId);
         saleRepo.deleteById(saleId);

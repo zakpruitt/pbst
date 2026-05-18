@@ -21,15 +21,9 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepo;
     private final ExpenseMapper expenseMapper;
-
-    // ---------- Create ----------
-
     public void create(CreateExpenseRequest request) {
         expenseRepo.save(expenseMapper.toEntity(request));
     }
-
-    // ---------- Read ----------
-
     public ExpensePageData getPageData() {
         List<ExpenseResponse> expenses = expenseMapper.toResponseList(expenseRepo.findAllByOrderByExpenseDateDescIdDesc());
         List<MonthGroup<ExpenseResponse>> groups = MonthGroup.groupByMonth(expenses, ExpenseResponse::getExpenseDate);
@@ -59,9 +53,6 @@ public class ExpenseService {
                 .countMonth(thisMonth.size())
                 .build();
     }
-
-    // ---------- Delete ----------
-
     public void delete(Long id) {
         expenseRepo.deleteById(id);
     }

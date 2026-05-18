@@ -36,9 +36,6 @@ public class InventoryService {
     private final TrackedItemMapper trackedItemMapper;
     private final GradedDetailsMapper gradedDetailsMapper;
     private final ObjectMapper objectMapper;
-
-    // ---------- Create ----------
-
     public void createItems(CreateInventoryRequest request) {
         List<InventorySnapshotRow> rows;
         try {
@@ -60,15 +57,10 @@ public class InventoryService {
             itemRepo.save(item);
         }
     }
-
-    // ---------- Read ----------
-
     public TrackedItemResponse getById(Long id) {
         TrackedItem item = findById(id);
         return trackedItemMapper.toResponse(item);
     }
-
-
     public InventorySplitResponse getByPurpose(String purpose) {
         List<TrackedItem> items = itemRepo.findByPurpose(purpose);
         List<TrackedItemResponse> all = trackedItemMapper.toResponseList(items);
@@ -95,9 +87,6 @@ public class InventoryService {
                 other
         );
     }
-
-    // ---------- Update ----------
-
     public String update(Long id, UpdateInventoryRequest request) {
         TrackedItem item = findById(id);
         trackedItemMapper.updateEntity(request, item);
@@ -112,9 +101,6 @@ public class InventoryService {
         itemRepo.save(item);
         return item.getPurpose();
     }
-
-    // ---------- Delete ----------
-
     public String delete(Long id) {
         TrackedItem item = findById(id);
         String purpose = item.getPurpose();
@@ -122,9 +108,6 @@ public class InventoryService {
         itemRepo.save(item);
         return purpose;
     }
-
-    // ---------- Helpers ----------
-
     private TrackedItem findById(Long id) {
         return itemRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", id));

@@ -69,9 +69,6 @@ public class EbayClient {
         log.info("eBay fetch: {} orders, {} parsed", orders.size(), results.size());
         return results;
     }
-
-    // --- Transaction aggregation ---
-
     private Map<String, Double> aggregateTransactions(List<EbayTransaction> transactions) {
         Map<String, Double> data = new HashMap<>();
 
@@ -101,7 +98,6 @@ public class EbayClient {
         return data;
     }
 
-    // --- Order mapping ---
     // grossAmount = payout + fees (actual money collected, not listed prices)
     // netAmount is computed downstream: grossAmount - ebayFees - shippingCost
 
@@ -132,9 +128,6 @@ public class EbayClient {
     private double amountOrZero(EbayAmount amount) {
         return amount != null ? amount.toDouble() : 0;
     }
-
-    // --- Paginated fetch ---
-
     private List<EbayOrder> fetchOrders(ZonedDateTime since) {
         List<EbayOrder> all = new ArrayList<>();
 
@@ -209,9 +202,6 @@ public class EbayClient {
                 .queryParam("filter", filter)
                 .toUriString();
     }
-
-    // --- Authentication ---
-
     private <T> ResponseEntity<T> authenticatedGet(String url, Class<T> responseType) {
         refreshTokenIfNeeded();
         HttpHeaders headers = new HttpHeaders();

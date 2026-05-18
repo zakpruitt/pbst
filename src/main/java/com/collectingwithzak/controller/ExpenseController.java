@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
-
-    // ---------- Pages ----------
-
     @GetMapping
     public String index(Model model) {
         ExpensePageData data = expenseService.getPageData();
@@ -38,9 +35,6 @@ public class ExpenseController {
     public String newExpense() {
         return "expenses/new";
     }
-
-    // ---------- Actions ----------
-
     @PostMapping
     public String create(CreateExpenseRequest request) {
         expenseService.create(request);

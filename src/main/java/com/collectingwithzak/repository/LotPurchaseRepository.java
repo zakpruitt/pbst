@@ -11,18 +11,12 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
-
-    // ---------- Business logic ----------
-
     @Query("SELECT DISTINCT l FROM LotPurchase l LEFT JOIN FETCH l.trackedItems ORDER BY l.purchaseDate DESC")
     List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
 
     @Modifying
     @Query("UPDATE LotPurchase l SET l.status = :status WHERE l.id = :id")
     void updateStatus(Long id, String status);
-
-    // ---------- Dashboard / KPI ----------
-
     List<LotPurchase> findByOrderByPurchaseDateDesc(Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(l.totalCost), 0) FROM LotPurchase l WHERE l.status != 'REJECTED'")

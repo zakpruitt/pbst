@@ -19,9 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class InventoryController {
 
     private final InventoryService inventoryService;
-
-    // ---------- Pages ----------
-
     @GetMapping
     public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
                         @RequestHeader(value = "HX-Request", required = false) String hx,
@@ -80,9 +77,6 @@ public class InventoryController {
         model.addAttribute("item", item);
         return "inventory/edit";
     }
-
-    // ---------- Actions ----------
-
     @PostMapping
     public String create(CreateInventoryRequest request) {
         inventoryService.createItems(request);

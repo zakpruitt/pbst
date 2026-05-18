@@ -33,28 +33,17 @@ public class LotService {
     private final LotMapper lotMapper;
     private final TrackedItemMapper trackedItemMapper;
     private final GradedDetailsMapper gradedDetailsMapper;
-
-    // ---------- Create ----------
-
     public Long create(CreateLotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
         return lotRepo.save(lot).getId();
     }
-
-    // ---------- Read ----------
-
     public LotResponse getById(Long id) {
         LotPurchase lot = findById(id);
         return lotMapper.toResponse(lot);
     }
-
-
     public List<LotResponse> getAll() {
         return lotMapper.toResponseList(lotRepo.findAllWithItemsOrderByPurchaseDateDesc());
     }
-
-    // ---------- Update ----------
-
     public void update(Long id, UpdateLotRequest request) {
         LotPurchase lot = findById(id);
         lotMapper.updateEntity(request, lot);
@@ -84,22 +73,14 @@ public class LotService {
             reject(id);
         }
     }
-
-    // ---------- Delete ----------
-
     public void delete(Long id) {
         itemRepo.deleteByLotPurchaseId(id);
         lotRepo.deleteById(id);
     }
-
-    // ---------- Helpers ----------
-
     private LotPurchase findById(Long id) {
         return lotRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lot", id));
     }
-
-
     private TrackedItem snapshotToTrackedItem(LotPurchase lot, SnapshotItem item) {
         TrackedItem trackedItem = trackedItemMapper.fromSnapshotItem(item);
         trackedItem.setLotPurchase(lot);

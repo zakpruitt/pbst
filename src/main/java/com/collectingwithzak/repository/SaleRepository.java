@@ -16,9 +16,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
-
-    // ---------- Business logic ----------
-
     Sale findByEbayOrderId(String ebayOrderId);
 
     @Query("SELECT s FROM Sale s LEFT JOIN FETCH s.items WHERE s.id = :id")
@@ -52,9 +49,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     default List<Sale> findVince() {
         return findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED.name(), "vince");
     }
-
-    // ---------- Dashboard / KPI ----------
-
     @Query("SELECT s FROM Sale s WHERE s.status = 'CONFIRMED' ORDER BY s.netAmount DESC")
     List<Sale> findTopByNet(Pageable pageable);
 

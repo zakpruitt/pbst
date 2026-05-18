@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GradingSubmissionRepository extends JpaRepository<GradingSubmission, Long> {
-
-    // ---------- Business logic ----------
-
     @Query("SELECT DISTINCT g FROM GradingSubmission g LEFT JOIN FETCH g.items ORDER BY g.createdAt DESC")
     List<GradingSubmission> findAllWithItemsOrderByCreatedAtDesc();
 
@@ -33,9 +30,6 @@ public interface GradingSubmissionRepository extends JpaRepository<GradingSubmis
     @Modifying
     @Query("UPDATE GradingSubmission g SET g.upchargeTotal = :upchargeTotal, g.returnDate = :returnDate WHERE g.id = :id")
     void updateReturnDetails(Long id, double upchargeTotal, LocalDate returnDate);
-
-    // ---------- Dashboard / KPI ----------
-
     @Query("SELECT new com.collectingwithzak.dto.response.StatusCount(g.status, COUNT(g)) FROM GradingSubmission g GROUP BY g.status")
     List<StatusCount> countByStatus();
 }

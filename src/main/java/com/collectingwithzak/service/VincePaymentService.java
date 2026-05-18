@@ -23,15 +23,9 @@ public class VincePaymentService {
     private final VincePaymentRepository paymentRepo;
     private final SaleRepository saleRepo;
     private final VincePaymentMapper paymentMapper;
-
-    // ---------- Create ----------
-
     public void create(CreateVincePaymentRequest request) {
         paymentRepo.save(paymentMapper.toEntity(request));
     }
-
-    // ---------- Read ----------
-
     public List<VincePaymentResponse> getAll() {
         return paymentMapper.toResponseList(paymentRepo.findAllByOrderByPaymentDateDescIdDesc());
     }
@@ -41,9 +35,6 @@ public class VincePaymentService {
         PaymentTotals paymentTotals = paymentRepo.getTotals();
         return VinceLedger.from(salesTotals, paymentTotals.getPaidOut(), paymentTotals.getReceivable());
     }
-
-    // ---------- Delete ----------
-
     public void delete(Long id) {
         paymentRepo.deleteById(id);
     }

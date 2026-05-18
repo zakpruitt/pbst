@@ -19,9 +19,6 @@ import java.util.List;
 public class LotController {
 
     private final LotService lotService;
-
-    // ---------- Pages ----------
-
     @GetMapping
     public String index(Model model) {
         List<LotResponse> lots = lotService.getAll();
@@ -77,9 +74,6 @@ public class LotController {
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";
     }
-
-    // ---------- Actions ----------
-
     @PostMapping
     public String create(CreateLotRequest request) {
         Long id = lotService.create(request);

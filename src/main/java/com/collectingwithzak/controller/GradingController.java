@@ -21,9 +21,6 @@ import java.util.List;
 public class GradingController {
 
     private final GradingService gradingService;
-
-    // ---------- Pages ----------
-
     @GetMapping
     public String index(Model model) {
         List<GradingSubmissionResponse> submissions = gradingService.getAll();
@@ -55,9 +52,6 @@ public class GradingController {
         model.addAttribute("attachedIds", formData.getAttachedIds());
         return "grading/edit";
     }
-
-    // ---------- Actions ----------
-
     @PostMapping
     public String create(CreateGradingRequest request) {
         Long id = gradingService.createWithItems(request);

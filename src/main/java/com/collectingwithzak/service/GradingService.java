@@ -104,7 +104,7 @@ public class GradingService {
 
     // ---------- Update ----------
 
-    public void update(UpdateGradingRequest request, Long id) {
+    public void update(Long id, UpdateGradingRequest request) {
         GradingSubmission submission = findById(id);
         List<Long> itemIds = request.getItemIds() != null ? request.getItemIds() : List.of();
 

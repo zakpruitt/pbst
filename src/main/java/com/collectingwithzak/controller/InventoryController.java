@@ -9,7 +9,7 @@ import com.collectingwithzak.entity.enums.Purpose;
 import com.collectingwithzak.service.InventoryService;
 import org.springframework.util.StringUtils;
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -43,7 +43,8 @@ public class InventoryController {
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
-                        HttpServletRequest request, Model model) {
+                        @RequestHeader(value = "HX-Request", required = false) String hx,
+                        Model model) {
         InventorySplitResponse split = inventoryService.getByPurpose(purpose);
 
         List<TrackedItemResponse> allItems = split.getAllItems();
@@ -56,7 +57,7 @@ public class InventoryController {
         model.addAttribute("totalCost", TrackedItemResponse.sumCost(allItems));
         model.addAttribute("totalMarket", TrackedItemResponse.sumMarket(allItems));
 
-        if ("true".equals(request.getHeader("HX-Request"))) {
+        if (hx != null) {
             return "inventory/index :: inventory-page";
         }
         return "inventory/index";

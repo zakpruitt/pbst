@@ -75,6 +75,14 @@ public class LotService {
         lotRepo.updateStatus(id, LotStatus.REJECTED.name());
     }
 
+    public void updateStatus(Long id, String action) {
+        if ("accept".equals(action)) {
+            accept(id);
+        } else if ("reject".equals(action)) {
+            reject(id);
+        }
+    }
+
     // ---------- Delete ----------
 
     public void delete(Long id) {
@@ -88,6 +96,7 @@ public class LotService {
         return lotRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lot", id));
     }
+
 
     private TrackedItem snapshotToTrackedItem(LotPurchase lot, SnapshotItem item) {
         int qty = item.getQty() <= 0 ? 1 : item.getQty();

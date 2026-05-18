@@ -99,11 +99,7 @@ public class LotController {
 
     @PostMapping("/{id}/status")
     public String updateStatus(@PathVariable Long id, @RequestParam String action) {
-        if ("accept".equals(action)) {
-            lotService.accept(id);
-        } else if ("reject".equals(action)) {
-            lotService.reject(id);
-        }
+        lotService.updateStatus(id, action);
         return "redirect:/lots/" + id;
     }
 

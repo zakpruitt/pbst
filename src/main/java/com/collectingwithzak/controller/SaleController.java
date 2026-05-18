@@ -114,10 +114,11 @@ public class SaleController {
     }
 
     @PostMapping("/{id}/ignore")
-    public Object ignore(@PathVariable Long id, @RequestHeader(value = "HX-Request", required = false) String hx) {
+    public Object ignore(@PathVariable Long id,
+                         @RequestHeader(value = "HX-Request", required = false) String hx) {
         saleService.ignore(id);
         if (hx != null) {
-            return ResponseEntity.ok("");
+            return ResponseEntity.noContent().build();
         }
         return "redirect:/sales/staging";
     }
@@ -128,7 +129,7 @@ public class SaleController {
                         @RequestHeader(value = "HX-Request", required = false) String hx) {
         saleService.markAsVince(id);
         if (hx != null) {
-            return ResponseEntity.ok("");
+            return ResponseEntity.noContent().build();
         }
         if ("detail".equals(from)) {
             return "redirect:/sales?view=vince";
@@ -138,11 +139,11 @@ public class SaleController {
 
     @PatchMapping("/{id}/amounts")
     @ResponseBody
-    public ResponseEntity<String> updateAmounts(@PathVariable Long id,
-                                                @RequestParam("grossAmount") double grossAmount,
-                                                @RequestParam("netAmount") double netAmount) {
+    public ResponseEntity<Void> updateAmounts(@PathVariable Long id,
+                                              @RequestParam("grossAmount") double grossAmount,
+                                              @RequestParam("netAmount") double netAmount) {
         saleService.updateAmounts(id, grossAmount, netAmount);
-        return ResponseEntity.ok("");
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/unstage")

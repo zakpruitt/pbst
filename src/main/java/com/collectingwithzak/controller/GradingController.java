@@ -72,7 +72,7 @@ public class GradingController {
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, UpdateGradingRequest request) {
-        gradingService.update(request, id);
+        gradingService.update(id, request);
         return "redirect:/grading/" + id;
     }
 
@@ -86,7 +86,7 @@ public class GradingController {
     @ResponseBody
     public ResponseEntity<Void> recordReturn(@PathVariable Long id, @RequestBody RecordReturnRequest request) {
         gradingService.recordReturn(id, request.getGrades());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     // ---------- Delete ----------

@@ -42,15 +42,10 @@
             <div class="col"><div class="text-muted small text-uppercase">Fees</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(sale.ebayFees, 1, 2)}"></div></div>
             <div class="col"><div class="text-muted small text-uppercase">Earnings</div><div class="fw-semibold text-success" th:text="'$' + ${#numbers.formatDecimal(sale.netAmount, 1, 2)}"></div></div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
-                <div>
-                    <span th:if="${sale.attributedTo == 'vince'}" class="badge bg-info text-dark">Vince</span>
-                    <span th:unless="${sale.attributedTo == 'vince'}" class="badge"
-                          th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
-                          th:text="${sale.status == 'CONFIRMED' ? 'Confirmed' : (sale.status == 'STAGED' ? 'Staged' : 'Ignored')}"></span>
-                </div>
+                <div><th:block th:replace="~{fragments/items :: sale-status-badge(sale=${sale})}"></th:block></div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Method of Sale</div>
-                <div><span class="badge" th:classappend="${sale.origin == 'EBAY' ? 'bg-primary' : (sale.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}" th:text="${sale.origin == 'EBAY' ? 'eBay' : (sale.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span></div>
+                <div><span th:replace="~{fragments/items :: origin-badge(origin=${sale.origin})}"></span></div>
             </div>
         </div>
     </div>

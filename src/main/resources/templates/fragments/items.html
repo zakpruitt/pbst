@@ -1,50 +1,52 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<!-- Tracked item cell: image + name resolution + set info -->
-<div th:fragment="item-cell(item)" class="d-flex align-items-center gap-2">
+<!-- Tracked item image: resolves pokemonCard → sealedProduct fallback -->
+<th:block th:fragment="item-thumb(item)">
     <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
          th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
          th:data-card-img="${item.pokemonCard.imageUrl}">
     <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null or item.pokemonCard.imageUrl.isEmpty()) and item.sealedProduct != null and item.sealedProduct.imageUrl != null and !item.sealedProduct.imageUrl.isEmpty()}"
          th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
          th:data-card-img="${item.sealedProduct.imageUrl}">
+</th:block>
+
+<!-- Tracked item name: resolves manualNameOverride → pokemonCard → sealedProduct → "Unnamed" -->
+<th:block th:fragment="item-name(item)">
+    <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}"
+          class="fw-medium" th:text="${item.manualNameOverride}"></span>
+    <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}"
+          class="fw-medium" th:text="${item.pokemonCard.name}"></span>
+    <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}"
+          class="fw-medium" th:text="${item.sealedProduct.name}"></span>
+    <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
+          class="text-muted fst-italic">Unnamed</span>
+</th:block>
+
+<!-- Tracked item set name -->
+<th:block th:fragment="item-set(item)">
+    <span th:if="${item.pokemonCard != null}" th:text="${item.pokemonCard.setName}"></span>
+    <span th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></span>
+</th:block>
+
+<!-- Tracked item cell: image + name + set info -->
+<div th:fragment="item-cell(item)" class="d-flex align-items-center gap-2">
+    <th:block th:replace="~{fragments/items :: item-thumb(item=${item})}"></th:block>
     <div>
-        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}"
-              class="fw-medium" th:text="${item.manualNameOverride}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}"
-              class="fw-medium" th:text="${item.pokemonCard.name}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}"
-              class="fw-medium" th:text="${item.sealedProduct.name}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
-              class="text-muted fst-italic">Unnamed</span>
-        <div th:if="${item.pokemonCard != null}" class="text-muted inv-subtext"
-             th:text="${item.pokemonCard.setName}"></div>
-        <div th:if="${item.pokemonCard == null and item.sealedProduct != null}"
-             class="text-muted inv-subtext" th:text="${item.sealedProduct.setName}"></div>
+        <th:block th:replace="~{fragments/items :: item-name(item=${item})}"></th:block>
+        <div th:if="${item.pokemonCard != null or item.sealedProduct != null}" class="text-muted inv-subtext">
+            <th:block th:replace="~{fragments/items :: item-set(item=${item})}"></th:block>
+        </div>
     </div>
 </div>
 
 <!-- Tracked item cell with acquisition details (date, lot link, grading link) -->
 <div th:fragment="item-cell-detailed(item)" class="d-flex align-items-center gap-2">
-    <img th:if="${item.pokemonCard != null and item.pokemonCard.imageUrl != null and !item.pokemonCard.imageUrl.isEmpty()}"
-         th:src="${item.pokemonCard.imageUrl}" class="card-thumb"
-         th:data-card-img="${item.pokemonCard.imageUrl}">
-    <img th:if="${(item.pokemonCard == null or item.pokemonCard.imageUrl == null or item.pokemonCard.imageUrl.isEmpty()) and item.sealedProduct != null and item.sealedProduct.imageUrl != null and !item.sealedProduct.imageUrl.isEmpty()}"
-         th:src="${item.sealedProduct.imageUrl}" class="card-thumb"
-         th:data-card-img="${item.sealedProduct.imageUrl}">
+    <th:block th:replace="~{fragments/items :: item-thumb(item=${item})}"></th:block>
     <div>
-        <span th:if="${item.manualNameOverride != null and !item.manualNameOverride.isEmpty()}"
-              class="fw-medium" th:text="${item.manualNameOverride}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard != null}"
-              class="fw-medium" th:text="${item.pokemonCard.name}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct != null}"
-              class="fw-medium" th:text="${item.sealedProduct.name}"></span>
-        <span th:if="${(item.manualNameOverride == null or item.manualNameOverride.isEmpty()) and item.pokemonCard == null and item.sealedProduct == null}"
-              class="text-muted fst-italic">Unnamed</span>
+        <th:block th:replace="~{fragments/items :: item-name(item=${item})}"></th:block>
         <div class="text-muted inv-subtext">
-            <span th:if="${item.pokemonCard != null}" th:text="${item.pokemonCard.setName}"></span>
-            <span th:if="${item.pokemonCard == null and item.sealedProduct != null}" th:text="${item.sealedProduct.setName}"></span>
+            <th:block th:replace="~{fragments/items :: item-set(item=${item})}"></th:block>
             <span th:if="${item.acquisitionDate != null}"> &middot; <span th:replace="~{fragments/items :: date-color(date=${item.acquisitionDate})}"></span></span>
         </div>
         <div th:if="${item.lotPurchase != null or item.gradingSubmission != null}" class="text-muted inv-subtext">
@@ -63,6 +65,12 @@
     <span th:unless="${details != null and details.grade != null and !details.grade.isEmpty()}">&mdash;</span>
 </th:block>
 
+<!-- Company badge: colored by grading company name -->
+<span th:fragment="company-badge(company)"
+      class="badge"
+      th:classappend="${company == 'PSA' ? 'grade-psa' : (company == 'BGS' ? 'grade-bgs' : (company == 'CGC' ? 'grade-cgc' : (company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+      th:text="${company}"></span>
+
 <!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest -->
 <th:block th:fragment="type-badge(item)">
     <span th:if="${item.itemType == 'GRADED_CARD' and item.gradedDetails != null and item.gradedDetails.gradingCompany != null and !item.gradedDetails.gradingCompany.isEmpty()}"
@@ -73,6 +81,142 @@
           class="badge bg-secondary"
           th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
 </th:block>
+
+<!-- Origin badge: eBay / Facebook / Other -->
+<span th:fragment="origin-badge(origin)"
+      class="badge" style="font-size:.65rem"
+      th:classappend="${origin == 'EBAY' ? 'bg-primary' : (origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
+      th:text="${origin == 'EBAY' ? 'eBay' : (origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
+
+<!-- Sale status badge -->
+<th:block th:fragment="sale-status-badge(sale)">
+    <span th:if="${sale.attributedTo == 'vince'}" class="badge bg-info text-dark">Vince</span>
+    <span th:unless="${sale.attributedTo == 'vince'}" class="badge"
+          th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
+          th:text="${sale.status == 'CONFIRMED' ? 'Confirmed' : (sale.status == 'STAGED' ? 'Staged' : 'Ignored')}"></span>
+</th:block>
+
+<!-- Lot status badge -->
+<span th:fragment="lot-status-badge(status)"
+      class="badge"
+      th:classappend="${status == 'ACCEPTED' ? 'bg-success' : (status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
+      th:text="${status == 'ACCEPTED' ? 'Accepted' : (status == 'REJECTED' ? 'Rejected' : 'Pending')}"></span>
+
+<!-- Grading status badge -->
+<span th:fragment="grading-status-badge(status)"
+      class="badge"
+      th:classappend="${status == 'RETURNED' ? 'bg-success' : (status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}"
+      th:text="${status == 'RETURNED' ? 'Returned' : (status == 'IN_GRADING' ? 'In Grading' : (status == 'PREPPING' ? 'Prepping' : status))}"></span>
+
+<!-- Purpose badge -->
+<span th:fragment="purpose-badge(purpose)"
+      class="badge"
+      th:classappend="${purpose == 'INVENTORY' ? 'bg-primary' : (purpose == 'IN_GRADING' ? 'bg-warning text-dark' : 'bg-secondary')}"
+      th:text="${purpose == 'INVENTORY' ? 'Inventory' : (purpose == 'IN_GRADING' ? 'In Grading' : (purpose == 'PERSONAL_COLLECTION' ? 'Personal' : (purpose == 'SOLD' ? 'Sold' : purpose)))}"></span>
+
+<!-- Item picker table: used by sales/confirm, grading/new, grading/edit -->
+<div th:fragment="item-picker-table(items, label, checkboxName, attachedIds)">
+    <div th:if="${!#lists.isEmpty(items)}" class="mb-4">
+        <span class="month-pill section-pill d-inline-block mb-2" th:text="${label}"></span>
+        <table class="table table-hover bg-white mb-0">
+            <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${items}">
+                <td>
+                    <div th:replace="~{fragments/items :: item-cell(item=${item})}"></div>
+                </td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
+                </td>
+                <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? '$' + #numbers.formatDecimal(item.pokemonCard.marketPrice, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle ps-4"><input type="checkbox" th:name="${checkboxName}" th:value="${item.id}" class="form-check-input item-cb" th:checked="${attachedIds != null and attachedIds.contains(item.id)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Sale row in grouped table -->
+<tr th:fragment="sale-row(s)" class="sale-row"
+    th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
+    th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
+    <td>
+        <div class="d-flex align-items-start gap-2">
+            <div class="min-w-0 flex-grow-1">
+                <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
+                   th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
+                <div class="text-muted inv-subtext mt-1">
+                    <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
+                    <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
+                    <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
+                    <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
+                    <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
+                        · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </td>
+    <td class="text-center align-middle text-nowrap ps-4">
+        <span th:replace="~{fragments/items :: origin-badge(origin=${s.origin})}"></span>
+    </td>
+    <td class="text-end align-middle text-nowrap ps-4">
+        <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
+        <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+    </td>
+</tr>
+
+<!-- Grouped sales table with month headers -->
+<div th:fragment="sale-groups(groups)" id="sales-list">
+    <div th:each="group : ${groups}" class="sale-month-group mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
+            <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)} + ' net'"></span>
+        </div>
+        <div class="table-responsive">
+        <table class="table table-sm table-hover bg-white mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width:100%">Item</th>
+                <th class="text-center text-nowrap ps-4">Origin</th>
+                <th class="text-end text-nowrap ps-4">Amounts</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${group.items}" class="sale-row"
+                th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
+                th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
+                <td>
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="min-w-0 flex-grow-1">
+                            <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
+                               th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
+                            <div class="text-muted inv-subtext mt-1">
+                                <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
+                                <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
+                                <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
+                                <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
+                                <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
+                                    · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center align-middle text-nowrap ps-4">
+                    <span th:replace="~{fragments/items :: origin-badge(origin=${s.origin})}"></span>
+                </td>
+                <td class="text-end align-middle text-nowrap ps-4">
+                    <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
+                    <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
 
 <!-- Dashboard stat card -->
 <div th:fragment="stat-card(label, value, subtext, valueClass)" class="col-sm-6 col-lg-3">

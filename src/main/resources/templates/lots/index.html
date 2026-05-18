@@ -60,9 +60,7 @@
                     <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(lot.totalCost, 1, 2)}"></td>
                     <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${lot.estimatedMarketValue != 0 ? '$' + #numbers.formatDecimal(lot.estimatedMarketValue, 1, 2) : '—'}"></td>
                     <td class="text-center align-middle text-nowrap ps-4">
-                        <span class="badge"
-                              th:classappend="${lot.status == 'ACCEPTED' ? 'bg-success' : (lot.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
-                              th:text="${lot.status == 'ACCEPTED' ? 'Accepted' : (lot.status == 'REJECTED' ? 'Rejected' : 'Pending')}"></span>
+                        <span th:replace="~{fragments/items :: lot-status-badge(status=${lot.status})}"></span>
                     </td>
                 </tr>
                 </tbody>

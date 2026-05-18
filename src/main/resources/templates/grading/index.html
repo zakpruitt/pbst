@@ -43,14 +43,12 @@
                         </div>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4">
-                        <span class="badge"
-                              th:classappend="${s.company == 'PSA' ? 'grade-psa' : (s.company == 'BGS' ? 'grade-bgs' : (s.company == 'CGC' ? 'grade-cgc' : (s.company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-                              th:text="${s.company}"></span>
+                        <span th:replace="~{fragments/items :: company-badge(company=${s.company})}"></span>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4" th:text="${s.items != null ? s.items.size() : 0}"></td>
                     <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="${s.grandTotal != null and s.grandTotal != 0 ? '$' + #numbers.formatDecimal(s.grandTotal, 1, 2) : '—'}"></td>
                     <td class="text-center align-middle text-nowrap ps-4">
-                        <span class="badge" th:classappend="${s.status == 'RETURNED' ? 'bg-success' : (s.status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${s.status == 'RETURNED' ? 'Returned' : (s.status == 'IN_GRADING' ? 'In Grading' : (s.status == 'PREPPING' ? 'Prepping' : (s.status == 'ACCEPTED' ? 'Accepted' : (s.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span>
+                        <span th:replace="~{fragments/items :: grading-status-badge(status=${s.status})}"></span>
                     </td>
                 </tr>
                 </tbody>

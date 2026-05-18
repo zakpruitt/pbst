@@ -39,12 +39,10 @@
             <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Upcharges</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}"></div></div>
             <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Grand Total</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}"></div></div>
             <div class="col"><div class="text-muted small text-uppercase">Company</div>
-                <div><span class="badge"
-                           th:classappend="${submission.company == 'PSA' ? 'grade-psa' : (submission.company == 'BGS' ? 'grade-bgs' : (submission.company == 'CGC' ? 'grade-cgc' : (submission.company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-                           th:text="${submission.company}"></span></div>
+                <div><span th:replace="~{fragments/items :: company-badge(company=${submission.company})}"></span></div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
-                <div><span class="badge" th:classappend="${submission.status == 'RETURNED' ? 'bg-success' : (submission.status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}" th:text="${submission.status == 'RETURNED' ? 'Returned' : (submission.status == 'IN_GRADING' ? 'In Grading' : (submission.status == 'PREPPING' ? 'Prepping' : (submission.status == 'ACCEPTED' ? 'Accepted' : (submission.status == 'REJECTED' ? 'Rejected' : 'Pending'))))}"></span></div>
+                <div><span th:replace="~{fragments/items :: grading-status-badge(status=${submission.status})}"></span></div>
             </div>
         </div>
     </div>

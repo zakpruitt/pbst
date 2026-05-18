@@ -167,57 +167,7 @@
                     </div>
                 </div>
 
-                <div id="sales-list">
-                    <div th:each="group : ${groups}" class="sale-month-group mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
-                            <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)} + ' net'"></span>
-                        </div>
-                        <div class="table-responsive">
-                        <table class="table table-sm table-hover bg-white mb-0">
-                            <thead class="table-light">
-                            <tr>
-                                <th style="width:100%">Item</th>
-                                <th class="text-center text-nowrap ps-4">Origin</th>
-                                <th class="text-end text-nowrap ps-4">Amounts</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="s : ${group.items}" class="sale-row"
-                                th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
-                                th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
-                                <td>
-                                    <div class="d-flex align-items-start gap-2">
-                                        <div class="min-w-0 flex-grow-1">
-                                            <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
-                                               th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
-                                            <div class="text-muted inv-subtext mt-1">
-                                                <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
-                                                <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
-                                                <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
-                                                <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
-                                                <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
-                                                    · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-center align-middle text-nowrap ps-4">
-                                    <span class="badge" style="font-size:.65rem"
-                                          th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
-                                          th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
-                                </td>
-                                <td class="text-end align-middle text-nowrap ps-4">
-                                    <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
-                                    <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
-                </div>
+                <div th:replace="~{fragments/items :: sale-groups(groups=${groups})}"></div>
             </div>
         </div><!-- /sales tab -->
     </div><!-- /x-data vinceTab -->
@@ -243,57 +193,7 @@
         </div>
     </div>
 
-    <div id="sales-list">
-        <div th:each="group : ${groups}" class="sale-month-group mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
-                <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)} + ' net'"></span>
-            </div>
-            <div class="table-responsive">
-            <table class="table table-sm table-hover bg-white mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th style="width:100%">Item</th>
-                    <th class="text-center text-nowrap ps-4">Origin</th>
-                    <th class="text-end text-nowrap ps-4">Amounts</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="s : ${group.items}" class="sale-row"
-                    th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
-                    th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
-                    <td>
-                        <div class="d-flex align-items-start gap-2">
-                            <div class="min-w-0 flex-grow-1">
-                                <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
-                                   th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
-                                <div class="text-muted inv-subtext mt-1">
-                                    <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
-                                    <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
-                                    <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
-                                    <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
-                                    <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
-                                        · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="text-center align-middle text-nowrap ps-4">
-                        <span class="badge" style="font-size:.65rem"
-                              th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
-                              th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
-                    </td>
-                    <td class="text-end align-middle text-nowrap ps-4">
-                        <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
-                        <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            </div>
-        </div>
-    </div>
+    <div th:replace="~{fragments/items :: sale-groups(groups=${groups})}"></div>
 </div>
 </div>
 

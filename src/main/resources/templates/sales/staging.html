@@ -35,9 +35,7 @@
             </div>
         </td>
         <td class="text-center align-middle text-nowrap ps-4">
-            <span class="badge" style="font-size:.65rem"
-                  th:classappend="${s.origin == 'EBAY' ? 'bg-primary' : (s.origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
-                  th:text="${s.origin == 'EBAY' ? 'eBay' : (s.origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
+            <span th:replace="~{fragments/items :: origin-badge(origin=${s.origin})}"></span>
         </td>
         <td class="text-center align-middle text-nowrap ps-4">
             <div class="small text-muted editable-amount" th:data-sale-id="${s.id}" data-field="gross"
@@ -50,10 +48,10 @@
                 <a th:href="'/sales/' + ${s.id} + '/confirm?from=staging'" class="btn btn-success btn-sm">Confirm</a>
                 <button type="button" class="btn btn-outline-info btn-sm w-100"
                         th:attr="hx-post='/sales/' + ${s.id} + '/vince'"
-                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">&#8594; Vince</button>
+                        hx-target="closest tr" hx-swap="delete swap:150ms">&#8594; Vince</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm w-100"
                         th:attr="hx-post='/sales/' + ${s.id} + '/ignore'"
-                        hx-target="closest tr" hx-swap="outerHTML swap:150ms">&#8212; Ignore</button>
+                        hx-target="closest tr" hx-swap="delete swap:150ms">&#8212; Ignore</button>
             </div>
         </td>
     </tr>

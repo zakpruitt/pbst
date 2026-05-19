@@ -1,17 +1,18 @@
-package com.collectingwithzak.dto.ebay;
+package com.collectingwithzak.dto.sale;
 
+import com.collectingwithzak.dto.inventory.TrackedItemResponse;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class EbayOrderData {
+public class SaleResponse {
+    private Long id;
     private String ebayOrderId;
     private LocalDate saleDate;
     private String title;
@@ -19,5 +20,12 @@ public class EbayOrderData {
     private double grossAmount;
     private double ebayFees;
     private double shippingCost;
+    private double netAmount;
+    private String imageUrl;
     private String orderStatus;
+    private String origin;
+    private String status;
+    private String attributedTo;
+    private String notes;
+    private List<TrackedItemResponse> items;
 }

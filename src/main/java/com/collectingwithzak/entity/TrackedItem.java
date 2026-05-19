@@ -2,6 +2,7 @@ package com.collectingwithzak.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDate;
 
 @Entity
@@ -29,6 +30,9 @@ public class TrackedItem extends BaseEntity {
 
     @Builder.Default
     private String purpose = "INVENTORY";
+
+    @Builder.Default
+    private String status = "AVAILABLE";
 
     @Builder.Default
     @Column(name = "item_type")

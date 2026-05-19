@@ -1,8 +1,8 @@
 package com.collectingwithzak.entity;
 
+import com.collectingwithzak.dto.lot.SnapshotItem;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.collectingwithzak.dto.SnapshotItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,7 +46,8 @@ public class LotPurchase extends BaseEntity {
             return List.of();
         }
         try {
-            return MAPPER.readValue(lotContentSnapshot, new TypeReference<>() {});
+            return MAPPER.readValue(lotContentSnapshot, new TypeReference<>() {
+            });
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse lot snapshot", e);
         }

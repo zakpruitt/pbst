@@ -49,20 +49,20 @@
             <th:block th:replace="~{fragments/items :: item-set(item=${item})}"></th:block>
             <span th:if="${item.acquisitionDate != null}"> &middot; <span th:replace="~{fragments/items :: date-color(date=${item.acquisitionDate})}"></span></span>
         </div>
-        <div th:if="${item.lotPurchase != null or item.gradingSubmission != null}" class="text-muted inv-subtext">
-            <span th:if="${item.lotPurchase != null}"><a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
-            <span th:if="${item.gradingSubmission != null}"><span th:if="${item.lotPurchase != null}"> &middot; </span><a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
+        <div th:if="${item.lotPurchaseId != null or item.gradingSubmissionId != null}" class="text-muted inv-subtext">
+            <span th:if="${item.lotPurchaseId != null}"><a th:href="'/lots/' + ${item.lotPurchaseId}" class="text-muted" th:text="${item.lotPurchaseSellerName}"></a></span>
+            <span th:if="${item.gradingSubmissionId != null}"><span th:if="${item.lotPurchaseId != null}"> &middot; </span><a th:href="'/grading/' + ${item.gradingSubmissionId}" class="text-muted" th:text="${item.gradingSubmissionName}"></a></span>
         </div>
     </div>
 </div>
 
 <!-- Grade badge: colored PSA/BGS/CGC/TAG badge or mdash -->
-<th:block th:fragment="grade-badge(details)">
-    <span th:if="${details != null and details.grade != null and !details.grade.isEmpty()}"
+<th:block th:fragment="grade-badge(item)">
+    <span th:if="${item.grade != null and !item.grade.isEmpty()}"
           class="badge"
-          th:classappend="${details.gradingCompany == 'PSA' ? 'grade-psa' : (details.gradingCompany == 'BGS' ? 'grade-bgs' : (details.gradingCompany == 'CGC' ? 'grade-cgc' : (details.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-          th:text="${details.gradingCompany + ' ' + details.grade}"></span>
-    <span th:unless="${details != null and details.grade != null and !details.grade.isEmpty()}">&mdash;</span>
+          th:classappend="${item.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+          th:text="${item.gradingCompany + ' ' + item.grade}"></span>
+    <span th:unless="${item.grade != null and !item.grade.isEmpty()}">&mdash;</span>
 </th:block>
 
 <!-- Company badge: colored by grading company name -->
@@ -73,11 +73,11 @@
 
 <!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest -->
 <th:block th:fragment="type-badge(item)">
-    <span th:if="${item.itemType == 'GRADED_CARD' and item.gradedDetails != null and item.gradedDetails.gradingCompany != null and !item.gradedDetails.gradingCompany.isEmpty()}"
+    <span th:if="${item.itemType == 'GRADED_CARD' and item.gradingCompany != null and !item.gradingCompany.isEmpty()}"
           class="badge"
-          th:classappend="${item.gradedDetails.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradedDetails.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradedDetails.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradedDetails.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-          th:text="${item.gradedDetails.gradingCompany + ' ' + (item.gradedDetails.grade != null ? item.gradedDetails.grade : '')}"></span>
-    <span th:if="${item.itemType != 'GRADED_CARD' or item.gradedDetails == null or item.gradedDetails.gradingCompany == null or item.gradedDetails.gradingCompany.isEmpty()}"
+          th:classappend="${item.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
+          th:text="${item.gradingCompany + ' ' + (item.grade != null ? item.grade : '')}"></span>
+    <span th:if="${item.itemType != 'GRADED_CARD' or item.gradingCompany == null or item.gradingCompany.isEmpty()}"
           class="badge bg-secondary"
           th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
 </th:block>

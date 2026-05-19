@@ -18,13 +18,13 @@ function cardSearch() {
 
         async pick(card) {
             const params = new URLSearchParams({
-                card_id: card.id || '',
+                pokemonCardId: card.id || '',
                 name: card.name || '',
-                set: card.setName || '',
-                card: card.cardNumber || '',
+                setName: card.setName || '',
+                cardNumber: card.cardNumber || '',
                 rarity: card.rarity || '',
-                market: card.marketPrice || 0,
-                img: card.imageUrl || '',
+                marketPrice: card.marketPrice || 0,
+                imageUrl: card.imageUrl || '',
             });
             this.clear();
             await this.appendRow(params);
@@ -32,7 +32,7 @@ function cardSearch() {
 
         async addOther(name) {
             const params = new URLSearchParams({
-                type: 'OTHER',
+                itemType: 'OTHER',
                 name: (name || this.query || '').trim(),
             });
             this.clear();

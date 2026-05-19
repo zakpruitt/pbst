@@ -86,7 +86,7 @@
                     <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
                 </td>
                 <td class="text-center align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradingUpcharge, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
             </tr>
             </tbody>
@@ -96,8 +96,8 @@
 <p th:if="${submission.items == null or submission.items.isEmpty()}" class="text-muted small">No items attached.</p>
 
 <div th:if="${submission.status == 'PREPPING' and submission.items != null and !submission.items.isEmpty()}" class="d-flex justify-content-end">
-    <form method="POST" th:action="'/grading/' + ${submission.id} + '/advance'">
-        <input type="hidden" name="new_status" value="IN_GRADING">
+    <form method="POST" th:action="'/grading/' + ${submission.id} + '/status'">
+        <input type="hidden" name="action" value="SEND">
         <button type="submit" class="btn btn-warning btn-sm">&#9993; Mark Sent</button>
     </form>
 </div>

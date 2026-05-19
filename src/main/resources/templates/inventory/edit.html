@@ -45,16 +45,16 @@
                 <div class="col-sm-6">
                     <label class="form-label small text-muted mb-1">Grading Company</label>
                     <select name="gradingCompany" class="form-select form-select-sm">
-                        <option value="PSA" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'PSA'}">PSA</option>
-                        <option value="BGS" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'BGS'}">BGS</option>
-                        <option value="CGC" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'CGC'}">CGC</option>
-                        <option value="TAG" th:selected="${item.gradedDetails != null and item.gradedDetails.gradingCompany == 'TAG'}">TAG</option>
+                        <option value="PSA" th:selected="${item.gradingCompany == 'PSA'}">PSA</option>
+                        <option value="BGS" th:selected="${item.gradingCompany == 'BGS'}">BGS</option>
+                        <option value="CGC" th:selected="${item.gradingCompany == 'CGC'}">CGC</option>
+                        <option value="TAG" th:selected="${item.gradingCompany == 'TAG'}">TAG</option>
                     </select>
                 </div>
                 <div class="col-sm-6">
                     <label class="form-label small text-muted mb-1">Grade</label>
                     <input name="grade" class="form-control form-control-sm"
-                           th:value="${item.gradedDetails != null ? item.gradedDetails.grade : ''}">
+                           th:value="${item.grade != null ? item.grade : ''}">
                 </div>
             </div>
 

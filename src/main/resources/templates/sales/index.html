@@ -11,27 +11,27 @@
 </div>
 
 <ul class="nav nav-tabs mb-4">
-    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'mine' ? 'active' : ''}" href="/sales">Mine</a></li>
-    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'ignored' ? 'active' : ''}" href="/sales?view=ignored">Ignored</a></li>
-    <li class="nav-item"><a class="nav-link" th:classappend="${view == 'vince' ? 'active' : ''}" href="/sales?view=vince">Vince</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${data.view == 'mine' ? 'active' : ''}" href="/sales">Mine</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${data.view == 'ignored' ? 'active' : ''}" href="/sales?view=ignored">Ignored</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${data.view == 'vince' ? 'active' : ''}" href="/sales?view=vince">Vince</a></li>
 </ul>
 
-<a th:if="${stagedCount > 0}" href="/sales/staging" class="d-block text-decoration-none mb-3">
+<a th:if="${data.stagedCount > 0}" href="/sales/staging" class="d-block text-decoration-none mb-3">
     <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0 py-2 px-3">
-        <span><strong th:text="${stagedCount}"></strong> sale<span th:if="${stagedCount != 1}">s</span> awaiting triage</span>
+        <span><strong th:text="${data.stagedCount}"></strong> sale<span th:if="${data.stagedCount != 1}">s</span> awaiting triage</span>
         <span class="small fw-semibold">Review &rarr;</span>
     </div>
 </a>
 
 <!-- ==================== VINCE VIEW ==================== -->
-<th:block th:if="${view == 'vince' and vinceLedger != null}">
+<th:block th:if="${data.view == 'vince' and vinceLedger != null}">
     <div class="card mb-4">
         <div class="card-body">
             <h6 class="card-title mb-3">Vince Ledger</h6>
             <div class="row text-center g-2 mb-3">
                 <div class="col">
                     <div class="text-muted small">Sales</div>
-                    <div class="fw-semibold" th:text="${vinceLedger.salesCount}"></div>
+                    <div class="fw-semibold" th:text="${data.vinceLedger.salesCount}"></div>
                 </div>
                 <div class="col">
                     <div class="text-muted small">Gross</div>
@@ -45,16 +45,16 @@
                     <div class="text-muted small">Paid Out</div>
                     <div class="fw-semibold text-danger" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalPaidOut, 1, 2)}"></div>
                 </div>
-                <div class="col" th:if="${vinceLedger.totalVinceOwes > 0}">
+                <div class="col" th:if="${data.vinceLedger.totalVinceOwes > 0}">
                     <div class="text-muted small">He Owes Me</div>
                     <div class="fw-semibold text-warning" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalVinceOwes, 1, 2)}"></div>
                 </div>
                 <div class="col">
                     <div class="text-muted small">Balance</div>
-                    <div class="fw-bold" th:classappend="${vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"
+                    <div class="fw-bold" th:classappend="${data.vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"
                          th:text="'$' + ${#numbers.formatDecimal(vinceLedger.balance, 1, 2)}"></div>
                     <div class="text-muted" style="font-size:.65rem"
-                         th:text="${vinceLedger.balance > 0 ? 'you owe Vince' : (vinceLedger.balance < 0 ? 'Vince owes you' : 'settled')}"></div>
+                         th:text="${data.vinceLedger.balance > 0 ? 'you owe Vince' : (vinceLedger.balance < 0 ? 'Vince owes you' : 'settled')}"></div>
                 </div>
             </div>
         </div>
@@ -101,8 +101,8 @@
                 </div>
             </form>
 
-            <div th:if="${vincePaymentGroups != null and !vincePaymentGroups.isEmpty()}">
-                <div th:each="group : ${vincePaymentGroups}" class="mb-4">
+            <div th:if="${data.vincePaymentGroups != null and !vincePaymentGroups.isEmpty()}">
+                <div th:each="group : ${data.vincePaymentGroups}" class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
                         <span class="text-muted small" th:text="'$' + ${#numbers.formatDecimal(group.subtotal, 1, 2)}"></span>
@@ -140,7 +140,7 @@
                     </div>
                 </div>
             </div>
-            <p th:if="${vincePaymentGroups == null or vincePaymentGroups.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
+            <p th:if="${data.vincePaymentGroups == null or vincePaymentGroups.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
         </div>
 
         <!-- Sales tab -->
@@ -167,14 +167,14 @@
                     </div>
                 </div>
 
-                <div th:replace="~{fragments/items :: sale-groups(groups=${groups})}"></div>
+                <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
             </div>
         </div><!-- /sales tab -->
     </div><!-- /x-data vinceTab -->
 </th:block>
 
 <!-- ==================== MINE / IGNORED VIEW ==================== -->
-<div th:if="${view != 'vince'}">
+<div th:if="${data.view != 'vince'}">
 <div th:unless="${#lists.isEmpty(groups)}">
     <div class="card mb-3" x-data="saleFilter()">
         <div class="card-body py-2">
@@ -193,7 +193,7 @@
         </div>
     </div>
 
-    <div th:replace="~{fragments/items :: sale-groups(groups=${groups})}"></div>
+    <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
 </div>
 </div>
 

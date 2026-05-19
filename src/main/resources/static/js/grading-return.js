@@ -15,10 +15,10 @@ function collectGrades() {
 function recordReturn(submissionId) {
     const grades = collectGrades();
 
-    fetch('/grading/' + submissionId + '/return', {
+    fetch('/grading/' + submissionId + '/status?action=RETURN', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ grades: grades }),
+        body: JSON.stringify(grades),
     }).then((response) => {
         if (response.ok || response.redirected) {
             window.location.reload();

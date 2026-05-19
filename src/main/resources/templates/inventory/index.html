@@ -18,7 +18,7 @@
 <div th:fragment="inventory-page" id="inventory-page">
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link" th:classappend="${purpose == 'INVENTORY' ? 'active' : ''}"
+        <a class="nav-link" th:classappend="${data.purpose == 'INVENTORY' ? 'active' : ''}"
            href="/inventory?purpose=INVENTORY"
            hx-get="/inventory?purpose=INVENTORY"
            hx-target="#inventory-page"
@@ -26,7 +26,7 @@
            hx-push-url="true">Inventory</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" th:classappend="${purpose == 'IN_GRADING' ? 'active' : ''}"
+        <a class="nav-link" th:classappend="${data.purpose == 'IN_GRADING' ? 'active' : ''}"
            href="/inventory?purpose=IN_GRADING"
            hx-get="/inventory?purpose=IN_GRADING"
            hx-target="#inventory-page"
@@ -34,7 +34,7 @@
            hx-push-url="true">In Grading</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" th:classappend="${purpose == 'PERSONAL_COLLECTION' ? 'active' : ''}"
+        <a class="nav-link" th:classappend="${data.purpose == 'PERSONAL_COLLECTION' ? 'active' : ''}"
            href="/inventory?purpose=PERSONAL_COLLECTION"
            hx-get="/inventory?purpose=PERSONAL_COLLECTION"
            hx-target="#inventory-page"
@@ -43,12 +43,12 @@
     </li>
 </ul>
 
-<div th:if="${!#lists.isEmpty(items)}" class="card mb-3">
+<div th:if="${!#lists.isEmpty(data.items)}" class="card mb-3">
     <div class="card-body">
         <div class="row text-center">
             <div class="col">
                 <div class="text-muted small text-uppercase">Cost</div>
-                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(totalCost, 1, 2)}"></div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.totalCost, 1, 2)}"></div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Market</div>
@@ -56,33 +56,33 @@
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Items</div>
-                <div class="fw-semibold" th:text="${#lists.size(items)}"></div>
+                <div class="fw-semibold" th:text="${#lists.size(data.items)}"></div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Gain/Loss</div>
-                <div class="fw-semibold" th:classappend="${totalMarket - totalCost >= 0 ? 'text-success' : 'text-danger'}"
-                     th:text="'$' + ${#numbers.formatDecimal(totalMarket - totalCost, 1, 2)}"></div>
+                <div class="fw-semibold" th:classappend="${data.data.totalMarket - data.totalCost >= 0 ? 'text-success' : 'text-danger'}"
+                     th:text="'$' + ${#numbers.formatDecimal(data.totalMarket - data.totalCost, 1, 2)}"></div>
             </div>
         </div>
     </div>
 </div>
 
 <div id="inventory-list">
-    <p th:if="${#lists.isEmpty(items)}" class="text-muted">No items in this category.</p>
+    <p th:if="${#lists.isEmpty(data.items)}" class="text-muted">No items in this category.</p>
 
-    <div th:if="${!#lists.isEmpty(items)}">
+    <div th:if="${!#lists.isEmpty(data.items)}">
 
-        <div th:if="${!#lists.isEmpty(rawItems)}" class="mb-4">
+        <div th:if="${!#lists.isEmpty(data.rawItems)}" class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="month-pill section-pill d-inline-block">Raw</span>
-                <span class="text-muted small" th:text="${#lists.size(rawItems)} + ' items'"></span>
+                <span class="text-muted small" th:text="${#lists.size(data.rawItems)} + ' items'"></span>
             </div>
             <table class="table table-hover bg-white mb-0">
                 <thead class="table-light">
                 <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4"></th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${rawItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
+                <tr th:each="item : ${data.rawItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
                     <td>
                         <div th:replace="~{fragments/items :: item-cell-detailed(item=${item})}"></div>
                     </td>
@@ -98,17 +98,17 @@
             </table>
         </div>
 
-        <div th:if="${!#lists.isEmpty(gradedItems)}" class="mb-4">
+        <div th:if="${!#lists.isEmpty(data.gradedItems)}" class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="month-pill section-pill d-inline-block">Graded</span>
-                <span class="text-muted small" th:text="${#lists.size(gradedItems)} + ' items'"></span>
+                <span class="text-muted small" th:text="${#lists.size(data.gradedItems)} + ' items'"></span>
             </div>
             <table class="table table-hover bg-white mb-0">
                 <thead class="table-light">
                 <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Grade</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4"></th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${gradedItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
+                <tr th:each="item : ${data.gradedItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
                     <td>
                         <div th:replace="~{fragments/items :: item-cell-detailed(item=${item})}"></div>
                     </td>
@@ -127,17 +127,17 @@
             </table>
         </div>
 
-        <div th:if="${!#lists.isEmpty(sealedItems)}" class="mb-4">
+        <div th:if="${!#lists.isEmpty(data.sealedItems)}" class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="month-pill section-pill d-inline-block">Sealed</span>
-                <span class="text-muted small" th:text="${#lists.size(sealedItems)} + ' items'"></span>
+                <span class="text-muted small" th:text="${#lists.size(data.sealedItems)} + ' items'"></span>
             </div>
             <table class="table table-hover bg-white mb-0">
                 <thead class="table-light">
                 <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4"></th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${sealedItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
+                <tr th:each="item : ${data.sealedItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
                     <td>
                         <div th:replace="~{fragments/items :: item-cell-detailed(item=${item})}"></div>
                     </td>
@@ -151,17 +151,17 @@
             </table>
         </div>
 
-        <div th:if="${!#lists.isEmpty(otherItems)}" class="mb-4">
+        <div th:if="${!#lists.isEmpty(data.otherItems)}" class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="month-pill section-pill d-inline-block">Other</span>
-                <span class="text-muted small" th:text="${#lists.size(otherItems)} + ' items'"></span>
+                <span class="text-muted small" th:text="${#lists.size(data.otherItems)} + ' items'"></span>
             </div>
             <table class="table table-hover bg-white mb-0">
                 <thead class="table-light">
                 <tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4"></th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${otherItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
+                <tr th:each="item : ${data.otherItems}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
                     <td>
                         <div th:replace="~{fragments/items :: item-cell-detailed(item=${item})}"></div>
                     </td>

@@ -148,7 +148,7 @@ function initDashboard(data) {
     const itemTypeLabels = { RAW_CARD: 'Raw', GRADED_CARD: 'Graded', SEALED_PRODUCT: 'Sealed', OTHER: 'Other' };
     createDoughnut(
         'itemTypeChart',
-        mapLabels(data.itemTypeCounts, 'itemType', itemTypeLabels),
+        mapLabels(data.itemTypeCounts, 'label', itemTypeLabels),
         mapCounts(data.itemTypeCounts),
         colors.palette,
         colors.surface,
@@ -157,7 +157,7 @@ function initDashboard(data) {
     const originLabels = { EBAY: 'eBay', FACEBOOK: 'Facebook', OTHER: 'Other' };
     createDoughnut(
         'originChart',
-        mapLabels(data.originCounts, 'origin', originLabels),
+        mapLabels(data.originCounts, 'label', originLabels),
         mapCounts(data.originCounts),
         colors.palette,
         colors.surface,
@@ -165,7 +165,7 @@ function initDashboard(data) {
 
     createDoughnut(
         'gradingChart',
-        data.gradingStatuses.map((r) => r.status),
+        data.gradingStatuses.map((r) => r.label),
         mapCounts(data.gradingStatuses),
         colors.palette,
         colors.surface,

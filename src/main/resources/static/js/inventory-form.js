@@ -28,18 +28,18 @@ function inventoryItemSearch() {
             this.clear();
 
             const params = new URLSearchParams({
-                type: isSealed ? 'SEALED_PRODUCT' : 'RAW_CARD',
+                itemType: isSealed ? 'SEALED_PRODUCT' : 'RAW_CARD',
                 name: card.name || '',
-                set: card.setName || '',
-                card: card.cardNumber || '',
-                market: card.marketPrice || 0,
-                img: card.imageUrl || '',
+                setName: card.setName || '',
+                cardNumber: card.cardNumber || '',
+                marketValue: card.marketPrice || 0,
+                imageUrl: card.imageUrl || '',
             });
 
             if (isSealed) {
-                params.set('sealed_id', card.id || '');
+                params.set('sealedProductId', card.id || '');
             } else {
-                params.set('card_id', card.id || '');
+                params.set('pokemonCardId', card.id || '');
             }
 
             await this.appendRow(params);
@@ -47,7 +47,7 @@ function inventoryItemSearch() {
 
         async addOther(name) {
             const params = new URLSearchParams({
-                type: 'OTHER',
+                itemType: 'OTHER',
                 name: (name || this.query || '').trim(),
             });
             this.clear();
@@ -97,12 +97,12 @@ function inventoryTotals() {
 function serializeInventorySnapshot() {
     return collectItemRows().map((d) => ({
         name: d.name,
-        item_type: d.type,
-        cost_basis: d.costBasis || 0,
-        market_value: d.market || 0,
-        pokemon_card_id: d.cardId || '',
-        sealed_product_id: d.sealedId || '',
-        grading_company: d.gradingCompany || '',
+        itemType: d.type,
+        costBasis: d.costBasis || 0,
+        marketValue: d.market || 0,
+        pokemonCardId: d.cardId || '',
+        sealedProductId: d.sealedId || '',
+        gradingCompany: d.gradingCompany || '',
         grade: d.grade || '',
     }));
 }

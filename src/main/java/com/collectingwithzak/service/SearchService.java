@@ -1,11 +1,11 @@
 package com.collectingwithzak.service;
 
-import com.collectingwithzak.dto.response.CardSearchResult;
-import com.collectingwithzak.dto.response.SealedSearchResult;
+import com.collectingwithzak.dto.inventory.PokemonCardResponse;
+import com.collectingwithzak.dto.inventory.SealedProductResponse;
 import com.collectingwithzak.mapper.SearchMapper;
 import com.collectingwithzak.repository.PokemonCardRepository;
-import com.collectingwithzak.repository.SearchSpecification;
 import com.collectingwithzak.repository.SealedProductRepository;
+import com.collectingwithzak.repository.SearchSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -33,13 +33,13 @@ public class SearchService {
     private final SealedProductRepository sealedRepo;
     private final SearchMapper searchMapper;
 
-    public List<CardSearchResult> searchCards(String query) {
+    public List<PokemonCardResponse> searchCards(String query) {
         if (!StringUtils.hasText(query)) return List.of();
         return searchMapper.cardsToSearchResults(
                 cardRepo.findAll(SearchSpecification.multiTermLike(query, CARD_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());
     }
 
-    public List<SealedSearchResult> searchSealed(String query) {
+    public List<SealedProductResponse> searchSealed(String query) {
         if (!StringUtils.hasText(query)) return List.of();
         return searchMapper.sealedToSearchResults(
                 sealedRepo.findAll(SearchSpecification.multiTermLike(query, SEALED_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());

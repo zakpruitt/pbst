@@ -1,12 +1,15 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.request.CreateGradingRequest;
-import com.collectingwithzak.dto.request.RecordReturnRequest;
-import com.collectingwithzak.dto.request.UpdateGradingRequest;
-import com.collectingwithzak.dto.response.GradingFormData;
-import com.collectingwithzak.dto.response.GradingSubmissionResponse;
-import com.collectingwithzak.dto.response.MonthGroup;
+import com.collectingwithzak.dto.common.MonthGroup;
+import com.collectingwithzak.dto.grading.GradingItemRequest;
+import com.collectingwithzak.dto.grading.GradingRequest;
+import com.collectingwithzak.dto.grading.GradingSubmissionResponse;
+import com.collectingwithzak.dto.inventory.TrackedItemFilters;
+import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.entity.enums.GradingAction;
+import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.service.GradingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,6 +17,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/grading")
@@ -21,6 +26,7 @@ import java.util.List;
 public class GradingController {
 
     private final GradingService gradingService;
+
     @GetMapping
     public String index(Model model) {
         List<GradingSubmissionResponse> submissions = gradingService.getAll();
@@ -30,9 +36,9 @@ public class GradingController {
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        GradingFormData formData = gradingService.getNewFormData();
-        model.addAttribute("rawItems", formData.getRawItems());
-        model.addAttribute("gradedItems", formData.getGradedItems());
+        List<TrackedItemResponse> items = gradingService.getInventoryItems();
+        model.addAttribute("rawItems", TrackedItemFilters.filterByType(items, ItemType.RAW_CARD));
+        model.addAttribute("gradedItems", TrackedItemFilters.filterByType(items, ItemType.GRADED_CARD));
         return "grading/new";
     }
 
@@ -45,35 +51,43 @@ public class GradingController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        GradingFormData formData = gradingService.getEditFormData(id);
-        model.addAttribute("submission", formData.getSubmission());
-        model.addAttribute("rawItems", formData.getRawItems());
-        model.addAttribute("gradedItems", formData.getGradedItems());
-        model.addAttribute("attachedIds", formData.getAttachedIds());
+        GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
+        List<TrackedItemResponse> available = gradingService.getAvailableItemsForSubmission(id);
+        Set<Long> attachedIds = submission.getItems().stream()
+                .map(TrackedItemResponse::getId)
+                .collect(Collectors.toSet());
+
+        model.addAttribute("submission", submission);
+        model.addAttribute("rawItems", TrackedItemFilters.filterByType(available, ItemType.RAW_CARD));
+        model.addAttribute("gradedItems", TrackedItemFilters.filterByType(available, ItemType.GRADED_CARD));
+        model.addAttribute("attachedIds", attachedIds);
         return "grading/edit";
     }
+
     @PostMapping
-    public String create(CreateGradingRequest request) {
+    public String create(@Valid GradingRequest request) {
         Long id = gradingService.createWithItems(request);
         return "redirect:/grading/" + id;
     }
 
     @PostMapping("/{id}")
-    public String update(@PathVariable Long id, UpdateGradingRequest request) {
+    public String update(@PathVariable Long id, @Valid GradingRequest request) {
         gradingService.update(id, request);
         return "redirect:/grading/" + id;
     }
 
-    @PostMapping("/{id}/advance")
-    public String advanceStatus(@PathVariable Long id, @RequestParam("new_status") String newStatus) {
-        gradingService.advanceStatus(id, newStatus);
+    @PostMapping("/{id}/status")
+    public String updateStatus(@PathVariable Long id, @RequestParam("action") GradingAction action) {
+        gradingService.updateStatus(id, action, null);
         return "redirect:/grading/" + id;
     }
 
-    @PostMapping("/{id}/return")
+    @PostMapping(value = "/{id}/status", consumes = "application/json")
     @ResponseBody
-    public ResponseEntity<Void> recordReturn(@PathVariable Long id, @RequestBody RecordReturnRequest request) {
-        gradingService.recordReturn(id, request.getGrades());
+    public ResponseEntity<Void> updateStatusJson(@PathVariable Long id,
+                                                  @RequestParam("action") GradingAction action,
+                                                  @Valid @RequestBody List<GradingItemRequest> grades) {
+        gradingService.updateStatus(id, action, grades);
         return ResponseEntity.noContent().build();
     }
 
@@ -82,5 +96,4 @@ public class GradingController {
         gradingService.delete(id);
         return "redirect:/grading";
     }
-
 }

@@ -69,6 +69,7 @@ public class EbayClient {
         log.info("eBay fetch: {} orders, {} parsed", orders.size(), results.size());
         return results;
     }
+
     private Map<String, Double> aggregateTransactions(List<EbayTransaction> transactions) {
         Map<String, Double> data = new HashMap<>();
 
@@ -128,6 +129,7 @@ public class EbayClient {
     private double amountOrZero(EbayAmount amount) {
         return amount != null ? amount.toDouble() : 0;
     }
+
     private List<EbayOrder> fetchOrders(ZonedDateTime since) {
         List<EbayOrder> all = new ArrayList<>();
 
@@ -202,6 +204,7 @@ public class EbayClient {
                 .queryParam("filter", filter)
                 .toUriString();
     }
+
     private <T> ResponseEntity<T> authenticatedGet(String url, Class<T> responseType) {
         refreshTokenIfNeeded();
         HttpHeaders headers = new HttpHeaders();

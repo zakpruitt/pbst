@@ -1,10 +1,16 @@
 package com.collectingwithzak.service;
 
-import com.collectingwithzak.dto.response.*;
-import com.collectingwithzak.entity.enums.Purpose;
+import com.collectingwithzak.dto.dashboard.DashboardData;
+import com.collectingwithzak.dto.dashboard.MonthlyRevenue;
+import com.collectingwithzak.dto.inventory.InventoryTotals;
+import com.collectingwithzak.dto.sale.RangeTotals;
+import com.collectingwithzak.entity.enums.ItemStatus;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.mapper.SaleMapper;
-import com.collectingwithzak.repository.*;
+import com.collectingwithzak.repository.GradingSubmissionRepository;
+import com.collectingwithzak.repository.LotPurchaseRepository;
+import com.collectingwithzak.repository.SaleRepository;
+import com.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,6 +22,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,14 +44,14 @@ public class DashboardService {
     private final VincePaymentService vincePaymentService;
 
     public DashboardData getDashboardData() {
-        ConfirmedSaleTotals confirmed = saleRepo.getConfirmedTotals();
+        RangeTotals confirmed = saleRepo.getConfirmedTotals();
         double totalSpent = lotRepo.getTotalCostNonRejected();
         InventoryTotals invTotals = itemRepo.getInventoryTotals();
 
         List<String> monthLabels = buildMonthLabels();
-        List<MonthlyRevenue> revenueData = saleRepo.getMonthlyRevenue(TIMELINE_MONTHS);
-        Map<String, Double> grossByMonth = revenueData.stream().collect(Collectors.toMap(MonthlyRevenue::getMonth, MonthlyRevenue::getGross));
-        Map<String, Double> netByMonth = revenueData.stream().collect(Collectors.toMap(MonthlyRevenue::getMonth, MonthlyRevenue::getNet));
+        Map<String, MonthlyRevenue> revenueByMonth = saleRepo.getMonthlyRevenue(TIMELINE_MONTHS).stream()
+                .collect(Collectors.toMap(MonthlyRevenue::getMonth, Function.identity()));
+        Map<String, Double> spendByMonth = lotRepo.getMonthlySpend(TIMELINE_MONTHS);
 
         return DashboardData.builder()
                 .totalSpent(totalSpent)
@@ -53,16 +61,16 @@ public class DashboardService {
                 .margin(confirmed.getNet() - totalSpent)
                 .salesCount(confirmed.getCount())
                 .avgSale(confirmed.getCount() > 0 ? confirmed.getNet() / confirmed.getCount() : 0)
-                .gradingCount(itemRepo.countByPurpose(Purpose.IN_GRADING.name()))
-                .inventoryCount(itemRepo.countByPurpose(Purpose.INVENTORY.name()))
+                .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING.name()))
+                .inventoryCount(itemRepo.countByStatus(ItemStatus.AVAILABLE.name()))
                 .inventoryCost(invTotals.getCost())
                 .inventoryMarket(invTotals.getMarket())
                 .totals7(saleRepo.getTotalsSince(LocalDate.now().minusDays(7)))
                 .totals30(saleRepo.getTotalsSince(LocalDate.now().minusDays(30)))
                 .monthLabels(monthLabels)
-                .monthlySpend(buildSpendSeries(monthLabels))
-                .monthlyGross(fillSeries(monthLabels, grossByMonth))
-                .monthlyNet(fillSeries(monthLabels, netByMonth))
+                .monthlySpend(fillSeries(monthLabels, spendByMonth))
+                .monthlyGross(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenue::getGross))
+                .monthlyNet(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenue::getNet))
                 .originCounts(saleRepo.countByOrigin())
                 .itemTypeCounts(itemRepo.countByItemType())
                 .gradingStatuses(gradingRepo.countByStatus())
@@ -83,15 +91,19 @@ public class DashboardService {
         return labels;
     }
 
-    private List<Double> buildSpendSeries(List<String> monthLabels) {
-        Map<String, Double> data = lotRepo.getMonthlySpend(TIMELINE_MONTHS).stream()
-                .collect(Collectors.toMap(MonthlySpend::getMonth, MonthlySpend::getSpend));
-        return fillSeries(monthLabels, data);
-    }
-
     private List<Double> fillSeries(List<String> labels, Map<String, Double> data) {
         return labels.stream()
                 .map(label -> data.getOrDefault(label, 0.0))
+                .toList();
+    }
+
+    private List<Double> fillRevenueSeries(List<String> labels, Map<String, MonthlyRevenue> data,
+                                            ToDoubleFunction<MonthlyRevenue> extractor) {
+        return labels.stream()
+                .map(label -> {
+                    MonthlyRevenue revenue = data.get(label);
+                    return revenue != null ? extractor.applyAsDouble(revenue) : 0.0;
+                })
                 .toList();
     }
 }

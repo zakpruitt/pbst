@@ -1,6 +1,6 @@
 package com.collectingwithzak.repository;
 
-import com.collectingwithzak.dto.response.StatusCount;
+import com.collectingwithzak.dto.dashboard.LabeledStat;
 import com.collectingwithzak.entity.GradingSubmission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface GradingSubmissionRepository extends JpaRepository<GradingSubmission, Long> {
     @Query("SELECT DISTINCT g FROM GradingSubmission g LEFT JOIN FETCH g.items ORDER BY g.createdAt DESC")
-    List<GradingSubmission> findAllWithItemsOrderByCreatedAtDesc();
+    List<GradingSubmission> findAllWithItems();
 
     @Query("SELECT g FROM GradingSubmission g LEFT JOIN FETCH g.items WHERE g.id = :id")
     Optional<GradingSubmission> findByIdWithItems(Long id);
@@ -30,6 +30,7 @@ public interface GradingSubmissionRepository extends JpaRepository<GradingSubmis
     @Modifying
     @Query("UPDATE GradingSubmission g SET g.upchargeTotal = :upchargeTotal, g.returnDate = :returnDate WHERE g.id = :id")
     void updateReturnDetails(Long id, double upchargeTotal, LocalDate returnDate);
-    @Query("SELECT new com.collectingwithzak.dto.response.StatusCount(g.status, COUNT(g)) FROM GradingSubmission g GROUP BY g.status")
-    List<StatusCount> countByStatus();
+
+    @Query("SELECT new com.collectingwithzak.dto.dashboard.LabeledStat(g.status, COUNT(g)) FROM GradingSubmission g GROUP BY g.status")
+    List<LabeledStat> countByStatus();
 }

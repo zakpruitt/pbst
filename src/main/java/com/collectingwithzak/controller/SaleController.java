@@ -1,14 +1,15 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.request.CreateSaleRequest;
-import com.collectingwithzak.dto.request.CreateVincePaymentRequest;
-import com.collectingwithzak.dto.response.MonthGroup;
-import com.collectingwithzak.dto.response.SaleConfirmFormData;
-import com.collectingwithzak.dto.response.SaleResponse;
-import com.collectingwithzak.dto.response.VincePaymentResponse;
+import com.collectingwithzak.dto.inventory.TrackedItemFilters;
+import com.collectingwithzak.dto.sale.CreateSaleRequest;
+import com.collectingwithzak.dto.sale.SaleResponse;
+import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.dto.vince.CreateVincePaymentRequest;
+import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.SaleAction;
 import com.collectingwithzak.service.SaleService;
 import com.collectingwithzak.service.VincePaymentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/sales")
@@ -25,29 +27,13 @@ public class SaleController {
 
     private final SaleService saleService;
     private final VincePaymentService vincePaymentService;
+
     @GetMapping
     public String index(@RequestParam(defaultValue = "mine") String view, Model model) {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
             view = "mine";
         }
-
-        List<SaleResponse> sales = saleService.getAll(view);
-        long stagedCount = saleService.countStaged();
-
-        List<MonthGroup<SaleResponse>> groups = MonthGroup.groupByMonth(sales, SaleResponse::getSaleDate);
-        MonthGroup.computeSubtotals(groups, SaleResponse::getNetAmount);
-        model.addAttribute("groups", groups);
-        model.addAttribute("stagedCount", stagedCount);
-        model.addAttribute("view", view);
-
-        if ("vince".equals(view)) {
-            model.addAttribute("vinceLedger", vincePaymentService.getLedger());
-            List<VincePaymentResponse> payments = vincePaymentService.getAll();
-            List<MonthGroup<VincePaymentResponse>> paymentGroups = MonthGroup.groupByMonth(payments, VincePaymentResponse::getPaymentDate);
-            MonthGroup.computeSubtotals(paymentGroups, VincePaymentResponse::getAmount);
-            model.addAttribute("vincePaymentGroups", paymentGroups);
-        }
-
+        model.addAttribute("data", saleService.getIndexData(view));
         return "sales/index";
     }
 
@@ -71,22 +57,28 @@ public class SaleController {
 
     @GetMapping("/{id}/confirm")
     public String confirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
-        SaleConfirmFormData formData = saleService.getConfirmFormData(id);
-        model.addAttribute("sale", formData.getSale());
-        model.addAttribute("rawItems", formData.getRawItems());
-        model.addAttribute("gradedItems", formData.getGradedItems());
-        model.addAttribute("attachedIds", formData.getAttachedIds());
+        SaleResponse sale = saleService.getByIdWithItems(id);
+    List<TrackedItemResponse> available = saleService.getAvailableItemsForSale(id);
+        Set<Long> attachedIds = sale.getItems().stream()
+                .map(TrackedItemResponse::getId)
+                .collect(Collectors.toSet());
+
+        model.addAttribute("sale", sale);
+        model.addAttribute("rawItems", TrackedItemFilters.filterByType(available, ItemType.RAW_CARD));
+        model.addAttribute("gradedItems", TrackedItemFilters.filterByType(available, ItemType.GRADED_CARD));
+        model.addAttribute("attachedIds", attachedIds);
         model.addAttribute("from", from != null ? from : "");
         return "sales/confirm";
     }
+
     @PostMapping
-    public String create(CreateSaleRequest request) {
+    public String create(@Valid CreateSaleRequest request) {
         saleService.create(request);
         return "redirect:/sales";
     }
 
     @PostMapping("/vince/payments")
-    public String createVincePayment(CreateVincePaymentRequest request) {
+    public String createVincePayment(@Valid CreateVincePaymentRequest request) {
         vincePaymentService.create(request);
         return "redirect:/sales?view=vince";
     }

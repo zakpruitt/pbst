@@ -1,17 +1,16 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.SnapshotItem;
-import com.collectingwithzak.dto.request.CreateLotRequest;
-import com.collectingwithzak.dto.request.UpdateLotRequest;
-import com.collectingwithzak.dto.response.LotResponse;
-import com.collectingwithzak.dto.response.MonthGroup;
+import com.collectingwithzak.dto.common.MonthGroup;
+import com.collectingwithzak.dto.lot.SnapshotItem;
+import com.collectingwithzak.dto.lot.LotRequest;
+import com.collectingwithzak.dto.lot.LotResponse;
 import com.collectingwithzak.service.LotService;
+import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/lots")
@@ -19,12 +18,11 @@ import java.util.List;
 public class LotController {
 
     private final LotService lotService;
+
     @GetMapping
     public String index(Model model) {
         List<LotResponse> lots = lotService.getAll();
-        List<MonthGroup<LotResponse>> groups = MonthGroup.groupByMonth(lots, LotResponse::getPurchaseDate);
-        MonthGroup.computeSubtotals(groups, LotResponse::getTotalCost);
-        model.addAttribute("groups", groups);
+        model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotResponse::getPurchaseDate, LotResponse::getTotalCost));
         return "lots/index";
     }
 
@@ -34,28 +32,8 @@ public class LotController {
     }
 
     @GetMapping("/partials/row")
-    public String rowPartial(@RequestParam(value = "type", defaultValue = "RAW_CARD") String type,
-                             @RequestParam(defaultValue = "") String name,
-                             @RequestParam(value = "set", defaultValue = "") String setName,
-                             @RequestParam(value = "card", defaultValue = "") String cardNumber,
-                             @RequestParam(defaultValue = "") String rarity,
-                             @RequestParam(defaultValue = "0") double market,
-                             @RequestParam(value = "img", defaultValue = "") String imageUrl,
-                             @RequestParam(value = "card_id", defaultValue = "") String cardId,
-                             Model model) {
-        model.addAttribute("item", SnapshotItem.builder()
-                .name(name)
-                .itemType(type)
-                .setName(setName)
-                .cardNumber(cardNumber)
-                .rarity(rarity)
-                .marketPrice(market)
-                .imageUrl(imageUrl)
-                .pokemonCardId(cardId)
-                .qty(1)
-                .percentage(60)
-                .isTracked(false)
-                .build());
+    public String rowPartial(SnapshotItem item, Model model) {
+        model.addAttribute("item", item);
         return "lots/partials/row :: lot-row";
     }
 
@@ -74,14 +52,15 @@ public class LotController {
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";
     }
+
     @PostMapping
-    public String create(CreateLotRequest request) {
+    public String create(@Valid LotRequest request) {
         Long id = lotService.create(request);
         return "redirect:/lots/" + id;
     }
 
     @PostMapping("/{id}")
-    public String update(@PathVariable Long id, UpdateLotRequest request) {
+    public String update(@PathVariable Long id, @Valid LotRequest request) {
         lotService.update(id, request);
         return "redirect:/lots/" + id;
     }

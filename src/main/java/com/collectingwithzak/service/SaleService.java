@@ -1,13 +1,14 @@
 package com.collectingwithzak.service;
 
+import com.collectingwithzak.dto.common.MonthGroup;
 import com.collectingwithzak.dto.ebay.EbayOrderData;
-import com.collectingwithzak.dto.request.CreateSaleRequest;
-import com.collectingwithzak.dto.response.SaleConfirmFormData;
-import com.collectingwithzak.dto.response.SaleResponse;
-import com.collectingwithzak.dto.response.TrackedItemResponse;
+import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.dto.sale.CreateSaleRequest;
+import com.collectingwithzak.dto.sale.SaleIndexData;
+import com.collectingwithzak.dto.sale.SaleResponse;
+import com.collectingwithzak.dto.vince.VincePaymentResponse;
 import com.collectingwithzak.entity.Sale;
 import com.collectingwithzak.entity.TrackedItem;
-import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.SaleAction;
 import com.collectingwithzak.entity.enums.SaleStatus;
 import com.collectingwithzak.exception.ResourceNotFoundException;
@@ -20,8 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,27 @@ public class SaleService {
     private final SaleMapper saleMapper;
     private final TrackedItemMapper trackedItemMapper;
     private final EbaySaleUpsertService ebaySaleUpsertService;
+    private final VincePaymentService vincePaymentService;
+
+    public SaleIndexData getIndexData(String view) {
+        List<SaleResponse> sales = getAll(view);
+        List<MonthGroup<SaleResponse>> groups = MonthGroup.groupByMonth(sales, SaleResponse::getSaleDate, SaleResponse::getNetAmount);
+
+        SaleIndexData.SaleIndexDataBuilder builder = SaleIndexData.builder()
+                .groups(groups)
+                .stagedCount(countStaged())
+                .view(view);
+
+        if ("vince".equals(view)) {
+            builder.vinceLedger(vincePaymentService.getLedger());
+            List<VincePaymentResponse> payments = vincePaymentService.getAll();
+            List<MonthGroup<VincePaymentResponse>> paymentGroups = MonthGroup.groupByMonth(payments, VincePaymentResponse::getPaymentDate, VincePaymentResponse::getAmount);
+            builder.vincePaymentGroups(paymentGroups);
+        }
+
+        return builder.build();
+    }
+
     public void create(CreateSaleRequest request) {
         saleRepo.save(saleMapper.toEntity(request));
     }
@@ -56,6 +78,7 @@ public class SaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
         return saleMapper.toResponse(sale);
     }
+
     public List<SaleResponse> getAll(String view) {
         List<Sale> sales = switch (view) {
             case "vince" -> saleRepo.findVince();
@@ -64,19 +87,18 @@ public class SaleService {
         };
         return saleMapper.toResponseList(sales);
     }
+
     public List<SaleResponse> getStaged() {
         return saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED.name()));
     }
+
     public long countStaged() {
         return saleRepo.countByStatus(SaleStatus.STAGED.name());
     }
-    public SaleConfirmFormData getConfirmFormData(Long id) {
-        Sale sale = saleRepo.findByIdWithItems(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sale", id));
 
-        Set<Long> attachedIds = sale.getItems().stream()
-                .map(TrackedItem::getId)
-                .collect(Collectors.toSet());
+    public List<TrackedItemResponse> getAvailableItemsForSale(Long saleId) {
+        Sale sale = saleRepo.findByIdWithItems(saleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale", saleId));
 
         List<TrackedItem> available = itemRepo.findAvailableInventory();
         List<TrackedItem> allItems = new ArrayList<>(available);
@@ -85,15 +107,9 @@ public class SaleService {
                 allItems.add(attached);
             }
         }
-
-        List<TrackedItemResponse> all = trackedItemMapper.toResponseList(allItems);
-
-        return new SaleConfirmFormData(
-                saleMapper.toResponse(sale),
-                TrackedItemResponse.filterByType(all, ItemType.RAW_CARD),
-                TrackedItemResponse.filterByType(all, ItemType.GRADED_CARD),
-                attachedIds);
+        return trackedItemMapper.toResponseList(allItems);
     }
+
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
         itemRepo.detachFromSale(saleId);
         if (!itemIds.isEmpty()) {
@@ -118,6 +134,7 @@ public class SaleService {
         itemRepo.detachFromSale(saleId);
         saleRepo.updateStatusAndAttribution(saleId, status, attributedTo);
     }
+
     public void delete(Long saleId) {
         itemRepo.detachFromSale(saleId);
         saleRepo.deleteById(saleId);

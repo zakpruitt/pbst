@@ -1,8 +1,8 @@
 package com.collectingwithzak.mapper;
 
 import com.collectingwithzak.dto.ebay.EbayOrderData;
-import com.collectingwithzak.dto.request.CreateSaleRequest;
-import com.collectingwithzak.dto.response.SaleResponse;
+import com.collectingwithzak.dto.sale.CreateSaleRequest;
+import com.collectingwithzak.dto.sale.SaleResponse;
 import com.collectingwithzak.entity.Sale;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

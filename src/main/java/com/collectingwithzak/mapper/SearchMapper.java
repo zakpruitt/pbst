@@ -1,7 +1,7 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.response.CardSearchResult;
-import com.collectingwithzak.dto.response.SealedSearchResult;
+import com.collectingwithzak.dto.inventory.PokemonCardResponse;
+import com.collectingwithzak.dto.inventory.SealedProductResponse;
 import com.collectingwithzak.entity.PokemonCard;
 import com.collectingwithzak.entity.SealedProduct;
 import org.mapstruct.Mapper;
@@ -12,11 +12,11 @@ import java.util.List;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface SearchMapper {
 
-    CardSearchResult cardToSearchResult(PokemonCard entity);
+    PokemonCardResponse cardToSearchResult(PokemonCard entity);
 
-    List<CardSearchResult> cardsToSearchResults(List<PokemonCard> entities);
+    List<PokemonCardResponse> cardsToSearchResults(List<PokemonCard> entities);
 
-    SealedSearchResult sealedToSearchResult(SealedProduct entity);
+    SealedProductResponse sealedToSearchResult(SealedProduct entity);
 
-    List<SealedSearchResult> sealedToSearchResults(List<SealedProduct> entities);
+    List<SealedProductResponse> sealedToSearchResults(List<SealedProduct> entities);
 }

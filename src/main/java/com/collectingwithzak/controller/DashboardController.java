@@ -1,6 +1,6 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.response.DashboardData;
+import com.collectingwithzak.dto.dashboard.DashboardData;
 import com.collectingwithzak.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;

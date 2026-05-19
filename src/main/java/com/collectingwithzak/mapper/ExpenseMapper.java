@@ -1,7 +1,7 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.request.CreateExpenseRequest;
-import com.collectingwithzak.dto.response.ExpenseResponse;
+import com.collectingwithzak.dto.expense.CreateExpenseRequest;
+import com.collectingwithzak.dto.expense.ExpenseResponse;
 import com.collectingwithzak.entity.Expense;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

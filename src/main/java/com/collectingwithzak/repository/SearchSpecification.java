@@ -7,7 +7,8 @@ import java.util.List;
 
 public final class SearchSpecification {
 
-    private SearchSpecification() {}
+    private SearchSpecification() {
+    }
 
     public static <T> Specification<T> multiTermLike(String query, List<String> fields) {
         String[] terms = query.trim().toLowerCase().split("\\s+");

@@ -1,34 +1,36 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.InventorySnapshotRow;
-import com.collectingwithzak.dto.SnapshotItem;
-import com.collectingwithzak.dto.request.UpdateInventoryRequest;
-import com.collectingwithzak.dto.response.*;
-import com.collectingwithzak.entity.*;
+import com.collectingwithzak.dto.inventory.CreateInventoryRequest;
+import com.collectingwithzak.dto.inventory.InventoryItemRow;
+import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.dto.inventory.UpdateInventoryRequest;
+import com.collectingwithzak.dto.lot.SnapshotItem;
+import com.collectingwithzak.entity.TrackedItem;
 import org.mapstruct.*;
 
 import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {PokemonCardMapper.class, SealedProductMapper.class, GradedDetailsMapper.class})
+        uses = {PokemonCardMapper.class, SealedProductMapper.class})
 public interface TrackedItemMapper {
 
     @Mapping(target = "gradingFee", expression = "java(entity.getGradingFee())")
     @Mapping(target = "totalCostBasis", expression = "java(entity.getTotalCostBasis())")
+    @Mapping(source = "gradedDetails.gradingCompany", target = "gradingCompany")
+    @Mapping(source = "gradedDetails.grade", target = "grade")
+    @Mapping(source = "gradedDetails.gradingUpcharge", target = "gradingUpcharge")
+    @Mapping(source = "lotPurchase.id", target = "lotPurchaseId")
+    @Mapping(source = "lotPurchase.sellerName", target = "lotPurchaseSellerName")
+    @Mapping(source = "gradingSubmission.id", target = "gradingSubmissionId")
+    @Mapping(source = "gradingSubmission.submissionName", target = "gradingSubmissionName")
+    @Mapping(source = "gradingSubmission.costPerCard", target = "gradingCostPerCard")
     TrackedItemResponse toResponse(TrackedItem entity);
 
     List<TrackedItemResponse> toResponseList(List<TrackedItem> entities);
 
-    LotPurchaseSummary toLotSummary(LotPurchase entity);
-
-    GradingSubmissionSummary toGradingSummary(GradingSubmission entity);
-
-    GradedDetailsResponse toGradedDetailsResponse(GradedDetails entity);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "name", target = "manualNameOverride")
     @Mapping(source = "marketValue", target = "marketValueAtPurchase")
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "itemType", ignore = true)
     @Mapping(target = "lotPurchase", ignore = true)
     @Mapping(target = "pokemonCard", ignore = true)
@@ -36,41 +38,20 @@ public interface TrackedItemMapper {
     @Mapping(target = "gradingSubmission", ignore = true)
     @Mapping(target = "sale", ignore = true)
     @Mapping(target = "gradedDetails", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(UpdateInventoryRequest request, @MappingTarget TrackedItem entity);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(source = "name", target = "manualNameOverride")
-    @Mapping(source = "marketValue", target = "marketValueAtPurchase")
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "purpose", ignore = true)
-    @Mapping(target = "acquisitionDate", ignore = true)
-    @Mapping(target = "notes", ignore = true)
-    @Mapping(target = "lotPurchase", ignore = true)
-    @Mapping(target = "pokemonCard", ignore = true)
-    @Mapping(target = "sealedProduct", ignore = true)
-    @Mapping(target = "gradingSubmission", ignore = true)
-    @Mapping(target = "sale", ignore = true)
-    @Mapping(target = "gradedDetails", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    TrackedItem fromSnapshotRow(InventorySnapshotRow row);
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    @Mapping(source = "row.name", target = "manualNameOverride")
+    @Mapping(source = "row.marketValue", target = "marketValueAtPurchase")
+    @Mapping(source = "row.itemType", target = "itemType")
+    @Mapping(source = "row.costBasis", target = "costBasis")
+    @Mapping(source = "request.purpose", target = "purpose")
+    @Mapping(source = "request.acquisitionDate", target = "acquisitionDate")
+    TrackedItem fromSnapshotRow(InventoryItemRow row, CreateInventoryRequest request);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(source = "name", target = "manualNameOverride")
     @Mapping(source = "marketPrice", target = "marketValueAtPurchase")
     @Mapping(target = "costBasis", ignore = true)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "acquisitionDate", ignore = true)
-    @Mapping(target = "notes", ignore = true)
-    @Mapping(target = "lotPurchase", ignore = true)
-    @Mapping(target = "pokemonCard", ignore = true)
-    @Mapping(target = "sealedProduct", ignore = true)
-    @Mapping(target = "gradingSubmission", ignore = true)
-    @Mapping(target = "sale", ignore = true)
-    @Mapping(target = "gradedDetails", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     TrackedItem fromSnapshotItem(SnapshotItem item);
 }

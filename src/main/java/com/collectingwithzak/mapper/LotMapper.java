@@ -1,8 +1,7 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.request.CreateLotRequest;
-import com.collectingwithzak.dto.request.UpdateLotRequest;
-import com.collectingwithzak.dto.response.LotResponse;
+import com.collectingwithzak.dto.lot.LotRequest;
+import com.collectingwithzak.dto.lot.LotResponse;
 import com.collectingwithzak.entity.LotPurchase;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -25,12 +24,12 @@ public interface LotMapper {
     @Mapping(target = "trackedItems", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    LotPurchase toEntity(CreateLotRequest request);
+    LotPurchase toEntity(LotRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "trackedItems", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntity(UpdateLotRequest request, @MappingTarget LotPurchase entity);
+    void updateEntity(LotRequest request, @MappingTarget LotPurchase entity);
 }

@@ -1,6 +1,6 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.response.SealedProductResponse;
+import com.collectingwithzak.dto.inventory.SealedProductResponse;
 import com.collectingwithzak.entity.SealedProduct;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;

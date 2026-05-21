@@ -1,5 +1,8 @@
 package com.collectingwithzak.entity;
 
+import com.collectingwithzak.entity.enums.ItemStatus;
+import com.collectingwithzak.entity.enums.ItemType;
+import com.collectingwithzak.entity.enums.Purpose;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,32 +32,35 @@ public class TrackedItem extends BaseEntity {
     private String notes;
 
     @Builder.Default
-    private String purpose = "INVENTORY";
+    @Enumerated(EnumType.STRING)
+    private Purpose purpose = Purpose.INVENTORY;
 
     @Builder.Default
-    private String status = "AVAILABLE";
+    @Enumerated(EnumType.STRING)
+    private ItemStatus status = ItemStatus.AVAILABLE;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(name = "item_type")
-    private String itemType = "RAW_CARD";
+    private ItemType itemType = ItemType.RAW_CARD;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lot_purchase_id")
     private LotPurchase lotPurchase;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pokemon_card_id")
     private PokemonCard pokemonCard;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sealed_product_id")
     private SealedProduct sealedProduct;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "grading_submission_id")
     private GradingSubmission gradingSubmission;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sale_id")
     private Sale sale;
 

@@ -1,6 +1,7 @@
 package com.collectingwithzak.entity;
 
-import com.collectingwithzak.dto.lot.SnapshotItem;
+import com.collectingwithzak.dto.request.SnapshotItem;
+import com.collectingwithzak.entity.enums.LotStatus;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
@@ -36,7 +37,8 @@ public class LotPurchase extends BaseEntity {
     @Column(name = "lot_content_snapshot", columnDefinition = "text")
     private String lotContentSnapshot;
 
-    private String status = "PENDING";
+    @Enumerated(EnumType.STRING)
+    private LotStatus status = LotStatus.PENDING;
 
     @OneToMany(mappedBy = "lotPurchase", fetch = FetchType.LAZY)
     private List<TrackedItem> trackedItems = new ArrayList<>();

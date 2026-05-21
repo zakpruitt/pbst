@@ -1,17 +1,20 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.inventory.PokemonCardResponse;
+import com.collectingwithzak.dto.response.PokemonCardResponse;
 import com.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse.PokeWalletCard;
 import com.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse.TcgPlayer;
 import com.collectingwithzak.entity.PokemonCard;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PokemonCardMapper {
 
     PokemonCardResponse toResponse(PokemonCard entity);
+
+    List<PokemonCardResponse> toResponseList(List<PokemonCard> entities);
 
     @Mapping(source = "cardInfo.name", target = "name")
     @Mapping(source = "cardInfo.setCode", target = "setCode")

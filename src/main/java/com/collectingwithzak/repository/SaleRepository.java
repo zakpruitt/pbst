@@ -1,8 +1,8 @@
 package com.collectingwithzak.repository;
 
-import com.collectingwithzak.dto.dashboard.LabeledStat;
-import com.collectingwithzak.dto.dashboard.MonthlyRevenue;
-import com.collectingwithzak.dto.sale.RangeTotals;
+import com.collectingwithzak.dto.common.LabeledStat;
+import com.collectingwithzak.dto.common.MonthlyRevenue;
+import com.collectingwithzak.dto.common.RangeTotals;
 import com.collectingwithzak.entity.Sale;
 import com.collectingwithzak.entity.enums.SaleStatus;
 import org.springframework.data.domain.Pageable;
@@ -20,33 +20,33 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT s FROM Sale s LEFT JOIN FETCH s.items WHERE s.id = :id")
     Optional<Sale> findByIdWithItems(Long id);
 
-    List<Sale> findByStatusOrderBySaleDateDesc(String status);
+    List<Sale> findByStatusOrderBySaleDateDesc(SaleStatus status);
 
-    List<Sale> findByStatusAndAttributedToOrderBySaleDateDesc(String status, String attributedTo);
+    List<Sale> findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus status, String attributedTo);
 
     @Query("SELECT s FROM Sale s WHERE s.status = 'IGNORED' AND (s.attributedTo IS NULL OR s.attributedTo = '') ORDER BY s.saleDate DESC")
     List<Sale> findIgnored();
 
-    long countByStatus(String status);
+    long countByStatus(SaleStatus status);
 
     @Modifying
     @Query("UPDATE Sale s SET s.status = :status WHERE s.id = :id")
-    void updateStatus(Long id, String status);
+    void updateStatus(Long id, SaleStatus status);
 
     @Modifying
     @Query("UPDATE Sale s SET s.status = :status, s.attributedTo = :attributedTo WHERE s.id = :id")
-    void updateStatusAndAttribution(Long id, String status, String attributedTo);
+    void updateStatusAndAttribution(Long id, SaleStatus status, String attributedTo);
 
     @Modifying
     @Query("UPDATE Sale s SET s.grossAmount = :grossAmount, s.netAmount = :netAmount WHERE s.id = :id")
     void updateAmounts(Long id, double grossAmount, double netAmount);
 
     default List<Sale> findConfirmed() {
-        return findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED.name());
+        return findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED);
     }
 
     default List<Sale> findVince() {
-        return findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED.name(), "vince");
+        return findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "vince");
     }
 
     @Query("SELECT s FROM Sale s WHERE s.status = 'CONFIRMED' ORDER BY s.netAmount DESC")
@@ -75,7 +75,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlyRevenueRaw(int months);
 
-    @Query("SELECT new com.collectingwithzak.dto.dashboard.LabeledStat(s.origin, COUNT(s)) FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
+    @Query("SELECT new com.collectingwithzak.dto.common.LabeledStat(s.origin, COUNT(s)) FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
     List<LabeledStat> countByOrigin();
 
     default RangeTotals getConfirmedTotals() {

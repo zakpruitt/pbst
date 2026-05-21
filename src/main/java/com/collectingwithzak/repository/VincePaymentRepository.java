@@ -1,6 +1,6 @@
 package com.collectingwithzak.repository;
 
-import com.collectingwithzak.dto.vince.VincePaymentTotals;
+import com.collectingwithzak.dto.common.VincePaymentTotals;
 import com.collectingwithzak.entity.VincePayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

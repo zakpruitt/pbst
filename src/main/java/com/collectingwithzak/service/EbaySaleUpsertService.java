@@ -21,9 +21,8 @@ public class EbaySaleUpsertService {
         Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
         if (existing != null) {
             saleMapper.updateFromEbay(sale, existing);
-            saleRepo.save(existing);
         } else {
-            sale.setStatus(SaleStatus.STAGED.name());
+            sale.setStatus(SaleStatus.STAGED);
             saleRepo.save(sale);
         }
     }

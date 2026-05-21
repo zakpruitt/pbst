@@ -1,5 +1,7 @@
 package com.collectingwithzak.entity;
 
+import com.collectingwithzak.entity.enums.Origin;
+import com.collectingwithzak.entity.enums.SaleStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,9 +45,11 @@ public class Sale extends BaseEntity {
     @Column(name = "order_status")
     private String orderStatus;
 
-    private String origin = "EBAY";
+    @Enumerated(EnumType.STRING)
+    private Origin origin = Origin.EBAY;
 
-    private String status = "STAGED";
+    @Enumerated(EnumType.STRING)
+    private SaleStatus status = SaleStatus.STAGED;
 
     @Column(name = "attributed_to")
     private String attributedTo;

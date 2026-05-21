@@ -1,7 +1,7 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.vince.CreateVincePaymentRequest;
-import com.collectingwithzak.dto.vince.VincePaymentResponse;
+import com.collectingwithzak.dto.request.CreateVincePaymentRequest;
+import com.collectingwithzak.dto.response.VincePaymentResponse;
 import com.collectingwithzak.entity.VincePayment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

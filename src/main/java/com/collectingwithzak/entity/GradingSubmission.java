@@ -1,5 +1,6 @@
 package com.collectingwithzak.entity;
 
+import com.collectingwithzak.entity.enums.GradingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,7 +23,8 @@ public class GradingSubmission extends BaseEntity {
     private String company;
 
     @Builder.Default
-    private String status = "PREPPING";
+    @Enumerated(EnumType.STRING)
+    private GradingStatus status = GradingStatus.PREPPING;
 
     @Column(name = "submission_method")
     private String submissionMethod;

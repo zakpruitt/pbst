@@ -1,8 +1,7 @@
 package com.collectingwithzak.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import com.collectingwithzak.entity.enums.PaymentType;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,5 +21,6 @@ public class VincePayment extends BaseEntity {
 
     private String description = "";
 
-    private String type = "PAYOUT";
+    @Enumerated(EnumType.STRING)
+    private PaymentType type = PaymentType.PAYOUT;
 }

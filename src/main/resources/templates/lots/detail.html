@@ -17,11 +17,11 @@
     </div>
     <div class="d-flex gap-2 flex-shrink-0">
         <form th:if="${lot.status == 'PENDING'}" method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
-            <input type="hidden" name="action" value="accept">
+            <input type="hidden" name="action" value="ACCEPT">
             <button type="submit" class="btn btn-success btn-sm">Accept</button>
         </form>
         <form th:if="${lot.status == 'PENDING'}" method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
-            <input type="hidden" name="action" value="reject">
+            <input type="hidden" name="action" value="REJECT">
             <button type="submit" class="btn btn-outline-danger btn-sm">&#10005; Reject</button>
         </form>
         <a th:href="'/lots/' + ${lot.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>

@@ -1,15 +1,11 @@
 package com.collectingwithzak.service;
 
-import com.collectingwithzak.dto.inventory.CreateInventoryRequest;
-import com.collectingwithzak.dto.inventory.InventoryIndexData;
-import com.collectingwithzak.dto.inventory.InventoryItemRow;
-import com.collectingwithzak.dto.inventory.TrackedItemFilters;
-import com.collectingwithzak.dto.inventory.TrackedItemResponse;
-import com.collectingwithzak.dto.inventory.UpdateInventoryRequest;
+import com.collectingwithzak.dto.request.CreateInventoryRequest;
+import com.collectingwithzak.dto.request.InventoryItemRow;
+import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.entity.GradedDetails;
 import com.collectingwithzak.entity.TrackedItem;
 import com.collectingwithzak.entity.enums.ItemType;
-import com.collectingwithzak.entity.enums.ItemStatus;
 import com.collectingwithzak.exception.ResourceNotFoundException;
 import com.collectingwithzak.mapper.GradedDetailsMapper;
 import com.collectingwithzak.mapper.TrackedItemMapper;
@@ -36,20 +32,6 @@ public class InventoryService {
     private final GradedDetailsMapper gradedDetailsMapper;
     private final ObjectMapper objectMapper;
 
-    public InventoryIndexData getIndexData(String tab) {
-        List<TrackedItemResponse> allItems = getItemsForTab(tab);
-        return InventoryIndexData.builder()
-                .items(allItems)
-                .rawItems(TrackedItemFilters.filterByType(allItems, ItemType.RAW_CARD))
-                .gradedItems(TrackedItemFilters.filterByType(allItems, ItemType.GRADED_CARD))
-                .sealedItems(TrackedItemFilters.filterByType(allItems, ItemType.SEALED_PRODUCT))
-                .otherItems(TrackedItemFilters.filterByType(allItems, ItemType.OTHER))
-                .purpose(tab)
-                .totalCost(TrackedItemFilters.sumCost(allItems))
-                .totalMarket(TrackedItemFilters.sumMarket(allItems))
-                .build();
-    }
-
     public void createItems(CreateInventoryRequest request) {
         List<InventoryItemRow> rows = parseSnapshot(request.getItemsSnapshot());
 
@@ -60,37 +42,24 @@ public class InventoryService {
         }
     }
 
-    public TrackedItemResponse getById(Long id) {
-        TrackedItem item = findById(id);
-        return trackedItemMapper.toResponse(item);
-    }
-
-    public List<TrackedItemResponse> getItemsForTab(String tab) {
-        if (ItemStatus.IN_GRADING.name().equals(tab)) {
-            List<TrackedItem> items = itemRepo.findByStatus(ItemStatus.IN_GRADING.name());
-            return trackedItemMapper.toResponseList(items);
-        }
-        List<TrackedItem> items = itemRepo.findByPurpose(tab);
-        return trackedItemMapper.toResponseList(items);
-    }
-
     public String update(Long id, UpdateInventoryRequest request) {
         TrackedItem item = findById(id);
         trackedItemMapper.updateEntity(request, item);
 
-        if (ItemType.GRADED_CARD.name().equals(item.getItemType())) {
-            updateGradedDetails(item, request);
+        if (item.getItemType() == ItemType.GRADED_CARD) {
+            if (item.getGradedDetails() == null) {
+                item.setGradedDetails(new GradedDetails());
+            }
+            gradedDetailsMapper.updateFromRequest(request, item.getGradedDetails());
         }
 
-        itemRepo.save(item);
-        return item.getPurpose();
+        return item.getPurpose().name();
     }
 
     public String delete(Long id) {
         TrackedItem item = findById(id);
-        String purpose = item.getPurpose();
-        item.setStatus(ItemStatus.ARCHIVED.name());
-        itemRepo.save(item);
+        String purpose = item.getPurpose().name();
+        itemRepo.delete(item);
         return purpose;
     }
 
@@ -114,13 +83,5 @@ public class InventoryService {
         if (!row.getSealedProductId().isEmpty()) {
             item.setSealedProduct(sealedRepo.findById(row.getSealedProductId()).orElse(null));
         }
-    }
-
-    private void updateGradedDetails(TrackedItem item, UpdateInventoryRequest request) {
-        double existingUpcharge = item.getGradedDetails() != null
-                ? item.getGradedDetails().getGradingUpcharge() : 0;
-        GradedDetails details = gradedDetailsMapper.fromUpdateRequest(request);
-        details.setGradingUpcharge(existingUpcharge);
-        item.setGradedDetails(details);
     }
 }

@@ -1,10 +1,11 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.inventory.CreateInventoryRequest;
-import com.collectingwithzak.dto.inventory.InventoryItemRow;
-import com.collectingwithzak.dto.inventory.TrackedItemResponse;
-import com.collectingwithzak.dto.inventory.UpdateInventoryRequest;
-import com.collectingwithzak.dto.lot.SnapshotItem;
+import com.collectingwithzak.dto.request.CreateInventoryRequest;
+import com.collectingwithzak.dto.request.InventoryItemRow;
+import com.collectingwithzak.dto.request.SnapshotItem;
+import com.collectingwithzak.dto.request.UpdateInventoryRequest;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
+import com.collectingwithzak.entity.LotPurchase;
 import com.collectingwithzak.entity.TrackedItem;
 import org.mapstruct.*;
 
@@ -50,8 +51,12 @@ public interface TrackedItemMapper {
     TrackedItem fromSnapshotRow(InventoryItemRow row, CreateInventoryRequest request);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-    @Mapping(source = "name", target = "manualNameOverride")
-    @Mapping(source = "marketPrice", target = "marketValueAtPurchase")
-    @Mapping(target = "costBasis", ignore = true)
-    TrackedItem fromSnapshotItem(SnapshotItem item);
+    @Mapping(source = "item.name", target = "manualNameOverride")
+    @Mapping(source = "item.marketPrice", target = "marketValueAtPurchase")
+    @Mapping(target = "costBasis", expression = "java(item.getOffered() / item.getQty())")
+    @Mapping(source = "lot.purchaseDate", target = "acquisitionDate")
+    @Mapping(source = "lot", target = "lotPurchase")
+    @Mapping(target = "purpose", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    TrackedItem fromSnapshotItem(SnapshotItem item, LotPurchase lot);
 }

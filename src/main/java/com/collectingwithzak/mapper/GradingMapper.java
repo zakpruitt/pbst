@@ -1,7 +1,7 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.grading.GradingRequest;
-import com.collectingwithzak.dto.grading.GradingSubmissionResponse;
+import com.collectingwithzak.dto.request.GradingRequest;
+import com.collectingwithzak.dto.response.GradingSubmissionResponse;
 import com.collectingwithzak.entity.GradingSubmission;
 import org.mapstruct.*;
 
@@ -19,8 +19,11 @@ public interface GradingMapper {
     List<GradingSubmissionResponse> toResponseList(List<GradingSubmission> entities);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    @Mapping(target = "status", constant = "PREPPING")
+    @Mapping(target = "costPerCard", expression = "java(request.getItemIds().isEmpty() ? 0 : request.getSubmissionCost() / request.getItemIds().size())")
     GradingSubmission toEntity(GradingRequest request);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    @Mapping(target = "costPerCard", expression = "java(request.getItemIds().isEmpty() ? 0 : request.getSubmissionCost() / request.getItemIds().size())")
     void updateEntity(GradingRequest request, @MappingTarget GradingSubmission entity);
 }

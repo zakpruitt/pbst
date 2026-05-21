@@ -1,12 +1,13 @@
 package com.collectingwithzak.mapper;
 
-import com.collectingwithzak.dto.grading.GradingItemRequest;
-import com.collectingwithzak.dto.inventory.UpdateInventoryRequest;
-import com.collectingwithzak.dto.lot.SnapshotItem;
+import com.collectingwithzak.dto.request.GradingItemRequest;
+import com.collectingwithzak.dto.request.SnapshotItem;
+import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.entity.GradedDetails;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface GradedDetailsMapper {
@@ -20,4 +21,7 @@ public interface GradedDetailsMapper {
 
     @Mapping(target = "gradingUpcharge", ignore = true)
     GradedDetails fromUpdateRequest(UpdateInventoryRequest request);
+
+    @Mapping(target = "gradingUpcharge", ignore = true)
+    void updateFromRequest(UpdateInventoryRequest request, @MappingTarget GradedDetails details);
 }

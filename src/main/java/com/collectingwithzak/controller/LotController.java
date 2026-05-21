@@ -5,14 +5,15 @@ import com.collectingwithzak.dto.request.LotRequest;
 import com.collectingwithzak.dto.request.SnapshotItem;
 import com.collectingwithzak.dto.response.LotResponse;
 import com.collectingwithzak.entity.enums.LotAction;
-import com.collectingwithzak.service.render.LotRenderService;
 import com.collectingwithzak.service.LotService;
+import com.collectingwithzak.service.render.LotRenderService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/lots")

@@ -61,7 +61,7 @@ public class LotService {
             if (!item.isTracked()) continue;
 
             TrackedItem trackedItem = trackedItemMapper.fromSnapshotItem(item, lot);
-Me
+
             if (!item.getPokemonCardId().isEmpty()) {
                 trackedItem.setPokemonCard(cardRepo.findById(item.getPokemonCardId()).orElse(null));
             }

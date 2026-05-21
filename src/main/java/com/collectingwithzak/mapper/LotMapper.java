@@ -1,7 +1,6 @@
 package com.collectingwithzak.mapper;
 
 import com.collectingwithzak.dto.request.LotRequest;
-import com.collectingwithzak.dto.request.SnapshotItem;
 import com.collectingwithzak.dto.response.LotResponse;
 import com.collectingwithzak.entity.LotPurchase;
 import org.mapstruct.Mapper;

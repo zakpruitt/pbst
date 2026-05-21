@@ -8,8 +8,8 @@ import com.collectingwithzak.dto.response.GradingSubmissionResponse;
 import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.enums.GradingAction;
 import com.collectingwithzak.entity.enums.ItemType;
-import com.collectingwithzak.service.render.GradingRenderService;
 import com.collectingwithzak.service.GradingService;
+import com.collectingwithzak.service.render.GradingRenderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -87,8 +87,8 @@ public class GradingController {
     @PostMapping(value = "/{id}/status", consumes = "application/json")
     @ResponseBody
     public ResponseEntity<Void> updateStatusJson(@PathVariable Long id,
-                                                  @RequestParam("action") GradingAction action,
-                                                  @Valid @RequestBody List<GradingItemRequest> grades) {
+                                                 @RequestParam("action") GradingAction action,
+                                                 @Valid @RequestBody List<GradingItemRequest> grades) {
         gradingService.updateStatus(id, action, grades);
         return ResponseEntity.noContent().build();
     }

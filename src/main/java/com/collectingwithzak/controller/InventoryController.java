@@ -1,13 +1,12 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.request.InventoryItemRow;
 import com.collectingwithzak.dto.request.CreateInventoryRequest;
+import com.collectingwithzak.dto.request.InventoryItemRow;
 import com.collectingwithzak.dto.request.UpdateInventoryRequest;
 import com.collectingwithzak.dto.response.TrackedItemResponse;
-import com.collectingwithzak.service.render.InventoryRenderService;
 import com.collectingwithzak.service.InventoryService;
+import com.collectingwithzak.service.render.InventoryRenderService;
 import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

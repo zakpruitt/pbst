@@ -1,7 +1,7 @@
 package com.collectingwithzak.repository;
 
-import com.collectingwithzak.dto.common.LabeledStat;
 import com.collectingwithzak.dto.common.InventoryTotals;
+import com.collectingwithzak.dto.common.LabeledStat;
 import com.collectingwithzak.entity.TrackedItem;
 import com.collectingwithzak.entity.enums.ItemStatus;
 import com.collectingwithzak.entity.enums.Purpose;
@@ -67,7 +67,7 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
     default List<LabeledStat> countByItemType() {
         return countByItemTypeRaw().stream()
                 .map(row -> new LabeledStat(
-                        (String) row[0],
+                        row[0],
                         ((Number) row[1]).longValue()))
                 .toList();
     }

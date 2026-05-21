@@ -9,11 +9,7 @@ import com.collectingwithzak.dto.response.VinceLedger;
 import com.collectingwithzak.entity.enums.ItemStatus;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.mapper.SaleMapper;
-import com.collectingwithzak.repository.GradingSubmissionRepository;
-import com.collectingwithzak.repository.LotPurchaseRepository;
-import com.collectingwithzak.repository.SaleRepository;
-import com.collectingwithzak.repository.TrackedItemRepository;
-import com.collectingwithzak.repository.VincePaymentRepository;
+import com.collectingwithzak.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -105,7 +101,7 @@ public class DashboardRenderService {
     }
 
     private List<Double> fillRevenueSeries(List<String> labels, Map<String, MonthlyRevenue> data,
-                                            ToDoubleFunction<MonthlyRevenue> extractor) {
+                                           ToDoubleFunction<MonthlyRevenue> extractor) {
         return labels.stream()
                 .map(label -> {
                     MonthlyRevenue revenue = data.get(label);

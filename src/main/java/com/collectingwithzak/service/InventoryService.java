@@ -70,7 +70,8 @@ public class InventoryService {
 
     private List<InventoryItemRow> parseSnapshot(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<>() {});
+            return objectMapper.readValue(json, new TypeReference<>() {
+            });
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid items snapshot JSON", e);
         }

@@ -5,8 +5,6 @@ import com.collectingwithzak.dto.response.GradingSubmissionResponse;
 import com.collectingwithzak.entity.GradingSubmission;
 import org.mapstruct.*;
 
-
-
 import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,

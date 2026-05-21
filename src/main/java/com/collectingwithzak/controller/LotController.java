@@ -1,9 +1,11 @@
 package com.collectingwithzak.controller;
 
 import com.collectingwithzak.dto.common.MonthGroup;
-import com.collectingwithzak.dto.lot.SnapshotItem;
-import com.collectingwithzak.dto.lot.LotRequest;
-import com.collectingwithzak.dto.lot.LotResponse;
+import com.collectingwithzak.dto.request.LotRequest;
+import com.collectingwithzak.dto.request.SnapshotItem;
+import com.collectingwithzak.dto.response.LotResponse;
+import com.collectingwithzak.entity.enums.LotAction;
+import com.collectingwithzak.service.render.LotRenderService;
 import com.collectingwithzak.service.LotService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -17,17 +19,18 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LotController {
 
+    private final LotRenderService lotRenderService;
     private final LotService lotService;
 
     @GetMapping
-    public String index(Model model) {
-        List<LotResponse> lots = lotService.getAll();
+    public String renderIndex(Model model) {
+        List<LotResponse> lots = lotRenderService.getAll();
         model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotResponse::getPurchaseDate, LotResponse::getTotalCost));
         return "lots/index";
     }
 
     @GetMapping("/new")
-    public String newForm(Model model) {
+    public String renderNewForm(Model model) {
         return "lots/new";
     }
 
@@ -38,16 +41,16 @@ public class LotController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        LotResponse lot = lotService.getById(id);
+    public String renderDetail(@PathVariable Long id, Model model) {
+        LotResponse lot = lotRenderService.getById(id);
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/detail";
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        LotResponse lot = lotService.getById(id);
+    public String renderEditForm(@PathVariable Long id, Model model) {
+        LotResponse lot = lotRenderService.getById(id);
         model.addAttribute("lot", lot);
         model.addAttribute("snapshotItems", lot.getSnapshotItems());
         return "lots/edit";
@@ -66,7 +69,7 @@ public class LotController {
     }
 
     @PostMapping("/{id}/status")
-    public String updateStatus(@PathVariable Long id, @RequestParam String action) {
+    public String updateStatus(@PathVariable Long id, @RequestParam LotAction action) {
         lotService.updateStatus(id, action);
         return "redirect:/lots/" + id;
     }

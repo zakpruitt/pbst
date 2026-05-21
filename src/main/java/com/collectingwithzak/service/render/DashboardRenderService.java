@@ -1,9 +1,11 @@
-package com.collectingwithzak.service;
+package com.collectingwithzak.service.render;
 
-import com.collectingwithzak.dto.dashboard.DashboardData;
-import com.collectingwithzak.dto.dashboard.MonthlyRevenue;
-import com.collectingwithzak.dto.inventory.InventoryTotals;
-import com.collectingwithzak.dto.sale.RangeTotals;
+import com.collectingwithzak.dto.common.InventoryTotals;
+import com.collectingwithzak.dto.common.MonthlyRevenue;
+import com.collectingwithzak.dto.common.RangeTotals;
+import com.collectingwithzak.dto.common.VincePaymentTotals;
+import com.collectingwithzak.dto.page.DashboardData;
+import com.collectingwithzak.dto.response.VinceLedger;
 import com.collectingwithzak.entity.enums.ItemStatus;
 import com.collectingwithzak.mapper.LotMapper;
 import com.collectingwithzak.mapper.SaleMapper;
@@ -11,6 +13,7 @@ import com.collectingwithzak.repository.GradingSubmissionRepository;
 import com.collectingwithzak.repository.LotPurchaseRepository;
 import com.collectingwithzak.repository.SaleRepository;
 import com.collectingwithzak.repository.TrackedItemRepository;
+import com.collectingwithzak.repository.VincePaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class DashboardService {
+public class DashboardRenderService {
 
     private static final int TIMELINE_MONTHS = 12;
     private static final int TOP_N = 5;
@@ -39,9 +42,9 @@ public class DashboardService {
     private final SaleRepository saleRepo;
     private final TrackedItemRepository itemRepo;
     private final GradingSubmissionRepository gradingRepo;
+    private final VincePaymentRepository paymentRepo;
     private final SaleMapper saleMapper;
     private final LotMapper lotMapper;
-    private final VincePaymentService vincePaymentService;
 
     public DashboardData getDashboardData() {
         RangeTotals confirmed = saleRepo.getConfirmedTotals();
@@ -53,6 +56,10 @@ public class DashboardService {
                 .collect(Collectors.toMap(MonthlyRevenue::getMonth, Function.identity()));
         Map<String, Double> spendByMonth = lotRepo.getMonthlySpend(TIMELINE_MONTHS);
 
+        RangeTotals vinceSalesTotals = saleRepo.getVinceTotals();
+        VincePaymentTotals paymentTotals = paymentRepo.getTotals();
+        VinceLedger vinceLedger = VinceLedger.from(vinceSalesTotals, paymentTotals.getPaidOut(), paymentTotals.getVinceOwes());
+
         return DashboardData.builder()
                 .totalSpent(totalSpent)
                 .totalGross(confirmed.getGross())
@@ -61,8 +68,8 @@ public class DashboardService {
                 .margin(confirmed.getNet() - totalSpent)
                 .salesCount(confirmed.getCount())
                 .avgSale(confirmed.getCount() > 0 ? confirmed.getNet() / confirmed.getCount() : 0)
-                .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING.name()))
-                .inventoryCount(itemRepo.countByStatus(ItemStatus.AVAILABLE.name()))
+                .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING))
+                .inventoryCount(itemRepo.countByStatus(ItemStatus.AVAILABLE))
                 .inventoryCost(invTotals.getCost())
                 .inventoryMarket(invTotals.getMarket())
                 .totals7(saleRepo.getTotalsSince(LocalDate.now().minusDays(7)))
@@ -78,7 +85,7 @@ public class DashboardService {
                 .topSales(saleMapper.toResponseList(saleRepo.findTopByNet(PageRequest.of(0, TOP_N))))
                 .recentSales(saleMapper.toResponseList(saleRepo.findRecent(PageRequest.of(0, TOP_N))))
                 .recentLots(lotMapper.toResponseList(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, TOP_N))))
-                .vinceLedger(vincePaymentService.getLedger())
+                .vinceLedger(vinceLedger)
                 .build();
     }
 

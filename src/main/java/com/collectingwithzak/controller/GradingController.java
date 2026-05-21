@@ -1,13 +1,14 @@
 package com.collectingwithzak.controller;
 
 import com.collectingwithzak.dto.common.MonthGroup;
-import com.collectingwithzak.dto.grading.GradingItemRequest;
-import com.collectingwithzak.dto.grading.GradingRequest;
-import com.collectingwithzak.dto.grading.GradingSubmissionResponse;
-import com.collectingwithzak.dto.inventory.TrackedItemFilters;
-import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.dto.common.TrackedItemFilters;
+import com.collectingwithzak.dto.request.GradingItemRequest;
+import com.collectingwithzak.dto.request.GradingRequest;
+import com.collectingwithzak.dto.response.GradingSubmissionResponse;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.enums.GradingAction;
 import com.collectingwithzak.entity.enums.ItemType;
+import com.collectingwithzak.service.render.GradingRenderService;
 import com.collectingwithzak.service.GradingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,34 +26,35 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GradingController {
 
+    private final GradingRenderService gradingRenderService;
     private final GradingService gradingService;
 
     @GetMapping
-    public String index(Model model) {
-        List<GradingSubmissionResponse> submissions = gradingService.getAll();
+    public String renderIndex(Model model) {
+        List<GradingSubmissionResponse> submissions = gradingRenderService.getAll();
         model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
         return "grading/index";
     }
 
     @GetMapping("/new")
-    public String newForm(Model model) {
-        List<TrackedItemResponse> items = gradingService.getInventoryItems();
+    public String renderNewForm(Model model) {
+        List<TrackedItemResponse> items = gradingRenderService.getInventoryItems();
         model.addAttribute("rawItems", TrackedItemFilters.filterByType(items, ItemType.RAW_CARD));
         model.addAttribute("gradedItems", TrackedItemFilters.filterByType(items, ItemType.GRADED_CARD));
         return "grading/new";
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
+    public String renderDetail(@PathVariable Long id, Model model) {
+        GradingSubmissionResponse submission = gradingRenderService.getByIdWithItems(id);
         model.addAttribute("submission", submission);
         return "grading/detail";
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        GradingSubmissionResponse submission = gradingService.getByIdWithItems(id);
-        List<TrackedItemResponse> available = gradingService.getAvailableItemsForSubmission(id);
+    public String renderEditForm(@PathVariable Long id, Model model) {
+        GradingSubmissionResponse submission = gradingRenderService.getByIdWithItems(id);
+        List<TrackedItemResponse> available = gradingRenderService.getAvailableItemsForSubmission(id);
         Set<Long> attachedIds = submission.getItems().stream()
                 .map(TrackedItemResponse::getId)
                 .collect(Collectors.toSet());

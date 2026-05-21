@@ -1,14 +1,14 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.inventory.TrackedItemFilters;
-import com.collectingwithzak.dto.sale.CreateSaleRequest;
-import com.collectingwithzak.dto.sale.SaleResponse;
-import com.collectingwithzak.dto.inventory.TrackedItemResponse;
-import com.collectingwithzak.dto.vince.CreateVincePaymentRequest;
+import com.collectingwithzak.dto.common.TrackedItemFilters;
+import com.collectingwithzak.dto.request.CreateSaleRequest;
+import com.collectingwithzak.dto.request.CreateVincePaymentRequest;
+import com.collectingwithzak.dto.response.SaleResponse;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
 import com.collectingwithzak.entity.enums.ItemType;
 import com.collectingwithzak.entity.enums.SaleAction;
+import com.collectingwithzak.service.render.SaleRenderService;
 import com.collectingwithzak.service.SaleService;
-import com.collectingwithzak.service.VincePaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,40 +25,40 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SaleController {
 
+    private final SaleRenderService saleRenderService;
     private final SaleService saleService;
-    private final VincePaymentService vincePaymentService;
 
     @GetMapping
-    public String index(@RequestParam(defaultValue = "mine") String view, Model model) {
+    public String renderIndex(@RequestParam(defaultValue = "mine") String view, Model model) {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
             view = "mine";
         }
-        model.addAttribute("data", saleService.getIndexData(view));
+        model.addAttribute("data", saleRenderService.getIndexData(view));
         return "sales/index";
     }
 
     @GetMapping("/new")
-    public String newForm(Model model) {
+    public String renderNewForm(Model model) {
         return "sales/new";
     }
 
     @GetMapping("/staging")
-    public String staging(Model model) {
-        model.addAttribute("sales", saleService.getStaged());
+    public String renderStaging(Model model) {
+        model.addAttribute("sales", saleRenderService.getStaged());
         return "sales/staging";
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        SaleResponse sale = saleService.getByIdWithItems(id);
+    public String renderDetail(@PathVariable Long id, Model model) {
+        SaleResponse sale = saleRenderService.getByIdWithItems(id);
         model.addAttribute("sale", sale);
         return "sales/detail";
     }
 
     @GetMapping("/{id}/confirm")
-    public String confirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
-        SaleResponse sale = saleService.getByIdWithItems(id);
-    List<TrackedItemResponse> available = saleService.getAvailableItemsForSale(id);
+    public String renderConfirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
+        SaleResponse sale = saleRenderService.getByIdWithItems(id);
+        List<TrackedItemResponse> available = saleRenderService.getAvailableItemsForSale(id);
         Set<Long> attachedIds = sale.getItems().stream()
                 .map(TrackedItemResponse::getId)
                 .collect(Collectors.toSet());
@@ -79,7 +79,7 @@ public class SaleController {
 
     @PostMapping("/vince/payments")
     public String createVincePayment(@Valid CreateVincePaymentRequest request) {
-        vincePaymentService.create(request);
+        saleService.createVincePayment(request);
         return "redirect:/sales?view=vince";
     }
 
@@ -126,7 +126,7 @@ public class SaleController {
 
     @PostMapping("/vince/payments/{id}/delete")
     public String deleteVincePayment(@PathVariable Long id) {
-        vincePaymentService.delete(id);
+        saleService.deleteVincePayment(id);
         return "redirect:/sales?view=vince";
     }
 

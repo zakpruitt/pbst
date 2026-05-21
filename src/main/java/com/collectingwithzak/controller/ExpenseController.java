@@ -1,7 +1,8 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.expense.CreateExpenseRequest;
-import com.collectingwithzak.dto.expense.ExpenseIndexData;
+import com.collectingwithzak.dto.request.CreateExpenseRequest;
+import com.collectingwithzak.dto.page.ExpenseIndexData;
+import com.collectingwithzak.service.render.ExpenseRenderService;
 import com.collectingwithzak.service.ExpenseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,17 +18,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class ExpenseController {
 
+    private final ExpenseRenderService expenseRenderService;
     private final ExpenseService expenseService;
 
     @GetMapping
-    public String index(Model model) {
-        ExpenseIndexData data = expenseService.getIndexData();
+    public String renderIndex(Model model) {
+        ExpenseIndexData data = expenseRenderService.getIndexData();
         model.addAttribute("data", data);
         return "expenses/index";
     }
 
     @GetMapping("/new")
-    public String newExpense() {
+    public String renderNewForm() {
         return "expenses/new";
     }
 

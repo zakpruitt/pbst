@@ -1,9 +1,10 @@
 package com.collectingwithzak.controller;
 
-import com.collectingwithzak.dto.inventory.InventoryItemRow;
-import com.collectingwithzak.dto.inventory.CreateInventoryRequest;
-import com.collectingwithzak.dto.inventory.UpdateInventoryRequest;
-import com.collectingwithzak.dto.inventory.TrackedItemResponse;
+import com.collectingwithzak.dto.request.InventoryItemRow;
+import com.collectingwithzak.dto.request.CreateInventoryRequest;
+import com.collectingwithzak.dto.request.UpdateInventoryRequest;
+import com.collectingwithzak.dto.response.TrackedItemResponse;
+import com.collectingwithzak.service.render.InventoryRenderService;
 import com.collectingwithzak.service.InventoryService;
 import jakarta.validation.Valid;
 
@@ -17,13 +18,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class InventoryController {
 
+    private final InventoryRenderService inventoryRenderService;
     private final InventoryService inventoryService;
 
     @GetMapping
-    public String index(@RequestParam(defaultValue = "INVENTORY") String purpose,
-                        @RequestHeader(value = "HX-Request", required = false) String hx,
-                        Model model) {
-        model.addAttribute("data", inventoryService.getIndexData(purpose));
+    public String renderIndex(@RequestParam(defaultValue = "INVENTORY") String purpose,
+                              @RequestHeader(value = "HX-Request", required = false) String hx,
+                              Model model) {
+        model.addAttribute("data", inventoryRenderService.getIndexData(purpose));
         if (hx != null) {
             return "inventory/index :: inventory-page";
         }
@@ -31,7 +33,7 @@ public class InventoryController {
     }
 
     @GetMapping("/new")
-    public String newForm(Model model) {
+    public String renderNewForm(Model model) {
         return "inventory/new";
     }
 
@@ -42,8 +44,8 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        TrackedItemResponse item = inventoryService.getById(id);
+    public String renderEditForm(@PathVariable Long id, Model model) {
+        TrackedItemResponse item = inventoryRenderService.getById(id);
         model.addAttribute("item", item);
         return "inventory/edit";
     }

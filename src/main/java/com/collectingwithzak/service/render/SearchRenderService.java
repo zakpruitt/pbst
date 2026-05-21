@@ -1,8 +1,9 @@
-package com.collectingwithzak.service;
+package com.collectingwithzak.service.render;
 
-import com.collectingwithzak.dto.inventory.PokemonCardResponse;
-import com.collectingwithzak.dto.inventory.SealedProductResponse;
-import com.collectingwithzak.mapper.SearchMapper;
+import com.collectingwithzak.dto.response.PokemonCardResponse;
+import com.collectingwithzak.dto.response.SealedProductResponse;
+import com.collectingwithzak.mapper.PokemonCardMapper;
+import com.collectingwithzak.mapper.SealedProductMapper;
 import com.collectingwithzak.repository.PokemonCardRepository;
 import com.collectingwithzak.repository.SealedProductRepository;
 import com.collectingwithzak.repository.SearchSpecification;
@@ -17,7 +18,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SearchService {
+public class SearchRenderService {
 
     private static final List<String> CARD_SEARCH_FIELDS = List.of(
             "name",
@@ -31,17 +32,18 @@ public class SearchService {
 
     private final PokemonCardRepository cardRepo;
     private final SealedProductRepository sealedRepo;
-    private final SearchMapper searchMapper;
+    private final PokemonCardMapper cardMapper;
+    private final SealedProductMapper sealedMapper;
 
     public List<PokemonCardResponse> searchCards(String query) {
         if (!StringUtils.hasText(query)) return List.of();
-        return searchMapper.cardsToSearchResults(
+        return cardMapper.toResponseList(
                 cardRepo.findAll(SearchSpecification.multiTermLike(query, CARD_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());
     }
 
     public List<SealedProductResponse> searchSealed(String query) {
         if (!StringUtils.hasText(query)) return List.of();
-        return searchMapper.sealedToSearchResults(
+        return sealedMapper.toResponseList(
                 sealedRepo.findAll(SearchSpecification.multiTermLike(query, SEALED_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());
     }
 }

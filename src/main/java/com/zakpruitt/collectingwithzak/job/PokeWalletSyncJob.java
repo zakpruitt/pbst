@@ -81,6 +81,9 @@ public class PokeWalletSyncJob {
 
         var entities = cards.stream()
                 .filter(c -> c.getCardInfo() != null && c.getCardInfo().getCardNumber() != null)
+                .filter(c -> c.getTcgplayer() != null
+                        && c.getTcgplayer().getUrl() != null
+                        && c.getTcgplayer().getUrl().contains("/product/"))
                 .map(cardMapper::fromPokeWallet)
                 .toList();
         cardRepo.saveAll(entities);

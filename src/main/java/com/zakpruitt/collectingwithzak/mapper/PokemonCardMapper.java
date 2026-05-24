@@ -35,6 +35,14 @@ public interface PokemonCardMapper {
         if (card.getSetName() == null) card.setSetName("");
         if (card.getRarity() == null) card.setRarity("");
 
+        String name = card.getName();
+        if (name != null) {
+            int lastDash = name.lastIndexOf(" - ");
+            if (lastDash > 0) {
+                card.setName(name.substring(0, lastDash).trim());
+            }
+        }
+
         TcgPlayer tcg = dto.getTcgplayer();
         if (tcg == null) return;
 

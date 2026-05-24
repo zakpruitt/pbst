@@ -1,6 +1,5 @@
 package com.zakpruitt.collectingwithzak.client;
 
-import com.collectingwithzak.dto.ebay.*;
 import com.zakpruitt.collectingwithzak.dto.ebay.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

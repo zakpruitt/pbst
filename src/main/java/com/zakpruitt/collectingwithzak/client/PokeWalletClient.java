@@ -2,6 +2,8 @@ package com.zakpruitt.collectingwithzak.client;
 
 import com.zakpruitt.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse;
 import com.zakpruitt.collectingwithzak.dto.pokewallet.PokeWalletSearchResponse.PokeWalletCard;
+import com.zakpruitt.collectingwithzak.dto.pokewallet.PokeWalletSetsResponse;
+import com.zakpruitt.collectingwithzak.dto.pokewallet.PokeWalletSetsResponse.PokeWalletSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,8 +29,17 @@ public class PokeWalletClient {
     @Value("${pokewallet.base-url}")
     private String baseUrl;
 
-    public boolean isConfigured() {
-        return apiKey != null && !apiKey.isBlank() && baseUrl != null && !baseUrl.isBlank();
+    public List<PokeWalletSet> fetchSets() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-API-Key", apiKey);
+        headers.set("Accept", "application/json");
+
+        var response = restTemplate.exchange(baseUrl + "/sets", HttpMethod.GET,
+                new HttpEntity<>(headers), PokeWalletSetsResponse.class);
+
+        var body = response.getBody();
+        if (body == null || body.getData() == null) return List.of();
+        return body.getData();
     }
 
     public List<PokeWalletCard> fetchAllCards(String query) {

@@ -99,38 +99,57 @@ function serializeLotSnapshot() {
     let totalCost = 0;
     let totalEmv = 0;
 
-    const rows = collectItemRows().map((d) => {
+    const items = collectItemRows().map((d) => {
         const offered = d.qty * d.market * d.pct / 100;
         totalCost += offered;
         totalEmv += d.qty * d.market;
 
         return {
             name: d.name,
-            pokemon_card_id: d.cardId,
-            set_name: d.setName,
-            card_number: d.cardNumber,
-            rarity: d.rarity,
-            image_url: d.imageUrl,
+            pokemon_card_id: d.cardId || null,
+            set_name: d.setName || null,
+            card_number: d.cardNumber || null,
+            rarity: d.rarity || null,
+            image_url: d.imageUrl || null,
             qty: d.qty,
             market_price: d.market,
             percentage: d.pct,
             offered,
             item_type: d.type,
             is_tracked: d.tracked,
-            purpose: d.tracked ? 'INVENTORY' : '',
-            grading_company: d.gradingCompany,
-            grade: d.grade,
+            purpose: d.tracked ? 'INVENTORY' : null,
+            grading_company: d.gradingCompany || null,
+            grade: d.grade || null,
         };
     });
 
-    return { rows, totalCost, totalEmv };
+    return { items, totalCost, totalEmv };
 }
 
-document.getElementById('lot-form').addEventListener('submit', () => {
+document.getElementById('lot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
     const snapshot = serializeLotSnapshot();
-    document.getElementById('snapshot-input').value = JSON.stringify(snapshot.rows);
-    document.getElementById('total-cost-input').value = snapshot.totalCost.toFixed(2);
-    document.getElementById('emv-input').value = snapshot.totalEmv.toFixed(2);
+
+    const body = {
+        sellerName: formData.get('sellerName'),
+        purchaseDate: formData.get('purchaseDate'),
+        description: formData.get('description') || null,
+        totalCost: snapshot.totalCost,
+        estimatedMarketValue: snapshot.totalEmv,
+        items: snapshot.items,
+    };
+
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+        window.location.href = await response.text();
+    }
 });
 
 document.addEventListener('alpine:init', () => {

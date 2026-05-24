@@ -100,15 +100,33 @@ function serializeInventorySnapshot() {
         itemType: d.type,
         costBasis: d.costBasis || 0,
         marketValue: d.market || 0,
-        pokemonCardId: d.cardId || '',
-        sealedProductId: d.sealedId || '',
-        gradingCompany: d.gradingCompany || '',
-        grade: d.grade || '',
+        pokemonCardId: d.cardId || null,
+        sealedProductId: d.sealedId || null,
+        gradingCompany: d.gradingCompany || null,
+        grade: d.grade || null,
     }));
 }
 
-document.getElementById('inventory-form').addEventListener('submit', () => {
-    document.getElementById('items-snapshot-input').value = JSON.stringify(serializeInventorySnapshot());
+document.getElementById('inventory-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const body = {
+        items: serializeInventorySnapshot(),
+        purpose: formData.get('purpose'),
+        acquisitionDate: formData.get('acquisitionDate'),
+    };
+
+    const response = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+        window.location.href = await response.text();
+    }
 });
 
 document.addEventListener('alpine:init', () => {

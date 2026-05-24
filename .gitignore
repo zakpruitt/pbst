@@ -21,4 +21,5 @@ Thumbs.db
 
 # Local properties (contains secrets)
 src/main/resources/application-local.properties
+src/main/resources/application-fullsynclocal.properties
 /.claude/

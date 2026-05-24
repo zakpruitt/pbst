@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.collectingwithzak</groupId>
+    <groupId>com.zakpruitt</groupId>
     <artifactId>collectingwithzak</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>collectingwithzak</name>

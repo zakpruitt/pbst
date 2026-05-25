@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles("fullsynclocal")
+@ActiveProfiles("local")
 @Disabled("Manual runner — remove @Disabled to sync all eng/jap sets against a live DB")
 class FullSyncTest {
 

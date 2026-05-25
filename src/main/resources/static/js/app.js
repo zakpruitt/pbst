@@ -23,3 +23,12 @@
     }
   });
 })();
+
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (!form.checkValidity()) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  form.classList.add('was-validated');
+}, true);

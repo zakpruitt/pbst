@@ -8,14 +8,14 @@
 <a href="/inventory" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Inventory</a>
 <h4 class="mb-4">Add Items</h4>
 
-<form id="inventory-form" method="POST" action="/inventory">
+<form id="inventory-form" method="POST" action="/inventory" novalidate>
     <div class="card mb-3">
         <div class="card-body">
             <h6 class="card-title mb-3">Acquisition</h6>
             <div class="row g-2">
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Acquisition Date</label>
-                    <input name="acquisitionDate" type="date" class="form-control form-control-sm">
+                    <input name="acquisitionDate" type="date" class="form-control form-control-sm" required>
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Purpose</label>

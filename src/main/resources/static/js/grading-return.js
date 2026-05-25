@@ -1,3 +1,9 @@
+document.addEventListener('input', function (e) {
+    if (e.target.classList.contains('grade-input')) {
+        e.target.classList.remove('is-invalid');
+    }
+});
+
 function collectGrades() {
     const grades = [];
 
@@ -13,6 +19,18 @@ function collectGrades() {
 }
 
 function recordReturn(submissionId) {
+    const inputs = document.querySelectorAll('.grade-input');
+    let valid = true;
+    inputs.forEach(function (input) {
+        if (!input.value.trim()) {
+            input.classList.add('is-invalid');
+            valid = false;
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    });
+    if (!valid) return;
+
     const grades = collectGrades();
 
     fetch('/grading/' + submissionId + '/status?action=RETURN', {

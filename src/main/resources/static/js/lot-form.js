@@ -42,7 +42,7 @@ function cardSearch() {
         async appendRow(params) {
             const html = await fetch('/lots/partials/row?' + params).then((r) => r.text());
             document.getElementById('items-list').insertAdjacentHTML('beforeend', html);
-            document.dispatchEvent(new CustomEvent('lot:changed'));
+            setTimeout(() => window.dispatchEvent(new CustomEvent('lot:changed')), 0);
         },
 
         onEnter() {
@@ -129,6 +129,8 @@ function serializeLotSnapshot() {
 document.getElementById('lot-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+    form.classList.add('was-validated');
+    if (!form.checkValidity()) return;
     const formData = new FormData(form);
     const snapshot = serializeLotSnapshot();
 
@@ -153,5 +155,5 @@ document.getElementById('lot-form').addEventListener('submit', async (e) => {
 });
 
 document.addEventListener('alpine:init', () => {
-    setTimeout(() => document.dispatchEvent(new CustomEvent('lot:changed')), 0);
+    setTimeout(() => window.dispatchEvent(new CustomEvent('lot:changed')), 0);
 });

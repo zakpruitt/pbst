@@ -57,7 +57,7 @@ function inventoryItemSearch() {
         async appendRow(params) {
             const html = await fetch('/inventory/partials/row?' + params).then((r) => r.text());
             document.getElementById('items-list').insertAdjacentHTML('beforeend', html);
-            document.dispatchEvent(new CustomEvent('inv:changed'));
+            setTimeout(() => window.dispatchEvent(new CustomEvent('inv:changed')), 0);
         },
 
         onEnter() {
@@ -110,6 +110,8 @@ function serializeInventorySnapshot() {
 document.getElementById('inventory-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+    form.classList.add('was-validated');
+    if (!form.checkValidity()) return;
     const formData = new FormData(form);
 
     const body = {
@@ -130,5 +132,5 @@ document.getElementById('inventory-form').addEventListener('submit', async (e) =
 });
 
 document.addEventListener('alpine:init', () => {
-    setTimeout(() => document.dispatchEvent(new CustomEvent('inv:changed')), 0);
+    setTimeout(() => window.dispatchEvent(new CustomEvent('inv:changed')), 0);
 });

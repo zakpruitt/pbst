@@ -8,7 +8,7 @@
 <a href="/lots" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Lots</a>
 <h4 class="mb-4">New Lot</h4>
 
-<form id="lot-form" method="POST" action="/lots">
+<form id="lot-form" method="POST" action="/lots" novalidate>
     <div class="card mb-3">
         <div class="card-body">
             <h6 class="card-title mb-3">Lot Details</h6>
@@ -55,11 +55,13 @@
         </div>
 
         <div class="card p-3 mb-3">
-            <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+            <div class="d-flex gap-4 text-muted small flex-wrap">
                 <span>EMV <strong class="text-body" x-text="'$' + totalEmv.toFixed(2)"></strong></span>
                 <span>Buying <strong class="text-success" x-text="'$' + totalBuying.toFixed(2)"></strong></span>
                 <span>Tracked EMV <strong class="text-body" x-text="'$' + trackedEmv.toFixed(2)"></strong></span>
                 <span>Untracked EMV <strong class="text-body" x-text="'$' + untrackedEmv.toFixed(2)"></strong></span>
+            </div>
+            <div class="d-flex gap-4 text-muted small align-items-center mt-2">
                 <span>Est. Flip <strong :class="estFlipNet >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipNet.toFixed(2)"></strong> <span class="text-muted" style="font-size:.7rem">(-12% fees)</span></span>
                 <span>Est. Flip (gross) <strong :class="estFlipGross >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipGross.toFixed(2)"></strong></span>
                 <button type="submit" class="btn btn-success btn-sm ms-auto">Save Lot</button>

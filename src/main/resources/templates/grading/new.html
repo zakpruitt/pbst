@@ -8,7 +8,8 @@
 <a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Grading</a>
 <h4 class="mb-4">New Submission</h4>
 
-<form method="POST" action="/grading">
+<form method="POST" action="/grading" novalidate
+      onsubmit="if(!this.querySelector('input[name=itemIds]:checked')){alert('Select at least one item.');return false;}">
     <div class="card mb-3">
         <div class="card-body">
             <h6 class="card-title mb-3">Submission Details</h6>

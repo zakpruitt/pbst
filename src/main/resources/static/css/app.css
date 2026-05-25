@@ -241,7 +241,7 @@ h6 {
 
 /* Lot row */
 .lot-img-wrap {
-    width: 70px;
+    width: 90px;
     flex-shrink: 0;
     display: flex;
     justify-content: center;

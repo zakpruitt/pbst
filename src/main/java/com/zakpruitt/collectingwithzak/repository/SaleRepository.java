@@ -52,7 +52,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', sale_date), 'YYYY-MM') AS month, " +
             "COALESCE(SUM(gross_amount), 0) AS gross, COALESCE(SUM(net_amount), 0) AS net " +
-            "FROM Sale s WHERE s.status = 'CONFIRMED' " +
+            "FROM sales s WHERE s.status = 'CONFIRMED' " +
             "AND s.sale_date >= NOW() - make_interval(months => :months) " +
             "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlyRevenueRaw(int months);

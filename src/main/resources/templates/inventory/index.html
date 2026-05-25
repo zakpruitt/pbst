@@ -52,7 +52,7 @@
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Market</div>
-                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(totalMarket, 1, 2)}"></div>
+                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.totalMarket, 1, 2)}"></div>
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Items</div>
@@ -60,7 +60,7 @@
             </div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Gain/Loss</div>
-                <div class="fw-semibold" th:classappend="${data.data.totalMarket - data.totalCost >= 0 ? 'text-success' : 'text-danger'}"
+                <div class="fw-semibold" th:classappend="${data.totalMarket - data.totalCost >= 0 ? 'text-success' : 'text-danger'}"
                      th:text="'$' + ${#numbers.formatDecimal(data.totalMarket - data.totalCost, 1, 2)}"></div>
             </div>
         </div>

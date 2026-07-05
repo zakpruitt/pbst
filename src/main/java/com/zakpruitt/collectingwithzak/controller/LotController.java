@@ -32,7 +32,7 @@ public class LotController {
     }
 
     @GetMapping("/new")
-    public String renderNewForm(Model model) {
+    public String renderNewForm() {
         return "lots/new";
     }
 

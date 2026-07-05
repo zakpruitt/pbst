@@ -52,16 +52,11 @@ public class SaleService {
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
         Sale sale = findWithItemsById(saleId);
-        sale.getItems().forEach(item -> {
-            item.setSale(null);
-            item.setStatus(ItemStatus.AVAILABLE);
+        releaseItems(sale);
+        itemRepo.findAllById(itemIds).forEach(item -> {
+            item.setSale(sale);
+            item.setStatus(ItemStatus.SOLD);
         });
-        if (!itemIds.isEmpty()) {
-            itemRepo.findAllById(itemIds).forEach(item -> {
-                item.setSale(sale);
-                item.setStatus(ItemStatus.SOLD);
-            });
-        }
         sale.setStatus(SaleStatus.CONFIRMED);
     }
 
@@ -82,10 +77,7 @@ public class SaleService {
 
     public void delete(Long saleId) {
         Sale sale = findWithItemsById(saleId);
-        sale.getItems().forEach(item -> {
-            item.setSale(null);
-            item.setStatus(ItemStatus.AVAILABLE);
-        });
+        releaseItems(sale);
         saleRepo.delete(sale);
     }
 
@@ -99,12 +91,16 @@ public class SaleService {
 
     private void changeStatus(Long saleId, SaleStatus status, String attributedTo) {
         Sale sale = findWithItemsById(saleId);
+        releaseItems(sale);
+        sale.setStatus(status);
+        sale.setAttributedTo(attributedTo);
+    }
+
+    private void releaseItems(Sale sale) {
         sale.getItems().forEach(item -> {
             item.setSale(null);
             item.setStatus(ItemStatus.AVAILABLE);
         });
-        sale.setStatus(status);
-        sale.setAttributedTo(attributedTo);
     }
 
     private Sale findWithItemsById(Long saleId) {

@@ -18,10 +18,17 @@ public interface GradingMapper {
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(target = "status", constant = "PREPPING")
-    @Mapping(target = "costPerCard", expression = "java(request.getItemIds().isEmpty() ? 0 : request.getSubmissionCost() / request.getItemIds().size())")
+    @Mapping(target = "costPerCard", expression = "java(costPerCard(request))")
     GradingSubmission toEntity(GradingRequest request);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-    @Mapping(target = "costPerCard", expression = "java(request.getItemIds().isEmpty() ? 0 : request.getSubmissionCost() / request.getItemIds().size())")
+    @Mapping(target = "costPerCard", expression = "java(costPerCard(request))")
     void updateEntity(GradingRequest request, @MappingTarget GradingSubmission entity);
+
+    default double costPerCard(GradingRequest request) {
+        if (request.getItemIds().isEmpty() || request.getSubmissionCost() == null) {
+            return 0;
+        }
+        return request.getSubmissionCost() / request.getItemIds().size();
+    }
 }

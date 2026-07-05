@@ -31,38 +31,20 @@ public class GradingService {
     private final GradedDetailsMapper gradedDetailsMapper;
 
     public Long createWithItems(GradingRequest request) {
-        List<Long> itemIds = request.getItemIds();
         long count = gradingRepo.countByCompany(request.getCompany());
 
         GradingSubmission submission = gradingMapper.toEntity(request);
         submission.setSubmissionName(String.format("%s Submission #%d", request.getCompany(), count + 1));
         gradingRepo.save(submission);
 
-        if (!itemIds.isEmpty()) {
-            itemRepo.findAllById(itemIds).forEach(item -> {
-                item.setGradingSubmission(submission);
-                item.setStatus(ItemStatus.IN_GRADING);
-            });
-        }
-
+        attachItems(submission, request.getItemIds());
         return submission.getId();
     }
 
     public void update(Long id, GradingRequest request) {
         GradingSubmission submission = findWithItemsById(id);
-        submission.getItems().forEach(item -> {
-            item.setGradingSubmission(null);
-            item.setStatus(ItemStatus.AVAILABLE);
-        });
-
-        List<Long> itemIds = request.getItemIds();
-        if (!itemIds.isEmpty()) {
-            itemRepo.findAllById(itemIds).forEach(item -> {
-                item.setGradingSubmission(submission);
-                item.setStatus(ItemStatus.IN_GRADING);
-            });
-        }
-
+        releaseItems(submission);
+        attachItems(submission, request.getItemIds());
         gradingMapper.updateEntity(request, submission);
     }
 
@@ -79,11 +61,22 @@ public class GradingService {
 
     public void delete(Long id) {
         GradingSubmission submission = findWithItemsById(id);
+        releaseItems(submission);
+        gradingRepo.delete(submission);
+    }
+
+    private void attachItems(GradingSubmission submission, List<Long> itemIds) {
+        itemRepo.findAllById(itemIds).forEach(item -> {
+            item.setGradingSubmission(submission);
+            item.setStatus(ItemStatus.IN_GRADING);
+        });
+    }
+
+    private void releaseItems(GradingSubmission submission) {
         submission.getItems().forEach(item -> {
             item.setGradingSubmission(null);
             item.setStatus(ItemStatus.AVAILABLE);
         });
-        gradingRepo.delete(submission);
     }
 
     private void recordReturn(GradingSubmission submission, List<GradingItemRequest> grades) {

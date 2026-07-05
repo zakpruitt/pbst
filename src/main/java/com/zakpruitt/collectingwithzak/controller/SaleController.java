@@ -38,7 +38,7 @@ public class SaleController {
     }
 
     @GetMapping("/new")
-    public String renderNewForm(Model model) {
+    public String renderNewForm() {
         return "sales/new";
     }
 

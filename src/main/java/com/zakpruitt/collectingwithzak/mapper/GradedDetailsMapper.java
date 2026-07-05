@@ -20,8 +20,5 @@ public interface GradedDetailsMapper {
     GradedDetails fromSnapshotItem(SnapshotItem item);
 
     @Mapping(target = "gradingUpcharge", ignore = true)
-    GradedDetails fromUpdateRequest(UpdateInventoryRequest request);
-
-    @Mapping(target = "gradingUpcharge", ignore = true)
     void updateFromRequest(UpdateInventoryRequest request, @MappingTarget GradedDetails details);
 }

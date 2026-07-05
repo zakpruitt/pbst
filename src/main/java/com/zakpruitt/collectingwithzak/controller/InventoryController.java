@@ -33,7 +33,7 @@ public class InventoryController {
     }
 
     @GetMapping("/new")
-    public String renderNewForm(Model model) {
+    public String renderNewForm() {
         return "inventory/new";
     }
 

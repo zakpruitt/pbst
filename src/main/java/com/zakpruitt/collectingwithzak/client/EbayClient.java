@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
@@ -131,50 +132,31 @@ public class EbayClient {
     }
 
     private List<EbayOrder> fetchOrders(ZonedDateTime since) {
-        List<EbayOrder> all = new ArrayList<>();
-
-        for (String filter : buildTimeWindowFilters(since, "creationdate")) {
-            for (int offset = 0; ; offset += ORDERS_PAGE_SIZE) {
-                String url = buildPageUrl(
-                        ordersUrl,
-                        ORDERS_PAGE_SIZE,
-                        offset,
-                        filter
-                );
-
-                ResponseEntity<EbayOrdersResponse> response = authenticatedGet(url, EbayOrdersResponse.class);
-                if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
-
-                List<EbayOrder> page = response.getBody().getOrders();
-                if (page == null || page.isEmpty()) break;
-
-                all.addAll(page);
-                if (page.size() < ORDERS_PAGE_SIZE) break;
-            }
-        }
-        return all;
+        return fetchAllPages(ordersUrl, ORDERS_PAGE_SIZE, "creationdate", since,
+                EbayOrdersResponse.class, EbayOrdersResponse::getOrders);
     }
 
     private List<EbayTransaction> fetchTransactions(ZonedDateTime since) {
-        List<EbayTransaction> all = new ArrayList<>();
+        return fetchAllPages(transactionsUrl, TRANSACTIONS_PAGE_SIZE, "transactionDate", since,
+                EbayTransactionsResponse.class, EbayTransactionsResponse::getTransactions);
+    }
 
-        for (String filter : buildTimeWindowFilters(since, "transactionDate")) {
-            for (int offset = 0; ; offset += TRANSACTIONS_PAGE_SIZE) {
-                String url = buildPageUrl(
-                        transactionsUrl,
-                        TRANSACTIONS_PAGE_SIZE,
-                        offset,
-                        filter
-                );
+    private <R, T> List<T> fetchAllPages(String baseUrl, int pageSize, String filterField, ZonedDateTime since,
+                                         Class<R> responseType, Function<R, List<T>> pageExtractor) {
+        List<T> all = new ArrayList<>();
 
-                ResponseEntity<EbayTransactionsResponse> response = authenticatedGet(url, EbayTransactionsResponse.class);
+        for (String filter : buildTimeWindowFilters(since, filterField)) {
+            for (int offset = 0; ; offset += pageSize) {
+                String url = buildPageUrl(baseUrl, pageSize, offset, filter);
+
+                ResponseEntity<R> response = authenticatedGet(url, responseType);
                 if (response.getStatusCode() == HttpStatus.NO_CONTENT || response.getBody() == null) break;
 
-                List<EbayTransaction> page = response.getBody().getTransactions();
+                List<T> page = pageExtractor.apply(response.getBody());
                 if (page == null || page.isEmpty()) break;
 
                 all.addAll(page);
-                if (page.size() < TRANSACTIONS_PAGE_SIZE) break;
+                if (page.size() < pageSize) break;
             }
         }
         return all;
@@ -192,12 +174,7 @@ public class EbayClient {
         return filters;
     }
 
-    private String buildPageUrl(
-            String baseUrl,
-            int limit,
-            int offset,
-            String filter
-    ) {
+    private String buildPageUrl(String baseUrl, int limit, int offset, String filter) {
         return UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .queryParam("limit", limit)
                 .queryParam("offset", offset)

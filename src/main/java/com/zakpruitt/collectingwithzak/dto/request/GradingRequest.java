@@ -13,8 +13,7 @@ public class GradingRequest {
     private String company;
     private String submissionMethod;
     @PositiveOrZero
-    private double submissionCost;
+    private Double submissionCost;
     private String notes;
     private List<Long> itemIds = new ArrayList<>();
-    private List<GradingItemRequest> grades = new ArrayList<>();
 }

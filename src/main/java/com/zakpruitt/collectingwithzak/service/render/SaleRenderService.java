@@ -85,13 +85,9 @@ public class SaleRenderService {
     public List<TrackedItemResponse> getAvailableItemsForSale(Long saleId) {
         Sale sale = findByIdWithItems(saleId);
 
-        List<TrackedItem> available = itemRepo.findByStatusAndSaleIsNull(ItemStatus.AVAILABLE);
-        List<TrackedItem> allItems = new ArrayList<>(available);
-        for (TrackedItem attached : sale.getItems()) {
-            if (!allItems.contains(attached)) {
-                allItems.add(attached);
-            }
-        }
+        // Attached items have sale set, so they never overlap with the available query.
+        List<TrackedItem> allItems = new ArrayList<>(itemRepo.findByStatusAndSaleIsNull(ItemStatus.AVAILABLE));
+        allItems.addAll(sale.getItems());
         return trackedItemMapper.toResponseList(allItems);
     }
 

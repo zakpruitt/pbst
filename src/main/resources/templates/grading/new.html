@@ -5,26 +5,11 @@
 <body>
 <div layout:fragment="content">
 
-<a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Grading</a>
+<a th:replace="~{fragments/items :: back-link(url='/grading', label='Grading')}"></a>
 <h4 class="mb-4">New Submission</h4>
 
-<form method="POST" action="/grading" novalidate
-      onsubmit="if(!this.querySelector('input[name=itemIds]:checked')){alert('Select at least one item.');return false;}">
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="card-title mb-3">Submission Details</h6>
-            <div class="row g-2">
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Grading Company</label>
-                    <select name="company" class="form-select form-select-sm" required>
-                        <option value="PSA">PSA</option><option value="BGS">BGS</option><option value="CGC">CGC</option><option value="TAG">TAG</option>
-                    </select>
-                </div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Submission Method</label><input name="submissionMethod" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular"></div>
-                <div class="col-sm-4"><label class="form-label small text-muted mb-1">Total Cost ($)</label><input name="submissionCost" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Leave blank if unknown"></div>
-            </div>
-            <div class="mt-2"><label class="form-label small text-muted mb-1">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes about this submission"></textarea></div>
-        </div>
-    </div>
+<form method="POST" action="/grading" novalidate data-require-checkbox="itemIds">
+    <div th:replace="~{fragments/forms :: grading-submission-fields(submission=${null})}"></div>
 
     <div th:if="${#lists.isEmpty(rawItems) and #lists.isEmpty(gradedItems)}" class="card mb-3">
         <div class="card-body text-muted">No items in your inventory yet. <a href="/lots/new">Add a lot</a> and mark cards as tracked.</div>

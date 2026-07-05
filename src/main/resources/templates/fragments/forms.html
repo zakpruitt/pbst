@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Grading company <option> list -->
+<th:block th:fragment="company-options(selected)">
+    <option th:each="co : ${ {'PSA', 'BGS', 'CGC', 'TAG'} }"
+            th:value="${co}" th:text="${co}" th:selected="${co == selected}"></option>
+</th:block>
+
+<!-- Grading company + grade inputs (Alpine.js bound) -->
+<div th:fragment="grading-inputs" class="d-flex gap-2 ms-auto flex-no-shrink">
+    <div class="input-group input-group-sm input-w-210">
+        <select class="form-select shadow-none input-w-110" style="flex:none" x-model="gradingCompany">
+            <th:block th:replace="~{fragments/forms :: company-options(selected=${null})}"></th:block>
+        </select>
+        <input type="text" class="form-control shadow-none text-center px-2"
+               style="flex-grow:1" placeholder="Grade" x-model="grade">
+    </div>
+    <div style="width:31px"></div>
+</div>
+
+<!-- Card/product search with dropdown results.
+     component: Alpine factory name ("cardSearch()" or "inventoryItemSearch()").
+     Results with a _kind get a Card/Sealed badge; rows append via the component's partialUrl. -->
+<div th:fragment="item-search(component, placeholder)" class="card mb-3" th:attr="x-data=${component}">
+    <div class="card-body">
+        <h6 class="card-title mb-3">Add Items</h6>
+        <div class="position-relative mb-2">
+            <input type="text" class="form-control form-control-sm" autocomplete="off"
+                   th:placeholder="${placeholder}"
+                   x-model="query" @input.debounce.300ms="search()"
+                   @keydown.enter.prevent="onEnter()" @keydown.escape="clear()">
+            <div class="position-absolute w-100 bg-white border rounded-3 shadow mt-1"
+                 style="z-index:100;max-height:280px;overflow-y:auto;display:none"
+                 x-show="results.length > 0" @click.outside="clear()">
+                <template x-for="c in results" :key="(c._kind || '') + ':' + c.id">
+                    <button type="button"
+                            class="search-result-btn d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                            @click="pick(c)">
+                        <template x-if="c.imageUrl">
+                            <img :src="c.imageUrl" style="height:48px;width:auto;border-radius:4px;flex-shrink:0">
+                        </template>
+                        <template x-if="!c.imageUrl">
+                            <div style="width:34px"></div>
+                        </template>
+                        <span class="flex-grow-1">
+                            <strong class="d-block" x-text="c.name"></strong>
+                            <span class="text-muted small" x-text="c.setName"></span><br>
+                            <span class="text-success small" x-text="c.marketPrice ? '$' + c.marketPrice.toFixed(2) : ''"></span>
+                        </span>
+                        <template x-if="c._kind">
+                            <span class="badge bg-light text-muted border text-uppercase"
+                                  style="font-size:.62rem;letter-spacing:.06em"
+                                  x-text="c._kind === 'sealed' ? 'Sealed' : 'Card'"></span>
+                        </template>
+                    </button>
+                </template>
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="addOther()">+ Add Other</button>
+    </div>
+</div>
+
+<!-- Lot form totals bar (requires an enclosing x-data="lotTotals()") -->
+<div th:fragment="lot-totals(submitLabel)" class="card p-3 mb-3">
+    <div class="d-flex gap-4 text-muted small align-items-center flex-wrap">
+        <span>EMV <strong class="text-body" x-text="'$' + totalEmv.toFixed(2)"></strong></span>
+        <span>Buying <strong class="text-success" x-text="'$' + totalBuying.toFixed(2)"></strong></span>
+        <span>Tracked EMV <strong class="text-body" x-text="'$' + trackedEmv.toFixed(2)"></strong></span>
+        <span>Untracked EMV <strong class="text-body" x-text="'$' + untrackedEmv.toFixed(2)"></strong></span>
+        <span>Est. Flip <strong :class="estFlipNet >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipNet.toFixed(2)"></strong> <span class="text-muted" style="font-size:.7rem">(-12% fees)</span></span>
+        <span>Est. Flip (gross) <strong :class="estFlipGross >= 0 ? 'text-success' : 'text-danger'" x-text="'$' + estFlipGross.toFixed(2)"></strong></span>
+        <button type="submit" class="btn btn-success btn-sm ms-auto" th:text="${submitLabel}"></button>
+    </div>
+</div>
+
+<!-- Grading submission details card; submission is null on the new form -->
+<div th:fragment="grading-submission-fields(submission)" class="card mb-3">
+    <div class="card-body">
+        <h6 class="card-title mb-3">Submission Details</h6>
+        <div class="row g-2">
+            <div class="col-sm-4"><label class="form-label small text-muted mb-1">Grading Company</label>
+                <select name="company" class="form-select form-select-sm" required>
+                    <th:block th:replace="~{fragments/forms :: company-options(selected=${submission != null ? submission.company : null})}"></th:block>
+                </select>
+            </div>
+            <div class="col-sm-4"><label class="form-label small text-muted mb-1">Submission Method</label>
+                <input name="submissionMethod" class="form-control form-control-sm" placeholder="e.g. Bulk, Regular"
+                       th:value="${submission != null ? submission.submissionMethod : ''}"></div>
+            <div class="col-sm-4"><label class="form-label small text-muted mb-1">Total Cost ($)</label>
+                <input name="submissionCost" type="number" step="0.01" min="0" class="form-control form-control-sm"
+                       placeholder="Leave blank if unknown"
+                       th:value="${submission != null ? submission.submissionCost : ''}"></div>
+        </div>
+        <div class="mt-2"><label class="form-label small text-muted mb-1">Notes</label>
+            <textarea name="notes" class="form-control form-control-sm" rows="2"
+                      placeholder="Optional notes about this submission"
+                      th:text="${submission != null ? submission.notes : ''}"></textarea></div>
+    </div>
+</div>
+
+</html>

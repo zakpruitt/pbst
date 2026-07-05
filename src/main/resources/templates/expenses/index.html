@@ -37,11 +37,11 @@
     </div>
 </div>
 
-<div th:if="${#lists.isEmpty(groups)}">
+<div th:if="${#lists.isEmpty(data.groups)}">
     <p class="text-muted">No expenses yet. <a href="/expenses/new">Add one</a>.</p>
 </div>
 
-<div th:unless="${#lists.isEmpty(groups)}" id="expenses-list">
+<div th:unless="${#lists.isEmpty(data.groups)}" id="expenses-list">
     <div th:each="group : ${data.groups}" class="expense-month-group mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
@@ -60,27 +60,13 @@
                 <td class="align-middle text-nowrap ps-4"><span th:replace="~{fragments/items :: date-color(date=${e.expenseDate})}"></span></td>
                 <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(e.cost, 1, 2)}"></td>
                 <td class="text-center align-middle ps-4">
-                    <form method="POST" th:action="'/expenses/' + ${e.id} + '/delete'" onsubmit="return confirm('Delete this expense?')">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                    </form>
+                    <form th:replace="~{fragments/items :: delete-button(action='/expenses/' + ${e.id} + '/delete', message='Delete this expense?')}"></form>
                 </td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
-
-<script>
-function copyExpenseName(el) {
-    const text = el.dataset.full || el.textContent;
-    navigator.clipboard.writeText(text).then(() => {
-        const original = el.textContent;
-        el.textContent = "Copied!";
-        el.classList.add("text-success");
-        setTimeout(() => { el.textContent = original; el.classList.remove("text-success"); }, 900);
-    });
-}
-</script>
 
 </div>
 </body>

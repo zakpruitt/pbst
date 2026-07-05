@@ -56,27 +56,17 @@
     </div>
 </div>
 
-<!-- Grade badge: colored PSA/BGS/CGC/TAG badge or mdash -->
-<th:block th:fragment="grade-badge(item)">
-    <span th:if="${item.grade != null and !item.grade.isEmpty()}"
-          class="badge"
-          th:classappend="${item.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-          th:text="${item.gradingCompany + ' ' + item.grade}"></span>
-    <span th:unless="${item.grade != null and !item.grade.isEmpty()}">&mdash;</span>
-</th:block>
-
-<!-- Company badge: colored by grading company name -->
-<span th:fragment="company-badge(company)"
+<!-- Badge colored by grading company: text defaults to the company name -->
+<span th:fragment="company-badge(company, text)"
       class="badge"
       th:classappend="${company == 'PSA' ? 'grade-psa' : (company == 'BGS' ? 'grade-bgs' : (company == 'CGC' ? 'grade-cgc' : (company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-      th:text="${company}"></span>
+      th:text="${text != null ? text : company}"></span>
 
 <!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest -->
 <th:block th:fragment="type-badge(item)">
-    <span th:if="${item.itemType == 'GRADED_CARD' and item.gradingCompany != null and !item.gradingCompany.isEmpty()}"
-          class="badge"
-          th:classappend="${item.gradingCompany == 'PSA' ? 'grade-psa' : (item.gradingCompany == 'BGS' ? 'grade-bgs' : (item.gradingCompany == 'CGC' ? 'grade-cgc' : (item.gradingCompany == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
-          th:text="${item.gradingCompany + ' ' + (item.grade != null ? item.grade : '')}"></span>
+    <th:block th:if="${item.itemType == 'GRADED_CARD' and item.gradingCompany != null and !item.gradingCompany.isEmpty()}">
+        <span th:replace="~{fragments/items :: company-badge(company=${item.gradingCompany}, text=${item.gradingCompany + ' ' + (item.grade != null ? item.grade : '')})}"></span>
+    </th:block>
     <span th:if="${item.itemType != 'GRADED_CARD' or item.gradingCompany == null or item.gradingCompany.isEmpty()}"
           class="badge bg-secondary"
           th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
@@ -117,7 +107,7 @@
 <!-- Item picker table: used by sales/confirm, grading/new, grading/edit -->
 <div th:fragment="item-picker-table(items, label, checkboxName, attachedIds)">
     <div th:if="${!#lists.isEmpty(items)}" class="mb-4">
-        <span class="month-pill section-pill d-inline-block mb-2" th:text="${label}"></span>
+        <span th:replace="~{fragments/items :: section-pill(label=${label})}"></span>
         <table class="table table-hover bg-white mb-0">
             <thead class="table-light"><tr><th style="width:100%">Item</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Market</th><th class="text-center text-nowrap ps-4" style="width:3rem"></th></tr></thead>
             <tbody>
@@ -184,34 +174,9 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="s : ${group.items}" class="sale-row"
-                th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
-                th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
-                <td>
-                    <div class="d-flex align-items-start gap-2">
-                        <div class="min-w-0 flex-grow-1">
-                            <a th:href="'/sales/' + ${s.id}" class="sale-title text-body text-decoration-none fw-medium"
-                               th:title="${s.title}" th:text="${#strings.abbreviate(s.title, 45)}"></a>
-                            <div class="text-muted inv-subtext mt-1">
-                                <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
-                                <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
-                                <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
-                                <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
-                                <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
-                                    · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-center align-middle text-nowrap ps-4">
-                    <span th:replace="~{fragments/items :: origin-badge(origin=${s.origin})}"></span>
-                </td>
-                <td class="text-end align-middle text-nowrap ps-4">
-                    <div class="small text-muted" th:text="'Sold: $' + ${#numbers.formatDecimal(s.grossAmount, 1, 2)}"></div>
-                    <div class="fw-semibold text-success" th:text="'Earnings: $' + ${#numbers.formatDecimal(s.netAmount, 1, 2)}"></div>
-                </td>
-            </tr>
+            <th:block th:each="s : ${group.items}">
+                <tr th:replace="~{fragments/items :: sale-row(s=${s})}"></tr>
+            </th:block>
             </tbody>
         </table>
         </div>
@@ -225,6 +190,25 @@
         <h5 class="mb-0" th:classappend="${valueClass}" th:text="${value}"></h5>
         <p class="text-muted small mb-0 mt-1" th:text="${subtext}"></p>
     </div></div>
+</div>
+
+<!-- Back navigation link -->
+<a th:fragment="back-link(url, label)" th:href="${url}"
+   class="text-muted text-decoration-none small d-inline-block mb-3">&larr; <span th:text="${label}">Back</span></a>
+
+<!-- Section pill header -->
+<span th:fragment="section-pill(label)" class="month-pill section-pill d-inline-block mb-2" th:text="${label}"></span>
+
+<!-- Delete button with confirmation -->
+<form th:fragment="delete-button(action, message)" method="POST" th:action="${action}" class="d-inline"
+      th:data-confirm="${message}">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+</form>
+
+<!-- Stat column: uppercase label over value, for summary cards -->
+<div th:fragment="stat-col(label, value, valueClass)" class="col">
+    <div class="text-muted small text-uppercase" th:text="${label}"></div>
+    <div class="fw-semibold" th:classappend="${valueClass}" th:text="${value}"></div>
 </div>
 
 <!-- Month-colored date display -->

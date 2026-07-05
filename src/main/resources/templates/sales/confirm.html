@@ -5,8 +5,7 @@
 <body>
 <div layout:fragment="content">
 
-<a th:href="${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}" class="text-muted text-decoration-none small d-inline-block mb-3"
-   th:text="${from == 'staging' ? '← Stager' : '← Sale'}"></a>
+<a th:replace="~{fragments/items :: back-link(url=${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}, label=${from == 'staging' ? 'Stager' : 'Sale'})}"></a>
 
 <div class="mb-4">
     <h4 class="mb-2" th:text="${sale.status == 'CONFIRMED' ? 'Edit Attached Items' : 'Confirm Sale'}"></h4>

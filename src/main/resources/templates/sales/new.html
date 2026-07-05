@@ -5,7 +5,7 @@
 <body>
 <div layout:fragment="content">
 
-<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Sales</a>
+<a th:replace="~{fragments/items :: back-link(url='/sales', label='Sales')}"></a>
 <h4 class="mb-4">New Sale</h4>
 
 <form method="POST" action="/sales" novalidate>

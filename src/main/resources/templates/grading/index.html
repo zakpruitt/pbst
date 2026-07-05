@@ -30,9 +30,9 @@
             <table class="table table-hover bg-white mt-2 mb-0">
                 <thead class="table-light"><tr><th style="width:100%">Submission</th><th class="text-center text-nowrap ps-4">Company</th><th class="text-center text-nowrap ps-4">Items</th><th class="text-center text-nowrap ps-4">Total</th><th class="text-center text-nowrap ps-4">Status</th></tr></thead>
                 <tbody>
-                <tr th:each="s : ${group.items}" class="grading-row"
+                <tr th:each="s : ${group.items}" class="grading-row clickable-row"
                     th:attr="data-name=${s.submissionName},data-company=${s.company}"
-                    th:onclick="'window.location=\'/grading/' + ${s.id} + '\''" style="cursor:pointer">
+                    th:data-href="@{/grading/{id}(id=${s.id})}">
                     <td>
                         <span class="fw-medium" th:text="${s.submissionName}"></span>
                         <div th:if="${s.sendDate != null}" class="inv-subtext">
@@ -43,7 +43,7 @@
                         </div>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4">
-                        <span th:replace="~{fragments/items :: company-badge(company=${s.company})}"></span>
+                        <span th:replace="~{fragments/items :: company-badge(company=${s.company}, text=${s.company})}"></span>
                     </td>
                     <td class="text-center align-middle text-nowrap ps-4" th:text="${s.items != null ? s.items.size() : 0}"></td>
                     <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="${s.grandTotal != null and s.grandTotal != 0 ? '$' + #numbers.formatDecimal(s.grandTotal, 1, 2) : '—'}"></td>

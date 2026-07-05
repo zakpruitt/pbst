@@ -5,7 +5,7 @@
 <body>
 <div layout:fragment="content">
 
-<a href="/grading" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Grading</a>
+<a th:replace="~{fragments/items :: back-link(url='/grading', label='Grading')}"></a>
 
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div class="flex-grow-1 me-3 min-w-0">
@@ -17,10 +17,7 @@
     </div>
     <div class="d-flex gap-2 flex-shrink-0">
         <a th:href="'/grading/' + ${submission.id} + '/edit'" class="btn btn-outline-secondary btn-sm">Edit</a>
-        <form method="POST" th:action="'/grading/' + ${submission.id} + '/delete'" class="d-inline"
-              onsubmit="return confirm('Delete this submission? Attached items will return to inventory.')">
-            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-        </form>
+        <form th:replace="~{fragments/items :: delete-button(action='/grading/' + ${submission.id} + '/delete', message='Delete this submission? Attached items will return to inventory.')}"></form>
     </div>
 </div>
 
@@ -34,12 +31,14 @@
 <div class="card mb-3">
     <div class="card-body">
         <div class="row text-center">
-            <div class="col"><div class="text-muted small text-uppercase">Item Total</div><div class="fw-semibold" th:text="${submission.items != null ? submission.items.size() : 0}"></div></div>
-            <div class="col"><div class="text-muted small text-uppercase">Sub. Cost</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.submissionCost, 1, 2)}"></div></div>
-            <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Upcharges</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}"></div></div>
-            <div th:if="${submission.status == 'RETURNED'}" class="col"><div class="text-muted small text-uppercase">Grand Total</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}"></div></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Item Total', value=${submission.items != null ? submission.items.size() : 0}, valueClass='')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Sub. Cost', value='$' + ${#numbers.formatDecimal(submission.submissionCost, 1, 2)}, valueClass='')}"></div>
+            <th:block th:if="${submission.status == 'RETURNED'}">
+                <div th:replace="~{fragments/items :: stat-col(label='Upcharges', value='$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}, valueClass='')}"></div>
+                <div th:replace="~{fragments/items :: stat-col(label='Grand Total', value='$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}, valueClass='')}"></div>
+            </th:block>
             <div class="col"><div class="text-muted small text-uppercase">Company</div>
-                <div><span th:replace="~{fragments/items :: company-badge(company=${submission.company})}"></span></div>
+                <div><span th:replace="~{fragments/items :: company-badge(company=${submission.company}, text=${submission.company})}"></span></div>
             </div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
                 <div><span th:replace="~{fragments/items :: grading-status-badge(status=${submission.status})}"></span></div>
@@ -51,7 +50,7 @@
 <!-- Record Grades form (IN_GRADING) -->
 <div th:if="${submission.status == 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
-        <span class="month-pill section-pill d-inline-block mb-2">Record Grades</span>
+        <span th:replace="~{fragments/items :: section-pill(label='Record Grades')}"></span>
         <table class="table table-sm table-hover bg-white mb-0">
             <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4" style="width:100px">New Grade</th><th class="text-center text-nowrap ps-4" style="width:100px">Upcharge</th></tr></thead>
             <tbody>
@@ -74,7 +73,7 @@
 <!-- Items table (not IN_GRADING) -->
 <div th:if="${submission.status != 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
-        <span class="month-pill section-pill d-inline-block mb-2">Items</span>
+        <span th:replace="~{fragments/items :: section-pill(label='Items')}"></span>
         <table class="table table-sm table-hover bg-white mb-0">
             <thead class="table-light"><tr><th style="width:100%">Card</th><th class="text-center text-nowrap ps-4">Type</th><th class="text-center text-nowrap ps-4">Cost Basis</th><th class="text-center text-nowrap ps-4">Upcharge</th><th class="text-center text-nowrap ps-4">Grand Total</th></tr></thead>
             <tbody>

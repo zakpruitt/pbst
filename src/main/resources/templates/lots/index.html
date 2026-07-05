@@ -49,8 +49,8 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="lot : ${group.items}" class="lot-row" style="cursor:pointer"
-                    th:onclick="'window.location=\'/lots/' + ${lot.id} + '\''"
+                <tr th:each="lot : ${group.items}" class="lot-row clickable-row"
+                    th:data-href="@{/lots/{id}(id=${lot.id})}"
                     th:attr="data-seller=${lot.sellerName},data-status=${lot.status}">
                     <td class="align-middle">
                         <span class="fw-medium" th:text="${lot.sellerName}"></span>

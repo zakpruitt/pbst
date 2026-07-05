@@ -24,7 +24,7 @@
 </a>
 
 <!-- ==================== VINCE VIEW ==================== -->
-<th:block th:if="${data.view == 'vince' and vinceLedger != null}">
+<th:block th:if="${data.view == 'vince' and data.vinceLedger != null}">
     <div class="card mb-4">
         <div class="card-body">
             <h6 class="card-title mb-3">Vince Ledger</h6>
@@ -35,26 +35,26 @@
                 </div>
                 <div class="col">
                     <div class="text-muted small">Gross</div>
-                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(vinceLedger.salesGross, 1, 2)}"></div>
+                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesGross, 1, 2)}"></div>
                 </div>
                 <div class="col">
                     <div class="text-muted small">Net Owed</div>
-                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(vinceLedger.salesNet, 1, 2)}"></div>
+                    <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesNet, 1, 2)}"></div>
                 </div>
                 <div class="col">
                     <div class="text-muted small">Paid Out</div>
-                    <div class="fw-semibold text-danger" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalPaidOut, 1, 2)}"></div>
+                    <div class="fw-semibold text-danger" th:text="'-$' + ${#numbers.formatDecimal(data.vinceLedger.totalPaidOut, 1, 2)}"></div>
                 </div>
                 <div class="col" th:if="${data.vinceLedger.totalVinceOwes > 0}">
                     <div class="text-muted small">He Owes Me</div>
-                    <div class="fw-semibold text-warning" th:text="'-$' + ${#numbers.formatDecimal(vinceLedger.totalVinceOwes, 1, 2)}"></div>
+                    <div class="fw-semibold text-warning" th:text="'-$' + ${#numbers.formatDecimal(data.vinceLedger.totalVinceOwes, 1, 2)}"></div>
                 </div>
                 <div class="col">
                     <div class="text-muted small">Balance</div>
                     <div class="fw-bold" th:classappend="${data.vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"
-                         th:text="'$' + ${#numbers.formatDecimal(vinceLedger.balance, 1, 2)}"></div>
+                         th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.balance, 1, 2)}"></div>
                     <div class="text-muted" style="font-size:.65rem"
-                         th:text="${data.vinceLedger.balance > 0 ? 'you owe Vince' : (vinceLedger.balance < 0 ? 'Vince owes you' : 'settled')}"></div>
+                         th:text="${data.vinceLedger.balance > 0 ? 'you owe Vince' : (data.vinceLedger.balance < 0 ? 'Vince owes you' : 'settled')}"></div>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
                 </div>
             </form>
 
-            <div th:if="${data.vincePaymentGroups != null and !vincePaymentGroups.isEmpty()}">
+            <div th:if="${data.vincePaymentGroups != null and !data.vincePaymentGroups.isEmpty()}">
                 <div th:each="group : ${data.vincePaymentGroups}" class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="month-label month-pill" th:classappend="${group.monthClass}" th:text="${group.label}"></span>
@@ -129,9 +129,9 @@
                                 th:title="${p.description}" th:text="${p.description != null and !p.description.isEmpty() ? p.description : '—'}"></td>
                             <td class="text-center align-middle text-nowrap ps-4 fw-semibold" th:text="'$' + ${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
                             <td class="text-center align-middle text-nowrap ps-4">
-                                <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Delete this payment?')">Delete</button>
+                                <form method="POST" th:action="'/sales/vince/payments/' + ${p.id} + '/delete'" style="display:inline"
+                                      data-confirm="Delete this payment?">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                                 </form>
                             </td>
                         </tr>
@@ -140,33 +140,17 @@
                     </div>
                 </div>
             </div>
-            <p th:if="${data.vincePaymentGroups == null or vincePaymentGroups.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
+            <p th:if="${data.vincePaymentGroups == null or data.vincePaymentGroups.isEmpty()}" class="text-muted small mb-0">No payments recorded yet.</p>
         </div>
 
         <!-- Sales tab -->
         <div x-show="vinceTab === 'sales'">
-            <div th:if="${#lists.isEmpty(groups)}">
+            <div th:if="${#lists.isEmpty(data.groups)}">
                 <p class="text-muted">No sales attributed to Vince yet.</p>
             </div>
 
-            <div th:unless="${#lists.isEmpty(groups)}">
-                <div class="card mb-3" x-data="saleFilter()">
-                    <div class="card-body py-2">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-sm"><input type="search" class="form-control form-control-sm" placeholder="Filter by title or buyer..." x-model="query" @input="apply()"></div>
-                            <div class="col-sm-auto">
-                                <select class="form-select form-select-sm" x-model="origin" @change="apply()">
-                                    <option value="">All origins</option>
-                                    <option value="EBAY">eBay</option>
-                                    <option value="FACEBOOK">Facebook</option>
-                                    <option value="OTHER">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-auto text-muted small" x-text="summary"></div>
-                        </div>
-                    </div>
-                </div>
-
+            <div th:unless="${#lists.isEmpty(data.groups)}">
+                <div th:replace="~{sales/index :: sale-filter}"></div>
                 <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
             </div>
         </div><!-- /sales tab -->
@@ -175,24 +159,8 @@
 
 <!-- ==================== MINE / IGNORED VIEW ==================== -->
 <div th:if="${data.view != 'vince'}">
-<div th:unless="${#lists.isEmpty(groups)}">
-    <div class="card mb-3" x-data="saleFilter()">
-        <div class="card-body py-2">
-            <div class="row g-2 align-items-center">
-                <div class="col-sm"><input type="search" class="form-control form-control-sm" placeholder="Filter by title or buyer..." x-model="query" @input="apply()"></div>
-                <div class="col-sm-auto">
-                    <select class="form-select form-select-sm" x-model="origin" @change="apply()">
-                        <option value="">All origins</option>
-                        <option value="EBAY">eBay</option>
-                        <option value="FACEBOOK">Facebook</option>
-                        <option value="OTHER">Other</option>
-                    </select>
-                </div>
-                <div class="col-sm-auto text-muted small" x-text="summary"></div>
-            </div>
-        </div>
-    </div>
-
+<div th:unless="${#lists.isEmpty(data.groups)}">
+    <div th:replace="~{sales/index :: sale-filter}"></div>
     <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
 </div>
 </div>
@@ -200,5 +168,24 @@
 <script src="/static/js/list-filter.js"></script>
 
 </div>
+
+<!-- Title/buyer/origin filter card for sale lists -->
+<div th:fragment="sale-filter" class="card mb-3" x-data="saleFilter()">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            <div class="col-sm"><input type="search" class="form-control form-control-sm" placeholder="Filter by title or buyer..." x-model="query" @input="apply()"></div>
+            <div class="col-sm-auto">
+                <select class="form-select form-select-sm" x-model="origin" @change="apply()">
+                    <option value="">All origins</option>
+                    <option value="EBAY">eBay</option>
+                    <option value="FACEBOOK">Facebook</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <div class="col-sm-auto text-muted small" x-text="summary"></div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

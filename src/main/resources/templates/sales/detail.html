@@ -5,7 +5,7 @@
 <body>
 <div layout:fragment="content">
 
-<a href="/sales" class="text-muted text-decoration-none small d-inline-block mb-3">&larr; Sales</a>
+<a th:replace="~{fragments/items :: back-link(url='/sales', label='Sales')}"></a>
 
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
@@ -26,10 +26,7 @@
                 <button type="submit" class="btn btn-outline-secondary btn-sm">&#8212; Ignore</button>
             </form>
             <a th:if="${sale.status == 'STAGED' or sale.status == 'CONFIRMED'}" th:href="'/sales/' + ${sale.id} + '/confirm'" class="btn btn-outline-secondary btn-sm">Edit</a>
-            <form method="POST" th:action="'/sales/' + ${sale.id} + '/delete'" class="d-inline"
-                  onsubmit="return confirm('Delete this sale? Attached items will return to inventory.')">
-                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-            </form>
+            <form th:replace="~{fragments/items :: delete-button(action='/sales/' + ${sale.id} + '/delete', message='Delete this sale? Attached items will return to inventory.')}"></form>
         </div>
         <small th:if="${sale.origin == 'EBAY' and sale.ebayOrderId != null and !sale.ebayOrderId.isEmpty()}">
             <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${sale.ebayOrderId}" target="_blank" rel="noopener" class="text-muted text-decoration-none">View on eBay ↗</a>
@@ -40,9 +37,9 @@
 <div class="card mb-3">
     <div class="card-body">
         <div class="row text-center">
-            <div class="col"><div class="text-muted small text-uppercase">Sold For</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(sale.grossAmount, 1, 2)}"></div></div>
-            <div class="col"><div class="text-muted small text-uppercase">Fees</div><div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(sale.ebayFees, 1, 2)}"></div></div>
-            <div class="col"><div class="text-muted small text-uppercase">Earnings</div><div class="fw-semibold text-success" th:text="'$' + ${#numbers.formatDecimal(sale.netAmount, 1, 2)}"></div></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Sold For', value='$' + ${#numbers.formatDecimal(sale.grossAmount, 1, 2)}, valueClass='')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Fees', value='$' + ${#numbers.formatDecimal(sale.ebayFees, 1, 2)}, valueClass='')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Earnings', value='$' + ${#numbers.formatDecimal(sale.netAmount, 1, 2)}, valueClass='text-success')}"></div>
             <div class="col"><div class="text-muted small text-uppercase">Status</div>
                 <div><th:block th:replace="~{fragments/items :: sale-status-badge(sale=${sale})}"></th:block></div>
             </div>
@@ -61,7 +58,7 @@
 </div>
 
 <div class="mb-4">
-    <span class="month-pill section-pill d-inline-block mb-2">Attached Items</span>
+    <span th:replace="~{fragments/items :: section-pill(label='Attached Items')}"></span>
     <p th:if="${sale.items == null or sale.items.isEmpty()}" class="text-muted small" style="opacity:.6">
         <span th:if="${sale.status == 'CONFIRMED'}">No items attached. <a th:href="'/sales/' + ${sale.id} + '/confirm'" class="text-muted">Attach from inventory</a>.</span>
         <span th:if="${sale.status == 'STAGED'}">Confirm this sale to attach inventory items.</span>

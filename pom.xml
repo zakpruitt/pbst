@@ -50,6 +50,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.zakpruitt</groupId>
+            <artifactId>jbay</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+
+
         <!-- Database -->
         <dependency>
             <groupId>org.postgresql</groupId>

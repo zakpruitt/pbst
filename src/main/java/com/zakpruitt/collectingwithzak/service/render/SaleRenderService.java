@@ -65,7 +65,7 @@ public class SaleRenderService {
         return saleMapper.toResponse(sale);
     }
 
-    public List<SaleResponse> getAll(String view) {
+    private List<SaleResponse> getAll(String view) {
         List<Sale> sales = switch (view) {
             case "vince" -> saleRepo.findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "vince");
             case "ignored" -> saleRepo.findIgnored();
@@ -78,7 +78,7 @@ public class SaleRenderService {
         return saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED));
     }
 
-    public long countStaged() {
+    private long countStaged() {
         return saleRepo.countByStatus(SaleStatus.STAGED);
     }
 

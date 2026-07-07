@@ -132,22 +132,10 @@
             <a href="/sales?view=vince" class="btn btn-outline-secondary btn-sm">View ledger &rarr;</a>
         </div>
         <div class="row text-center">
-            <div class="col">
-                <div class="text-muted small text-uppercase">Sales</div>
-                <div class="fw-semibold" th:text="${data.vinceLedger.salesCount}"></div>
-            </div>
-            <div class="col">
-                <div class="text-muted small text-uppercase">Gross</div>
-                <div class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesGross, 1, 2)}"></div>
-            </div>
-            <div class="col">
-                <div class="text-muted small text-uppercase">Net Owed</div>
-                <div class="fw-semibold text-info" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.salesNet, 1, 2)}"></div>
-            </div>
-            <div class="col">
-                <div class="text-muted small text-uppercase">Paid Out</div>
-                <div class="fw-semibold text-danger" th:text="'$' + ${#numbers.formatDecimal(data.vinceLedger.totalPaidOut, 1, 2)}"></div>
-            </div>
+            <div th:replace="~{fragments/items :: stat-col(label='Sales', value=${data.vinceLedger.salesCount}, valueClass='')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Gross', value='$' + ${#numbers.formatDecimal(data.vinceLedger.salesGross, 1, 2)}, valueClass='')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Net Owed', value='$' + ${#numbers.formatDecimal(data.vinceLedger.salesNet, 1, 2)}, valueClass='text-info')}"></div>
+            <div th:replace="~{fragments/items :: stat-col(label='Paid Out', value='$' + ${#numbers.formatDecimal(data.vinceLedger.totalPaidOut, 1, 2)}, valueClass='text-danger')}"></div>
             <div class="col">
                 <div class="text-muted small text-uppercase">Balance</div>
                 <div class="fw-bold" th:classappend="${data.vinceLedger.balance > 0 ? 'text-danger' : 'text-success'}"

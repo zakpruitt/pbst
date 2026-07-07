@@ -20,6 +20,4 @@ public class ExpenseIndexData {
     private double total30;
     private double totalMonth;
     private int count;
-    private int count30;
-    private int countMonth;
 }

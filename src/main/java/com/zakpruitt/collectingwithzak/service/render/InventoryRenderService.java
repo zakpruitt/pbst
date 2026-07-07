@@ -43,7 +43,7 @@ public class InventoryRenderService {
         return trackedItemMapper.toResponse(item);
     }
 
-    public List<TrackedItemResponse> getItemsForTab(String tab) {
+    private List<TrackedItemResponse> getItemsForTab(String tab) {
         if (ItemStatus.IN_GRADING.name().equals(tab)) {
             List<TrackedItem> items = itemRepo.findByStatus(ItemStatus.IN_GRADING);
             return trackedItemMapper.toResponseList(items);

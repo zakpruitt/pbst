@@ -159,10 +159,12 @@
 
 <!-- ==================== MINE / IGNORED VIEW ==================== -->
 <div th:if="${data.view != 'vince'}">
-<div th:unless="${#lists.isEmpty(data.groups)}">
-    <div th:replace="~{sales/index :: sale-filter}"></div>
-    <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
-</div>
+    <p th:if="${#lists.isEmpty(data.groups)}" class="text-muted"
+       th:text="${data.view == 'ignored' ? 'No ignored sales.' : 'No confirmed sales yet.'}"></p>
+    <div th:unless="${#lists.isEmpty(data.groups)}">
+        <div th:replace="~{sales/index :: sale-filter}"></div>
+        <div th:replace="~{fragments/items :: sale-groups(groups=${data.groups})}"></div>
+    </div>
 </div>
 
 <script src="/static/js/list-filter.js"></script>

@@ -21,6 +21,14 @@ public final class TrackedItemFilters {
     }
 
     public static double sumMarket(List<TrackedItemResponse> items) {
-        return items.stream().mapToDouble(TrackedItemResponse::getMarketValueAtPurchase).sum();
+        return items.stream().mapToDouble(TrackedItemFilters::marketValue).sum();
+    }
+
+    // Same fallback the inventory rows display: purchase-time value, else the card's current market price.
+    private static double marketValue(TrackedItemResponse item) {
+        if (item.getMarketValueAtPurchase() != 0) {
+            return item.getMarketValueAtPurchase();
+        }
+        return item.getPokemonCard() != null ? item.getPokemonCard().getMarketPrice() : 0;
     }
 }

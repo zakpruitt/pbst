@@ -26,7 +26,6 @@ public class DashboardData {
     private long gradingCount;
     private long inventoryCount;
     private double avgSale;
-    private double inventoryCost;
     private double inventoryMarket;
 
     private RangeTotals totals7;
@@ -40,7 +39,6 @@ public class DashboardData {
     private List<LabeledStat> originCounts;
     private List<LabeledStat> itemTypeCounts;
     private List<LabeledStat> gradingStatuses;
-    private List<LabeledStat> lotStatuses;
 
     private List<SaleResponse> topSales;
     private List<SaleResponse> recentSales;

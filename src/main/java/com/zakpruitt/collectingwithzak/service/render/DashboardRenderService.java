@@ -16,11 +16,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -76,7 +76,6 @@ public class DashboardRenderService {
                 .avgSale(confirmed.getCount() > 0 ? confirmed.getNet() / confirmed.getCount() : 0)
                 .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING))
                 .inventoryCount(itemRepo.countByStatus(ItemStatus.AVAILABLE))
-                .inventoryCost(invTotals.getCost())
                 .inventoryMarket(invTotals.getMarket())
                 .totals7(saleRepo.getTotalsSince(LocalDate.now().minusDays(7)))
                 .totals30(saleRepo.getTotalsSince(LocalDate.now().minusDays(30)))
@@ -87,7 +86,6 @@ public class DashboardRenderService {
                 .originCounts(saleRepo.countByOrigin())
                 .itemTypeCounts(itemRepo.countByItemType())
                 .gradingStatuses(gradingRepo.countByStatus())
-                .lotStatuses(lotRepo.countByStatus())
                 .topSales(saleMapper.toResponseList(saleRepo.findByStatusOrderByNetAmountDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N))))
                 .recentSales(saleMapper.toResponseList(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N))))
                 .recentLots(lotMapper.toResponseList(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, TOP_N))))

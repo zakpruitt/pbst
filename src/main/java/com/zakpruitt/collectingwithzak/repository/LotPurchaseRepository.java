@@ -1,6 +1,5 @@
 package com.zakpruitt.collectingwithzak.repository;
 
-import com.zakpruitt.collectingwithzak.dto.common.LabeledStat;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -26,9 +25,5 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
             "AND purchase_date >= NOW() - make_interval(months => :months) " +
             "GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> getMonthlySpendRaw(int months);
-
-    @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.LabeledStat(l.status, COUNT(l)) " +
-            "FROM LotPurchase l GROUP BY l.status")
-    List<LabeledStat> countByStatus();
 
 }

@@ -226,6 +226,18 @@ function serializeInventorySnapshot() {
     });
 }
 
+function showFormError(form, message) {
+    var alert = form.querySelector('.form-submit-error');
+    if (!alert) {
+        alert = document.createElement('div');
+        alert.className = 'form-submit-error alert alert-danger alert-dismissible';
+        alert.innerHTML = '<span></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        form.prepend(alert);
+    }
+    alert.querySelector('span').textContent = message;
+    alert.scrollIntoView({ block: 'nearest' });
+}
+
 function initFormSubmit(formId, buildBody, changeEvent) {
     document.getElementById(formId).addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -234,15 +246,28 @@ function initFormSubmit(formId, buildBody, changeEvent) {
         if (!form.checkValidity()) return;
 
         var body = buildBody(new FormData(form));
-        var response = await fetch(form.action, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
+        var response;
+        try {
+            response = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+        } catch (err) {
+            showFormError(form, 'Save failed: could not reach the server.');
+            return;
+        }
 
         if (response.ok) {
             window.location.href = await response.text();
+            return;
         }
+
+        var detail = '';
+        if (!(response.headers.get('Content-Type') || '').includes('text/html')) {
+            detail = await response.text().catch(function () { return ''; });
+        }
+        showFormError(form, detail || 'Save failed (HTTP ' + response.status + ').');
     });
 
     document.addEventListener('alpine:init', function () {

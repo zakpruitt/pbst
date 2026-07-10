@@ -13,14 +13,17 @@ import java.util.List;
 
 public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> {
 
+    // lotPurchase must be LEFT JOINed explicitly: dereferencing t.lotPurchase.status in the
+    // WHERE clause creates an implicit inner join that drops items with no lot.
     @EntityGraph(attributePaths = {"pokemonCard", "sealedProduct", "lotPurchase", "gradingSubmission"})
-    @Query("SELECT t FROM TrackedItem t WHERE t.purpose = :purpose AND t.status = 'AVAILABLE' " +
-            "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
+    @Query("SELECT t FROM TrackedItem t LEFT JOIN t.lotPurchase lp " +
+            "WHERE t.purpose = :purpose AND t.status = 'AVAILABLE' " +
+            "AND (lp IS NULL OR lp.status = 'ACCEPTED')")
     List<TrackedItem> findByPurpose(Purpose purpose);
 
     @EntityGraph(attributePaths = {"pokemonCard", "sealedProduct", "lotPurchase", "gradingSubmission"})
-    @Query("SELECT t FROM TrackedItem t WHERE t.status = :status " +
-            "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
+    @Query("SELECT t FROM TrackedItem t LEFT JOIN t.lotPurchase lp WHERE t.status = :status " +
+            "AND (lp IS NULL OR lp.status = 'ACCEPTED')")
     List<TrackedItem> findByStatus(ItemStatus status);
 
     @EntityGraph(attributePaths = {"pokemonCard"})
@@ -28,8 +31,8 @@ public interface TrackedItemRepository extends JpaRepository<TrackedItem, Long> 
 
     void deleteByLotPurchaseId(Long lotPurchaseId);
 
-    @Query("SELECT COUNT(t) FROM TrackedItem t WHERE t.status = :status " +
-            "AND (t.lotPurchase IS NULL OR t.lotPurchase.status = 'ACCEPTED')")
+    @Query("SELECT COUNT(t) FROM TrackedItem t LEFT JOIN t.lotPurchase lp WHERE t.status = :status " +
+            "AND (lp IS NULL OR lp.status = 'ACCEPTED')")
     long countByStatus(ItemStatus status);
 
     @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.LabeledStat(t.itemType, COUNT(t)) " +

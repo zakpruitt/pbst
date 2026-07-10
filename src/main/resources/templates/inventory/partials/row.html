@@ -28,7 +28,13 @@
         <div class="flex-grow-1 d-flex flex-column lot-row-content">
 
             <div class="d-flex gap-2 align-items-center w-100">
-                <strong class="flex-grow-1 text-truncate" x-text="name" style="min-width:0"></strong>
+                <template x-if="type === 'OTHER'">
+                    <input type="text" class="form-control form-control-sm flex-grow-1"
+                           placeholder="Item name" required x-model="name" style="min-width:0">
+                </template>
+                <template x-if="type !== 'OTHER'">
+                    <strong class="flex-grow-1 text-truncate" x-text="name" style="min-width:0"></strong>
+                </template>
 
                 <div class="d-flex gap-2 ms-auto flex-no-shrink">
                     <select class="form-select form-select-sm input-w-210" x-model="type">

@@ -1,6 +1,7 @@
 package com.zakpruitt.collectingwithzak.repository;
 
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
+import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,8 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
     @EntityGraph(attributePaths = {"trackedItems"})
     @Query("SELECT DISTINCT l FROM LotPurchase l ORDER BY l.purchaseDate DESC")
     List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
+
+    List<LotPurchase> findByStatusOrderByPurchaseDateDesc(LotStatus status);
 
     List<LotPurchase> findByOrderByPurchaseDateDesc(Pageable pageable);
 

@@ -1,12 +1,12 @@
 package com.zakpruitt.collectingwithzak.service;
 
+import com.zakpruitt.collectingwithzak.config.JbayProvider;
 import com.zakpruitt.collectingwithzak.dto.ebay.EbayOrderData;
 import com.zakpruitt.jbay.Amount;
-import com.zakpruitt.jbay.Jbay;
 import com.zakpruitt.jbay.finances.Transaction;
 import com.zakpruitt.jbay.orders.Order;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -17,26 +17,18 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class EbayOrderDataService {
 
-    private final Jbay jbay;
-
-    public EbayOrderDataService(@Value("${ebay.client-id}") String clientId,
-                                @Value("${ebay.client-secret}") String clientSecret,
-                                @Value("${ebay.refresh-token}") String refreshToken) {
-        boolean configured = !clientId.isBlank() && !clientSecret.isBlank() && !refreshToken.isBlank();
-        this.jbay = configured
-                ? Jbay.builder().credentials(clientId, clientSecret).refreshToken(refreshToken).build()
-                : null;
-    }
+    private final JbayProvider jbayProvider;
 
     public boolean isConfigured() {
-        return jbay != null;
+        return jbayProvider.isConfigured();
     }
 
     public List<EbayOrderData> fetchOrderData(ZonedDateTime since) {
-        List<Order> orders = jbay.orders().since(since);
-        List<Transaction> transactions = jbay.finances().transactionsSince(since);
+        List<Order> orders = jbayProvider.client().orders().since(since);
+        List<Transaction> transactions = jbayProvider.client().finances().transactionsSince(since);
 
         Map<String, Double> transactionData = aggregateTransactions(transactions);
         List<EbayOrderData> results = new ArrayList<>();

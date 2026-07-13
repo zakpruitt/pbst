@@ -30,6 +30,7 @@
           <a class="nav-link" th:classappend="${page == 'sales' ? 'active-page' : ''}" href="/sales">Sales</a>
           <a class="nav-link" th:classappend="${page == 'inventory' ? 'active-page' : ''}" href="/inventory">Inventory</a>
           <a class="nav-link" th:classappend="${page == 'grading' ? 'active-page' : ''}" href="/grading">Grading</a>
+          <a class="nav-link" th:classappend="${page == 'listings' ? 'active-page' : ''}" href="/listings">Listings</a>
           <a class="nav-link" th:classappend="${page == 'expenses' ? 'active-page' : ''}" href="/expenses">Expenses</a>
         </div>
         <form method="POST" th:action="@{/logout}" class="d-inline ms-lg-3 mt-2 mt-lg-0">

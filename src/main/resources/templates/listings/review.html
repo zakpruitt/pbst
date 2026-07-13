@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<a th:replace="~{fragments/items :: back-link(url='/listings', label='Listings')}"></a>
+<div class="mb-4">
+    <h4 class="mb-1">Review &amp; Stage</h4>
+    <small class="text-muted">Prices undercut the lowest live comp (price + shipping); edit anything before staging. Nothing goes live until you publish.</small>
+</div>
+
+<div th:if="${#lists.isEmpty(rows)}" class="card">
+    <div class="card-body text-center text-muted py-4">
+        Nothing to review — the selected cards may already be staged. <a href="/listings">Back to listings</a>.
+    </div>
+</div>
+
+<form th:unless="${#lists.isEmpty(rows)}" method="POST" action="/listings/stage">
+    <div th:each="row, iter : ${rows}" class="card mb-2">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].lotPurchaseId'" th:value="${row.candidate.lotPurchaseId}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].snapshotIndex'" th:value="${row.candidate.snapshotIndex}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].name'" th:value="${row.candidate.name}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].setName'" th:value="${row.candidate.setName}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].cardNumber'" th:value="${row.candidate.cardNumber}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].imageUrl'" th:value="${row.candidate.imageUrl}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].qty'" th:value="${row.candidate.qty}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].marketPrice'" th:value="${row.candidate.marketPrice}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].compPrice'" th:value="${row.compPrice}">
+
+        <div class="d-flex gap-3 p-3 align-items-start">
+            <div th:if="${row.candidate.imageUrl != null and !row.candidate.imageUrl.isEmpty()}" class="lot-img-wrap">
+                <img th:src="${row.candidate.imageUrl}" th:data-card-img="${row.candidate.imageUrl}"
+                     class="img-fluid rounded shadow-sm obj-fit-contain">
+            </div>
+
+            <div class="flex-grow-1 min-w-0">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div class="min-w-0">
+                        <span class="fw-medium" th:text="${row.candidate.name}"></span>
+                        <div class="text-muted inv-subtext">
+                            <span th:text="${row.candidate.setName}"></span>
+                            <span th:if="${row.candidate.cardNumber != null and !row.candidate.cardNumber.isEmpty()}" th:text="' · ' + ${row.candidate.cardNumber}"></span>
+                            <span th:text="' · market $' + ${#numbers.formatDecimal(row.candidate.marketPrice, 1, 2)}"></span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div th:if="${row.compPrice != null}" class="small">
+                            <span class="text-muted">Lowest comp</span>
+                            <span class="fw-semibold" th:text="'$' + ${#numbers.formatDecimal(row.compPrice, 1, 2)}"></span>
+                            <span class="text-muted" th:text="'(' + ${row.compCount} + ' found)'"></span>
+                            <a th:if="${row.compUrl != null and !row.compUrl.isEmpty()}" th:href="${row.compUrl}"
+                               target="_blank" rel="noopener" class="text-muted">view &#8599;</a>
+                            <div class="text-muted inv-subtext" th:title="${row.compTitle}"
+                                 th:text="${#strings.abbreviate(row.compTitle, 60)}"></div>
+                        </div>
+                        <span th:if="${row.compPrice == null}" class="badge bg-secondary">no comps — using market price</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                    <span class="text-muted small">Title</span>
+                    <input type="text" class="form-control form-control-sm" style="max-width:34rem"
+                           th:name="'rows[' + ${iter.index} + '].title'" th:value="${row.title}" maxlength="80" required>
+                    <span class="text-muted small ms-2">Price $</span>
+                    <input type="number" class="form-control form-control-sm text-end input-w-90"
+                           th:name="'rows[' + ${iter.index} + '].price'" th:value="${row.suggestedPrice}"
+                           step="0.01" min="0.01" required>
+                    <span th:if="${row.candidate.qty > 1}" class="badge bg-info text-dark"
+                          th:text="'qty ' + ${row.candidate.qty}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <div class="d-flex align-items-center">
+            <span class="text-muted small">Each card becomes an eBay inventory item + unpublished offer. Publish individually from the Listings page.</span>
+            <button type="submit" class="btn btn-success btn-sm ms-auto"
+                    th:text="'Stage ' + ${#lists.size(rows)} + ' listing(s)'"></button>
+        </div>
+    </div>
+</form>
+
+</div>
+</body>
+</html>

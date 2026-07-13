@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<body>
+<div layout:fragment="content">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Listings</h4>
+        <small class="text-muted">Stage eBay listings for untracked raw cards from accepted lots, priced under the competition.</small>
+    </div>
+</div>
+
+<div th:if="${stagedCount != null}" class="alert alert-success alert-dismissible">
+    <span th:text="${stagedCount} + ' listing(s) staged on eBay. Review below, then publish when ready.'"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<div th:if="${publishedId != null}" class="alert alert-success alert-dismissible">
+    <span>Listing published — it is live on eBay.</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<div th:if="${stageFailures != null}" class="alert alert-danger alert-dismissible">
+    <div th:each="failure : ${stageFailures}" th:text="${failure}"></div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+<div th:if="${!data.ebayConfigured}" class="card mb-4">
+    <div class="card-body text-center text-muted py-5">
+        eBay credentials are not configured — set EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, and EBAY_REFRESH_TOKEN to stage listings.
+    </div>
+</div>
+
+<th:block th:if="${data.ebayConfigured}">
+
+<!-- Candidates: untracked raw cards from accepted lots, not yet staged -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span th:replace="~{fragments/items :: section-pill(label='Candidates')}"></span>
+        <span class="text-muted small" th:text="${#lists.size(data.candidates)} + ' cards'"></span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(data.candidates)}" class="card">
+        <div class="card-body text-center text-muted py-4">No untracked raw cards awaiting listing. Accept a lot to feed this queue.</div>
+    </div>
+
+    <form th:unless="${#lists.isEmpty(data.candidates)}" method="POST" action="/listings/review"
+          data-require-checkbox="selectedKeys">
+        <table class="table table-hover bg-white mb-2">
+            <thead class="table-light">
+            <tr>
+                <th style="width:100%">Card</th>
+                <th class="text-center text-nowrap ps-4">Qty</th>
+                <th class="text-center text-nowrap ps-4">Market</th>
+                <th class="text-center text-nowrap ps-4" style="width:3rem"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${data.candidates}">
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <img th:if="${c.imageUrl != null and !c.imageUrl.isEmpty()}"
+                             th:src="${c.imageUrl}" class="card-thumb" th:data-card-img="${c.imageUrl}">
+                        <div>
+                            <span class="fw-medium" th:text="${c.name}"></span>
+                            <div class="text-muted inv-subtext">
+                                <span th:text="${c.setName}"></span>
+                                <span th:if="${c.cardNumber != null and !c.cardNumber.isEmpty()}" th:text="' · ' + ${c.cardNumber}"></span>
+                                <span th:if="${c.lotSellerName != null and !c.lotSellerName.isEmpty()}">
+                                    · <a th:href="'/lots/' + ${c.lotPurchaseId}" class="text-muted" th:text="${c.lotSellerName}"></a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center align-middle text-nowrap ps-4" th:text="${c.qty}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted"
+                    th:text="${c.marketPrice != 0 ? '$' + #numbers.formatDecimal(c.marketPrice, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle ps-4">
+                    <input type="checkbox" name="selectedKeys" th:value="${c.key}" class="form-check-input item-cb">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success btn-sm">Find comps &rarr;</button>
+        </div>
+    </form>
+</div>
+
+<!-- Staged and published listings -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span th:replace="~{fragments/items :: section-pill(label='Staged &amp; Published')}"></span>
+        <span class="text-muted small" th:text="${#lists.size(data.listings)} + ' listings'"></span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(data.listings)}" class="card">
+        <div class="card-body text-center text-muted py-4">Nothing staged yet.</div>
+    </div>
+
+    <table th:unless="${#lists.isEmpty(data.listings)}" class="table table-hover bg-white mb-0">
+        <thead class="table-light">
+        <tr>
+            <th style="width:100%">Card</th>
+            <th class="text-center text-nowrap ps-4">Qty</th>
+            <th class="text-center text-nowrap ps-4">Comp</th>
+            <th class="text-center text-nowrap ps-4">Listed</th>
+            <th class="text-center text-nowrap ps-4">Status</th>
+            <th class="text-center text-nowrap ps-4">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="l : ${data.listings}">
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <img th:if="${l.imageUrl != null and !l.imageUrl.isEmpty()}"
+                         th:src="${l.imageUrl}" class="card-thumb" th:data-card-img="${l.imageUrl}">
+                    <div>
+                        <span class="fw-medium" th:text="${l.cardName}"></span>
+                        <div class="text-muted inv-subtext">
+                            <span th:text="${l.setName}"></span>
+                            <span th:if="${l.cardNumber != null and !l.cardNumber.isEmpty()}" th:text="' · ' + ${l.cardNumber}"></span>
+                            <span th:if="${l.createdAt != null}"> · <span th:replace="~{fragments/items :: date-color(date=${l.createdAt})}"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="text-center align-middle text-nowrap ps-4" th:text="${l.qty}"></td>
+            <td class="text-center align-middle text-nowrap ps-4 text-muted"
+                th:text="${l.compPrice != null ? '$' + #numbers.formatDecimal(l.compPrice, 1, 2) : '—'}"></td>
+            <td class="text-center align-middle text-nowrap ps-4 fw-medium"
+                th:text="'$' + ${#numbers.formatDecimal(l.listedPrice, 1, 2)}"></td>
+            <td class="text-center align-middle text-nowrap ps-4">
+                <span class="badge" th:classappend="${l.status == 'PUBLISHED' ? 'bg-success' : 'bg-warning text-dark'}"
+                      th:text="${l.status == 'PUBLISHED' ? 'Published' : 'Staged'}"></span>
+            </td>
+            <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
+                <div class="d-flex gap-1">
+                    <form th:if="${l.status == 'STAGED'}" method="POST" th:action="'/listings/' + ${l.id} + '/publish'"
+                          class="d-inline" th:data-confirm="'Publish ' + ${l.cardName} + ' to eBay for $' + ${#numbers.formatDecimal(l.listedPrice, 1, 2)} + '? This makes it live.'">
+                        <button type="submit" class="btn btn-success btn-sm">Publish</button>
+                    </form>
+                    <button th:if="${l.status == 'STAGED'}" type="button" class="btn btn-outline-danger btn-sm"
+                            th:attr="hx-post='/listings/' + ${l.id} + '/delete'"
+                            hx-confirm="Withdraw this staged listing from eBay?"
+                            hx-target="closest tr" hx-swap="delete swap:150ms">&#10005;</button>
+                    <a th:if="${l.status == 'PUBLISHED' and l.ebayListingId != null and !l.ebayListingId.isEmpty()}"
+                       th:href="'https://www.ebay.com/itm/' + ${l.ebayListingId}" target="_blank" rel="noopener"
+                       class="btn btn-outline-secondary btn-sm">eBay &#8599;</a>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</th:block>
+
+</div>
+</body>
+</html>

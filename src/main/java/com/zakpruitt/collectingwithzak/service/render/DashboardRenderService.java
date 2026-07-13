@@ -1,7 +1,8 @@
 package com.zakpruitt.collectingwithzak.service.render;
 
 import com.zakpruitt.collectingwithzak.dto.common.InventoryTotals;
-import com.zakpruitt.collectingwithzak.dto.common.MonthlyRevenue;
+import com.zakpruitt.collectingwithzak.dto.common.MonthlyRevenueRow;
+import com.zakpruitt.collectingwithzak.dto.common.MonthlySpendRow;
 import com.zakpruitt.collectingwithzak.dto.common.RangeTotals;
 import com.zakpruitt.collectingwithzak.dto.common.VincePaymentTotals;
 import com.zakpruitt.collectingwithzak.dto.render.DashboardData;
@@ -20,7 +21,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -50,17 +50,10 @@ public class DashboardRenderService {
         InventoryTotals invTotals = itemRepo.getInventoryTotals();
 
         List<String> monthLabels = buildMonthLabels();
-        Map<String, MonthlyRevenue> revenueByMonth = saleRepo.getMonthlyRevenueRaw(TIMELINE_MONTHS).stream()
-                .map(row -> new MonthlyRevenue(
-                        (String) row[0],
-                        ((Number) row[1]).doubleValue(),
-                        ((Number) row[2]).doubleValue()))
-                .collect(Collectors.toMap(MonthlyRevenue::getMonth, Function.identity()));
-
-        Map<String, Double> spendByMonth = new LinkedHashMap<>();
-        for (Object[] row : lotRepo.getMonthlySpendRaw(TIMELINE_MONTHS)) {
-            spendByMonth.put((String) row[0], ((Number) row[1]).doubleValue());
-        }
+        Map<String, MonthlyRevenueRow> revenueByMonth = saleRepo.getMonthlyRevenue(TIMELINE_MONTHS).stream()
+                .collect(Collectors.toMap(MonthlyRevenueRow::getMonth, Function.identity()));
+        Map<String, Double> spendByMonth = lotRepo.getMonthlySpend(TIMELINE_MONTHS).stream()
+                .collect(Collectors.toMap(MonthlySpendRow::getMonth, MonthlySpendRow::getSpend));
 
         RangeTotals vinceSalesTotals = saleRepo.getVinceTotals();
         VincePaymentTotals paymentTotals = paymentRepo.getTotals();
@@ -81,8 +74,8 @@ public class DashboardRenderService {
                 .totals30(saleRepo.getTotalsSince(LocalDate.now().minusDays(30)))
                 .monthLabels(monthLabels)
                 .monthlySpend(fillSeries(monthLabels, spendByMonth))
-                .monthlyGross(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenue::getGross))
-                .monthlyNet(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenue::getNet))
+                .monthlyGross(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenueRow::getGross))
+                .monthlyNet(fillRevenueSeries(monthLabels, revenueByMonth, MonthlyRevenueRow::getNet))
                 .originCounts(saleRepo.countByOrigin())
                 .itemTypeCounts(itemRepo.countByItemType())
                 .gradingStatuses(gradingRepo.countByStatus())
@@ -108,11 +101,11 @@ public class DashboardRenderService {
                 .toList();
     }
 
-    private List<Double> fillRevenueSeries(List<String> labels, Map<String, MonthlyRevenue> data,
-                                           ToDoubleFunction<MonthlyRevenue> extractor) {
+    private List<Double> fillRevenueSeries(List<String> labels, Map<String, MonthlyRevenueRow> data,
+                                           ToDoubleFunction<MonthlyRevenueRow> extractor) {
         return labels.stream()
                 .map(label -> {
-                    MonthlyRevenue revenue = data.get(label);
+                    MonthlyRevenueRow revenue = data.get(label);
                     return revenue != null ? extractor.applyAsDouble(revenue) : 0.0;
                 })
                 .toList();

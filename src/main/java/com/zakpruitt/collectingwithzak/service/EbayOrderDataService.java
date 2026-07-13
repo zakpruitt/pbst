@@ -22,7 +22,8 @@ public class EbayOrderDataService {
 
     private final JbayProvider jbayProvider;
 
-    public boolean isConfigured() {
+    public boolean isConfigured()
+    {
         return jbayProvider.isConfigured();
     }
 

@@ -1,7 +1,6 @@
 package com.zakpruitt.collectingwithzak.config;
 
 import com.zakpruitt.jbay.Jbay;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,12 +13,12 @@ public class JbayProvider {
 
     private final Jbay jbay;
 
-    public JbayProvider(@Value("${ebay.client-id}") String clientId,
-                        @Value("${ebay.client-secret}") String clientSecret,
-                        @Value("${ebay.refresh-token}") String refreshToken) {
-        boolean configured = !clientId.isBlank() && !clientSecret.isBlank() && !refreshToken.isBlank();
-        this.jbay = configured
-                ? Jbay.builder().credentials(clientId, clientSecret).refreshToken(refreshToken).build()
+    public JbayProvider(EbayProperties properties) {
+        this.jbay = properties.isConfigured()
+                ? Jbay.builder()
+                        .credentials(properties.clientId(), properties.clientSecret())
+                        .refreshToken(properties.refreshToken())
+                        .build()
                 : null;
     }
 

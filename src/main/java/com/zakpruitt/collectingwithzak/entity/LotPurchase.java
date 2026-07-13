@@ -49,7 +49,7 @@ public class LotPurchase extends BaseEntity {
         try {
             return List.of(MAPPER.readValue(lotContentSnapshot, SnapshotItem[].class));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse lot snapshot", e);
+            throw new IllegalStateException("Failed to parse lot snapshot for lot " + getId(), e);
         }
     }
 }

@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -68,7 +68,7 @@ class ListingRenderServiceTest {
     }
 
     @Test
-    void candidatesAreUntrackedRawCardsOnly() {
+    void getIndexData_withMixedSnapshot_returnsOnlyUntrackedRawCards() {
         when(lotRepo.findByStatusOrderByPurchaseDateDesc(LotStatus.ACCEPTED)).thenReturn(List.of(
                 acceptedLot(1L, snapshotJson(
                         new SnapshotRow("Flip Card", "RAW_CARD", false),
@@ -79,14 +79,14 @@ class ListingRenderServiceTest {
 
         ListingIndexData data = renderService.getIndexData();
 
-        assertEquals(1, data.getCandidates().size());
+        assertThat(data.getCandidates()).hasSize(1);
         ListingCandidate candidate = data.getCandidates().getFirst();
-        assertEquals("Flip Card", candidate.getName());
-        assertEquals("1:0", candidate.getKey());
+        assertThat(candidate.getName()).isEqualTo("Flip Card");
+        assertThat(candidate.getKey()).isEqualTo("1:0");
     }
 
     @Test
-    void alreadyStagedCardsAreExcluded() {
+    void getIndexData_whenCardAlreadyStaged_excludesItFromCandidates() {
         LotPurchase lot = acceptedLot(1L, snapshotJson(
                 new SnapshotRow("Already Listed", "RAW_CARD", false),
                 new SnapshotRow("Still Waiting", "RAW_CARD", false)));
@@ -97,18 +97,20 @@ class ListingRenderServiceTest {
 
         ListingIndexData data = renderService.getIndexData();
 
-        assertEquals(1, data.getCandidates().size());
-        assertEquals("Still Waiting", data.getCandidates().getFirst().getName());
+        assertThat(data.getCandidates())
+                .extracting(ListingCandidate::getName)
+                .containsExactly("Still Waiting");
     }
 
     @Test
-    void selectionKeysAreValidatedAgainstRealCandidates() {
+    void findCandidatesByKeys_withUnknownKey_returnsOnlyRealCandidates() {
         when(lotRepo.findByStatusOrderByPurchaseDateDesc(LotStatus.ACCEPTED)).thenReturn(List.of(
                 acceptedLot(1L, snapshotJson(new SnapshotRow("Flip Card", "RAW_CARD", false)))));
 
         List<ListingCandidate> picked = renderService.findCandidatesByKeys(List.of("1:0", "99:5"));
 
-        assertEquals(1, picked.size());
-        assertEquals("Flip Card", picked.getFirst().getName());
+        assertThat(picked)
+                .extracting(ListingCandidate::getName)
+                .containsExactly("Flip Card");
     }
 }

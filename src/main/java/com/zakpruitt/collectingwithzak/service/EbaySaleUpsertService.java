@@ -18,12 +18,11 @@ public class EbaySaleUpsertService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void upsertFromEbay(Sale sale) {
-        Sale existing = saleRepo.findByEbayOrderId(sale.getEbayOrderId());
-        if (existing != null) {
-            saleMapper.updateFromEbay(sale, existing);
-        } else {
-            sale.setStatus(SaleStatus.STAGED);
-            saleRepo.save(sale);
-        }
+        saleRepo.findByEbayOrderId(sale.getEbayOrderId()).ifPresentOrElse(
+                existing -> saleMapper.updateFromEbay(sale, existing),
+                () -> {
+                    sale.setStatus(SaleStatus.STAGED);
+                    saleRepo.save(sale);
+                });
     }
 }

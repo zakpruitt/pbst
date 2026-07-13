@@ -1,6 +1,7 @@
 package com.zakpruitt.collectingwithzak.repository;
 
 import com.zakpruitt.collectingwithzak.dto.common.LabeledStat;
+import com.zakpruitt.collectingwithzak.dto.common.MonthlyRevenueRow;
 import com.zakpruitt.collectingwithzak.dto.common.RangeTotals;
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
@@ -15,7 +16,7 @@ import java.util.Optional;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
-    Sale findByEbayOrderId(String ebayOrderId);
+    Optional<Sale> findByEbayOrderId(String ebayOrderId);
 
     @EntityGraph(attributePaths = {"items"})
     Optional<Sale> findWithItemsById(Long id);
@@ -55,7 +56,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             "FROM sales s WHERE s.status = 'CONFIRMED' " +
             "AND s.sale_date >= NOW() - make_interval(months => :months) " +
             "GROUP BY month ORDER BY month", nativeQuery = true)
-    List<Object[]> getMonthlyRevenueRaw(int months);
+    List<MonthlyRevenueRow> getMonthlyRevenue(int months);
 
     @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.LabeledStat(s.origin, COUNT(s)) " +
             "FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -26,8 +25,11 @@ public class PokeWalletSyncJob {
     private final PokeWalletClient pokeWalletClient;
     private final PokemonCardRepository cardRepo;
     private final PokemonCardMapper cardMapper;
+
+    // Deliberately not @Transactional: each set involves PokeWallet HTTP calls, and a
+    // transaction spanning them would hold a connection for the whole run. saveAll
+    // commits each set on its own, which also matches the per-set error handling.
     @Scheduled(cron = "0 0 3 * * *")
-    @Transactional
     public void sync() {
         List<PokeWalletSet> allSets = fetchFilteredSets();
         List<PokeWalletSet> segment = getSegment(allSets, LocalDate.now().getDayOfYear());
@@ -37,7 +39,6 @@ public class PokeWalletSyncJob {
         syncSets(segment);
     }
 
-    @Transactional
     public void syncAll() {
         List<PokeWalletSet> allSets = fetchFilteredSets();
         log.info("PokeWallet full sync started: {} sets", allSets.size());

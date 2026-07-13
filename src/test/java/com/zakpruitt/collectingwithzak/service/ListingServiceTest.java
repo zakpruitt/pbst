@@ -2,44 +2,49 @@ package com.zakpruitt.collectingwithzak.service;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 class ListingServiceTest {
 
     @Test
-    void undercutsLowestCompByPercent() {
+    void suggestPrice_whenCompAboveFloor_undercutsByPercent() {
         // 5% under a $100 comp, market floor far below
-        assertEquals(95.00, ListingService.suggestPrice(100.0, 50.0, 5, 80), 0.001);
+        assertThat(ListingService.suggestPrice(100.0, 50.0, 5, 80)).isCloseTo(95.00, within(0.001));
     }
 
     @Test
-    void floorStopsJunkCompsFromTankingThePrice() {
+    void suggestPrice_whenCompBelowFloor_returnsFloorOfMarket() {
         // $4 junk comp on a $50 card: floor = 80% of market
-        assertEquals(40.00, ListingService.suggestPrice(4.0, 50.0, 5, 80), 0.001);
+        assertThat(ListingService.suggestPrice(4.0, 50.0, 5, 80)).isCloseTo(40.00, within(0.001));
     }
 
     @Test
-    void noCompsFallsBackToMarketPrice() {
-        assertEquals(12.34, ListingService.suggestPrice(null, 12.34, 5, 80), 0.001);
+    void suggestPrice_whenNoComps_fallsBackToMarketPrice() {
+        assertThat(ListingService.suggestPrice(null, 12.34, 5, 80)).isCloseTo(12.34, within(0.001));
     }
 
     @Test
-    void roundsHalfUpToCents() {
+    void suggestPrice_whenFractionalCents_roundsHalfUpToCents() {
         // 77.35 * 0.95 = 73.4825 -> 73.48
-        assertEquals(73.48, ListingService.suggestPrice(77.35, 10.0, 5, 80), 0.001);
+        assertThat(ListingService.suggestPrice(77.35, 10.0, 5, 80)).isCloseTo(73.48, within(0.001));
     }
 
     @Test
-    void defaultTitleJoinsPartsAndSkipsBlanks() {
-        assertEquals("Charizard ex 199/165 151 Pokemon TCG",
-                ListingService.defaultTitle("Charizard ex", "199/165", "151"));
-        assertEquals("Charizard ex Pokemon TCG",
-                ListingService.defaultTitle("Charizard ex", null, ""));
+    void defaultTitle_withAllParts_joinsThemInOrder() {
+        assertThat(ListingService.defaultTitle("Charizard ex", "199/165", "151"))
+                .isEqualTo("Charizard ex 199/165 151 Pokemon TCG");
     }
 
     @Test
-    void defaultTitleTruncatesTo80Chars() {
+    void defaultTitle_withBlankParts_skipsThem() {
+        assertThat(ListingService.defaultTitle("Charizard ex", null, ""))
+                .isEqualTo("Charizard ex Pokemon TCG");
+    }
+
+    @Test
+    void defaultTitle_whenLongerThan80Chars_truncates() {
         String longName = "A".repeat(100);
-        assertEquals(80, ListingService.defaultTitle(longName, "1/1", "Set").length());
+        assertThat(ListingService.defaultTitle(longName, "1/1", "Set")).hasSize(80);
     }
 }

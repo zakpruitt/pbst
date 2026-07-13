@@ -16,6 +16,7 @@ import com.zakpruitt.collectingwithzak.repository.VincePaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -37,6 +38,10 @@ public class SaleService {
         saleRepo.save(saleMapper.toEntity(request));
     }
 
+    // Suspends the class-level transaction: every order commits in its own
+    // REQUIRES_NEW transaction inside the upsert service, so a wrapper transaction
+    // would only pin a second connection for the whole loop.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void syncFromEbay(List<EbayOrderData> orders) {
         int upserted = 0;
         for (EbayOrderData order : orders) {

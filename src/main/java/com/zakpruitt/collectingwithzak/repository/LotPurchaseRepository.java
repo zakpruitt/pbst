@@ -1,5 +1,6 @@
 package com.zakpruitt.collectingwithzak.repository;
 
+import com.zakpruitt.collectingwithzak.dto.common.MonthlySpendRow;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,6 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
             "FROM lot_purchases WHERE status != 'REJECTED' " +
             "AND purchase_date >= NOW() - make_interval(months => :months) " +
             "GROUP BY month ORDER BY month", nativeQuery = true)
-    List<Object[]> getMonthlySpendRaw(int months);
+    List<MonthlySpendRow> getMonthlySpend(int months);
 
 }

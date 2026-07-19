@@ -1,7 +1,14 @@
 package com.zakpruitt.collectingwithzak.entity.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum SaleStatus {
-    STAGED,
-    CONFIRMED,
-    IGNORED
+    STAGED("Staged"),
+    CONFIRMED("Confirmed"),
+    IGNORED("Ignored");
+
+    private final String label;
 }

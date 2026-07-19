@@ -1,6 +1,8 @@
 package com.zakpruitt.collectingwithzak.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -47,4 +49,17 @@ public class SnapshotItem {
 
     @JsonProperty("image_url")
     private String imageUrl;
+
+    /**
+     * Same display surface as TrackedItem.getTypeLabel(), so shared fragments can render either.
+     * Ignored by Jackson to keep the persisted snapshot JSON unchanged.
+     */
+    @JsonIgnore
+    public String getTypeLabel() {
+        try {
+            return ItemType.valueOf(itemType).getLabel();
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return ItemType.OTHER.getLabel();
+        }
+    }
 }

@@ -67,6 +67,48 @@ public class TrackedItem extends BaseEntity {
     @Embedded
     private GradedDetails gradedDetails;
 
+    public void attachTo(GradingSubmission submission) {
+        this.gradingSubmission = submission;
+        this.status = ItemStatus.IN_GRADING;
+    }
+
+    public void releaseFromGrading() {
+        this.gradingSubmission = null;
+        this.status = ItemStatus.AVAILABLE;
+    }
+
+    /**
+     * The item comes back from the grader: it keeps its submission link (for the grading fee)
+     * but is a graded card, available again, with the recorded grade attached.
+     */
+    public void returnFromGrading(GradedDetails details) {
+        this.gradedDetails = details;
+        this.itemType = ItemType.GRADED_CARD;
+        this.status = ItemStatus.AVAILABLE;
+    }
+
+    public void attachTo(Sale sale) {
+        this.sale = sale;
+        this.status = ItemStatus.SOLD;
+    }
+
+    public void releaseFromSale() {
+        this.sale = null;
+        this.status = ItemStatus.AVAILABLE;
+    }
+
+    public String getTypeLabel() {
+        return itemType.getLabel();
+    }
+
+    public String getGradingCompany() {
+        return gradedDetails == null ? null : gradedDetails.getGradingCompany();
+    }
+
+    public String getGrade() {
+        return gradedDetails == null ? null : gradedDetails.getGrade();
+    }
+
     public double getGradingFee() {
         if (gradingSubmission == null) {
             return 0;
@@ -80,5 +122,15 @@ public class TrackedItem extends BaseEntity {
             total += gradedDetails.getGradingUpcharge();
         }
         return total;
+    }
+
+    /**
+     * Purchase-time market value, else the card's current market price — the value inventory displays and sums.
+     */
+    public double getEffectiveMarketValue() {
+        if (marketValueAtPurchase != 0) {
+            return marketValueAtPurchase;
+        }
+        return pokemonCard != null ? pokemonCard.getMarketPrice() : 0;
     }
 }

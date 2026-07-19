@@ -51,6 +51,13 @@ public class SnapshotItem {
     private String imageUrl;
 
     /**
+     * itemType stays a String because legacy snapshot JSON may hold values outside the ItemType enum.
+     */
+    public boolean isType(ItemType type) {
+        return type.name().equals(itemType);
+    }
+
+    /**
      * Same display surface as TrackedItem.getTypeLabel(), so shared fragments can render either.
      * Ignored by Jackson to keep the persisted snapshot JSON unchanged.
      */

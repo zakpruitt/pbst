@@ -1,5 +1,6 @@
 package com.zakpruitt.collectingwithzak.exception;
 
+import com.zakpruitt.collectingwithzak.ebay.EbayNotConfiguredException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,9 +38,9 @@ public class GlobalExceptionHandler {
     public String handleValidation(MethodArgumentNotValidException ex) {
         log.warn("Validation failed: {}", ex.getMessage());
         return ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + " " + error.getDefaultMessage())
-                .distinct()
-                .collect(Collectors.joining("; "));
+                 .map(error -> error.getField() + " " + error.getDefaultMessage())
+                 .distinct()
+                 .collect(Collectors.joining("; "));
     }
 
     @ExceptionHandler(EbayNotConfiguredException.class)

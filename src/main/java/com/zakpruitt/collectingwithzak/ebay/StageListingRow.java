@@ -1,4 +1,4 @@
-package com.zakpruitt.collectingwithzak.dto.request;
+package com.zakpruitt.collectingwithzak.ebay;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

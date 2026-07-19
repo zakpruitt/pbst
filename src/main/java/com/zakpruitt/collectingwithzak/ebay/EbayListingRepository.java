@@ -1,6 +1,5 @@
-package com.zakpruitt.collectingwithzak.repository;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.entity.EbayListing;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

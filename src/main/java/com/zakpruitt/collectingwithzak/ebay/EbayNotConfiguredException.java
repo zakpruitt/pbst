@@ -1,4 +1,4 @@
-package com.zakpruitt.collectingwithzak.exception;
+package com.zakpruitt.collectingwithzak.ebay;
 
 /**
  * Thrown when an eBay-backed feature is used without eBay credentials configured.

@@ -1,4 +1,4 @@
-package com.zakpruitt.collectingwithzak.service;
+package com.zakpruitt.collectingwithzak.ebay;
 
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;

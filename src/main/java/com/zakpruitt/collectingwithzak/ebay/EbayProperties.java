@@ -1,4 +1,4 @@
-package com.zakpruitt.collectingwithzak.config;
+package com.zakpruitt.collectingwithzak.ebay;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;

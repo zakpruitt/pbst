@@ -1,7 +1,5 @@
-package com.zakpruitt.collectingwithzak.job;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.config.JbayProvider;
-import com.zakpruitt.collectingwithzak.service.EbayOrderDataService;
 import com.zakpruitt.collectingwithzak.service.SaleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

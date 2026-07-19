@@ -1,13 +1,7 @@
-package com.zakpruitt.collectingwithzak.service;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.config.JbayProvider;
-import com.zakpruitt.collectingwithzak.config.ListingProperties;
-import com.zakpruitt.collectingwithzak.dto.common.ListingCandidate;
-import com.zakpruitt.collectingwithzak.dto.render.ListingIndexData;
-import com.zakpruitt.collectingwithzak.entity.EbayListing;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
-import com.zakpruitt.collectingwithzak.repository.EbayListingRepository;
 import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

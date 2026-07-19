@@ -1,6 +1,5 @@
-package com.zakpruitt.collectingwithzak.config;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.exception.EbayNotConfiguredException;
 import com.zakpruitt.jbay.Jbay;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +17,9 @@ public class JbayProvider {
     public JbayProvider(EbayProperties properties) {
         this.jbay = properties.isConfigured()
                 ? Jbay.builder()
-                .credentials(properties.clientId(), properties.clientSecret())
-                .refreshToken(properties.refreshToken())
-                .build()
+                      .credentials(properties.clientId(), properties.clientSecret())
+                      .refreshToken(properties.refreshToken())
+                      .build()
                 : null;
     }
 

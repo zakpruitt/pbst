@@ -1,7 +1,5 @@
-package com.zakpruitt.collectingwithzak.controller;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.dto.request.StageListingsRequest;
-import com.zakpruitt.collectingwithzak.service.ListingService;
 import com.zakpruitt.jbay.JbayException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

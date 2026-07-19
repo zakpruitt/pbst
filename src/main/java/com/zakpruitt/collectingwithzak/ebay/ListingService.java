@@ -1,18 +1,10 @@
-package com.zakpruitt.collectingwithzak.service;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.config.JbayProvider;
-import com.zakpruitt.collectingwithzak.config.ListingProperties;
-import com.zakpruitt.collectingwithzak.dto.common.ListingCandidate;
-import com.zakpruitt.collectingwithzak.dto.common.ListingReviewRow;
-import com.zakpruitt.collectingwithzak.dto.render.ListingIndexData;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
-import com.zakpruitt.collectingwithzak.dto.request.StageListingRow;
-import com.zakpruitt.collectingwithzak.dto.request.StageListingsRequest;
-import com.zakpruitt.collectingwithzak.entity.EbayListing;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
+import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import com.zakpruitt.collectingwithzak.entity.enums.ListingStatus;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
-import com.zakpruitt.collectingwithzak.repository.EbayListingRepository;
 import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository;
 import com.zakpruitt.jbay.Amount;
 import com.zakpruitt.jbay.JbayException;
@@ -72,8 +64,8 @@ public class ListingService {
 
     private static String joinNonBlank(String... parts) {
         return Stream.of(parts)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.joining(" "));
+                     .filter(StringUtils::hasText)
+                     .collect(Collectors.joining(" "));
     }
 
     private static SellingPolicy firstPolicy(List<SellingPolicy> policies, String kind) {
@@ -93,8 +85,9 @@ public class ListingService {
     public ListingIndexData getIndexData() {
         List<EbayListing> listings = listingRepo.findAllByOrderByCreatedAtDesc();
         Set<String> listedKeys = listings.stream()
-                .map(listing -> ListingCandidate.key(listing.getLotPurchase().getId(), listing.getSnapshotIndex()))
-                .collect(Collectors.toSet());
+                                         .map(listing -> ListingCandidate.key(listing.getLotPurchase()
+                                                                                     .getId(), listing.getSnapshotIndex()))
+                                         .collect(Collectors.toSet());
 
         return new ListingIndexData(findCandidates(listedKeys), listings, jbayProvider.isConfigured());
     }
@@ -105,8 +98,8 @@ public class ListingService {
     public List<ListingCandidate> findCandidatesByKeys(List<String> keys) {
         Set<String> wanted = Set.copyOf(keys);
         return findCandidates(Set.of()).stream()
-                .filter(candidate -> wanted.contains(candidate.getKey()))
-                .toList();
+                                       .filter(candidate -> wanted.contains(candidate.getKey()))
+                                       .toList();
     }
 
     /**
@@ -119,24 +112,24 @@ public class ListingService {
             List<SnapshotItem> snapshot = lot.parseSnapshot();
             for (int index = 0; index < snapshot.size(); index++) {
                 SnapshotItem item = snapshot.get(index);
-                if (item.isTracked() || !"RAW_CARD".equals(item.getItemType())) {
+                if (item.isTracked() || !item.isType(ItemType.RAW_CARD)) {
                     continue;
                 }
                 if (excludedKeys.contains(ListingCandidate.key(lot.getId(), index))) {
                     continue;
                 }
                 candidates.add(ListingCandidate.builder()
-                        .lotPurchaseId(lot.getId())
-                        .snapshotIndex(index)
-                        .lotSellerName(lot.getSellerName())
-                        .name(item.getName())
-                        .setName(item.getSetName())
-                        .cardNumber(item.getCardNumber())
-                        .rarity(item.getRarity())
-                        .qty(item.getQty())
-                        .marketPrice(item.getMarketPrice())
-                        .imageUrl(item.getImageUrl())
-                        .build());
+                                               .lotPurchaseId(lot.getId())
+                                               .snapshotIndex(index)
+                                               .lotSellerName(lot.getSellerName())
+                                               .name(item.getName())
+                                               .setName(item.getSetName())
+                                               .cardNumber(item.getCardNumber())
+                                               .rarity(item.getRarity())
+                                               .qty(item.getQty())
+                                               .marketPrice(item.getMarketPrice())
+                                               .imageUrl(item.getImageUrl())
+                                               .build());
             }
         }
 
@@ -152,31 +145,31 @@ public class ListingService {
         // Each comp search is an independent eBay round-trip; run them concurrently.
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             return candidates.stream()
-                    .map(candidate -> CompletableFuture.supplyAsync(() -> reviewRow(candidate), executor))
-                    .toList()
-                    .stream()
-                    .map(CompletableFuture::join)
-                    .toList();
+                             .map(candidate -> CompletableFuture.supplyAsync(() -> reviewRow(candidate), executor))
+                             .toList()
+                             .stream()
+                             .map(CompletableFuture::join)
+                             .toList();
         }
     }
 
     private ListingReviewRow reviewRow(ListingCandidate candidate) {
         List<ItemSummary> comps = searchComps(candidate);
         ItemSummary cheapest = comps.stream()
-                .min(Comparator.comparingDouble(ItemSummary::deliveredPrice))
-                .orElse(null);
+                                    .min(Comparator.comparingDouble(ItemSummary::deliveredPrice))
+                                    .orElse(null);
         Double compPrice = cheapest == null ? null : cheapest.deliveredPrice();
 
         return ListingReviewRow.builder()
-                .candidate(candidate)
-                .compPrice(compPrice)
-                .compTitle(cheapest == null ? "" : cheapest.title())
-                .compUrl(cheapest == null ? "" : cheapest.itemWebUrl())
-                .compCount(comps.size())
-                .suggestedPrice(suggestPrice(compPrice, candidate.getMarketPrice(),
-                        properties.undercutPercent(), properties.floorPercent()))
-                .title(defaultTitle(candidate.getName(), candidate.getCardNumber(), candidate.getSetName()))
-                .build();
+                               .candidate(candidate)
+                               .compPrice(compPrice)
+                               .compTitle(cheapest == null ? "" : cheapest.title())
+                               .compUrl(cheapest == null ? "" : cheapest.itemWebUrl())
+                               .compCount(comps.size())
+                               .suggestedPrice(suggestPrice(compPrice, candidate.getMarketPrice(),
+                                       properties.undercutPercent(), properties.floorPercent()))
+                               .title(defaultTitle(candidate.getName(), candidate.getCardNumber(), candidate.getSetName()))
+                               .build();
     }
 
     /**
@@ -278,19 +271,19 @@ public class ListingService {
                 defaults.merchantLocationKey()));
 
         listingRepo.save(EbayListing.builder()
-                .lotPurchase(lotRepo.getReferenceById(candidate.getLotPurchaseId()))
-                .snapshotIndex(candidate.getSnapshotIndex())
-                .cardName(candidate.getName())
-                .setName(Objects.requireNonNullElse(candidate.getSetName(), ""))
-                .cardNumber(Objects.requireNonNullElse(candidate.getCardNumber(), ""))
-                .imageUrl(Objects.requireNonNullElse(candidate.getImageUrl(), ""))
-                .qty(candidate.getQty())
-                .marketPrice(candidate.getMarketPrice())
-                .compPrice(row.getCompPrice())
-                .listedPrice(row.getPrice())
-                .sku(sku)
-                .offerId(offer.offerId())
-                .build());
+                                    .lotPurchase(lotRepo.getReferenceById(candidate.getLotPurchaseId()))
+                                    .snapshotIndex(candidate.getSnapshotIndex())
+                                    .cardName(candidate.getName())
+                                    .setName(Objects.requireNonNullElse(candidate.getSetName(), ""))
+                                    .cardNumber(Objects.requireNonNullElse(candidate.getCardNumber(), ""))
+                                    .imageUrl(Objects.requireNonNullElse(candidate.getImageUrl(), ""))
+                                    .qty(candidate.getQty())
+                                    .marketPrice(candidate.getMarketPrice())
+                                    .compPrice(row.getCompPrice())
+                                    .listedPrice(row.getPrice())
+                                    .sku(sku)
+                                    .offerId(offer.offerId())
+                                    .build());
     }
 
     private List<ItemSummary> searchComps(ListingCandidate candidate) {
@@ -299,11 +292,11 @@ public class ListingService {
         String excludeSeller = properties.excludeSeller();
         try {
             return jbayProvider.client().browse()
-                    .searchFixedPrice(query, properties.categoryId(), properties.compLimit())
-                    .stream()
-                    .filter(item -> !StringUtils.hasText(excludeSeller)
-                            || !item.sellerUsername().equalsIgnoreCase(excludeSeller))
-                    .toList();
+                               .searchFixedPrice(query, properties.categoryId(), properties.compLimit())
+                               .stream()
+                               .filter(item -> !StringUtils.hasText(excludeSeller)
+                                       || !item.sellerUsername().equalsIgnoreCase(excludeSeller))
+                               .toList();
         } catch (JbayException e) {
             log.warn("Comp search for '{}' failed: {}", query, e.getMessage());
             return List.of();
@@ -340,7 +333,8 @@ public class ListingService {
         String marketplace = properties.marketplace();
         SellingPolicy payment = firstPolicy(jbayProvider.client().account().paymentPolicies(marketplace), "payment");
         SellingPolicy returns = firstPolicy(jbayProvider.client().account().returnPolicies(marketplace), "return");
-        SellingPolicy fulfillment = firstPolicy(jbayProvider.client().account().fulfillmentPolicies(marketplace), "fulfillment");
+        SellingPolicy fulfillment = firstPolicy(jbayProvider.client().account()
+                                                            .fulfillmentPolicies(marketplace), "fulfillment");
         return new OfferRequest.ListingPolicies(payment.policyId(), returns.policyId(), fulfillment.policyId());
     }
 

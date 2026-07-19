@@ -1,5 +1,7 @@
-package com.zakpruitt.collectingwithzak.entity;
+package com.zakpruitt.collectingwithzak.ebay;
 
+import com.zakpruitt.collectingwithzak.entity.BaseEntity;
+import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.ListingStatus;
 import jakarta.persistence.*;
 import lombok.*;

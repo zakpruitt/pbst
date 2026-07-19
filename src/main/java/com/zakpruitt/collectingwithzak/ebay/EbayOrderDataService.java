@@ -1,7 +1,5 @@
-package com.zakpruitt.collectingwithzak.service;
+package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.config.JbayProvider;
-import com.zakpruitt.collectingwithzak.dto.ebay.EbayOrderData;
 import com.zakpruitt.jbay.Amount;
 import com.zakpruitt.jbay.finances.Transaction;
 import com.zakpruitt.jbay.orders.Order;
@@ -82,14 +80,14 @@ public class EbayOrderDataService {
         double refund = transactionData.getOrDefault(orderId + ":refund", 0.0);
 
         return EbayOrderData.builder()
-                .ebayOrderId(orderId)
-                .saleDate(order.creationDateTime().toLocalDate())
-                .title(order.lineItems().isEmpty() ? "" : order.lineItems().getFirst().title())
-                .buyerUsername(order.buyerUsername())
-                .grossAmount(payout + fees - refund)
-                .ebayFees(fees)
-                .shippingCost(transactionData.getOrDefault(orderId + ":shipping", 0.0))
-                .orderStatus(order.orderFulfillmentStatus())
-                .build();
+                            .ebayOrderId(orderId)
+                            .saleDate(order.creationDateTime().toLocalDate())
+                            .title(order.lineItems().isEmpty() ? "" : order.lineItems().getFirst().title())
+                            .buyerUsername(order.buyerUsername())
+                            .grossAmount(payout + fees - refund)
+                            .ebayFees(fees)
+                            .shippingCost(transactionData.getOrDefault(orderId + ":shipping", 0.0))
+                            .orderStatus(order.orderFulfillmentStatus())
+                            .build();
     }
 }

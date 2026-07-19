@@ -49,10 +49,10 @@ public class PokeWalletClient {
 
         while (page <= totalPages) {
             String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/search")
-                    .queryParam("q", query)
-                    .queryParam("page", page)
-                    .queryParam("limit", 100)
-                    .toUriString();
+                                             .queryParam("q", query)
+                                             .queryParam("page", page)
+                                             .queryParam("limit", 100)
+                                             .toUriString();
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-API-Key", apiKey);

@@ -48,10 +48,10 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(PasswordEncoder encoder) {
         return new InMemoryUserDetailsManager(
                 User.builder()
-                        .username(appUser)
-                        .password(encoder.encode(appPass))
-                        .roles("USER")
-                        .build()
+                    .username(appUser)
+                    .password(encoder.encode(appPass))
+                    .roles("USER")
+                    .build()
         );
     }
 

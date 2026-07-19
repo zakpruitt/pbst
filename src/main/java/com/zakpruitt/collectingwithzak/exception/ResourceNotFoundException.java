@@ -8,9 +8,6 @@ public class ResourceNotFoundException extends RuntimeException {
         super(String.format("%s not found with id: %d", resource, id));
     }
 
-    /**
-     * Supplier form for {@code repository.findById(id).orElseThrow(notFound("Sale", id))}.
-     */
     public static Supplier<ResourceNotFoundException> notFound(String resource, Long id) {
         return () -> new ResourceNotFoundException(resource, id);
     }

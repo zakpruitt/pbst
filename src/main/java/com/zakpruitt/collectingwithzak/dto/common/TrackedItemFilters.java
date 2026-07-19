@@ -12,8 +12,8 @@ public final class TrackedItemFilters {
 
     public static List<TrackedItem> filterByType(List<TrackedItem> items, ItemType type) {
         return items.stream()
-                .filter(i -> i.getItemType() == type)
-                .toList();
+                    .filter(i -> i.getItemType() == type)
+                    .toList();
     }
 
     public static double sumCost(List<TrackedItem> items) {

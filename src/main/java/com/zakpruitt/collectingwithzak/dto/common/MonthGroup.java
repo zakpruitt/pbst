@@ -58,8 +58,8 @@ public class MonthGroup<T> {
         group.label = label;
         group.firstDay = date;
         group.monthClass = "month-" + date.getMonth()
-                .name()
-                .toLowerCase();
+                                          .name()
+                                          .toLowerCase();
         group.items = new ArrayList<>();
         return group;
     }

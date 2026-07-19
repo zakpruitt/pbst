@@ -47,9 +47,9 @@ public class PokeWalletSyncJob {
 
     private List<PokeWalletSet> fetchFilteredSets() {
         return pokeWalletClient.fetchSets().stream()
-                .filter(s -> ALLOWED_LANGUAGES.contains(s.getLanguage()))
-                .sorted(Comparator.comparing(PokeWalletSet::getSetId))
-                .toList();
+                               .filter(s -> ALLOWED_LANGUAGES.contains(s.getLanguage()))
+                               .sorted(Comparator.comparing(PokeWalletSet::getSetId))
+                               .toList();
     }
 
     private List<PokeWalletSet> getSegment(List<PokeWalletSet> allSets, int dayOfYear) {
@@ -81,12 +81,12 @@ public class PokeWalletSyncJob {
         }
 
         var entities = cards.stream()
-                .filter(c -> c.getCardInfo() != null && c.getCardInfo().getCardNumber() != null)
-                .filter(c -> c.getTcgplayer() != null
-                        && c.getTcgplayer().getUrl() != null
-                        && c.getTcgplayer().getUrl().contains("/product/"))
-                .map(cardMapper::fromPokeWallet)
-                .toList();
+                            .filter(c -> c.getCardInfo() != null && c.getCardInfo().getCardNumber() != null)
+                            .filter(c -> c.getTcgplayer() != null
+                                    && c.getTcgplayer().getUrl() != null
+                                    && c.getTcgplayer().getUrl().contains("/product/"))
+                            .map(cardMapper::fromPokeWallet)
+                            .toList();
         cardRepo.saveAll(entities);
         log.info("Set synced: {} — {} cards", setId, entities.size());
     }

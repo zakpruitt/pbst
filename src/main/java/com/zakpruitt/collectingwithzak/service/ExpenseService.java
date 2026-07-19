@@ -48,8 +48,8 @@ public class ExpenseService {
 
     private double totalSince(List<Expense> expenses, LocalDate since) {
         return expenses.stream()
-                .filter(e -> !e.getExpenseDate().isBefore(since))
-                .mapToDouble(Expense::getCost)
-                .sum();
+                       .filter(e -> !e.getExpenseDate().isBefore(since))
+                       .mapToDouble(Expense::getCost)
+                       .sum();
     }
 }

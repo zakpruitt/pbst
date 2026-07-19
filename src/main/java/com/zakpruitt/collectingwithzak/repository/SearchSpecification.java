@@ -19,8 +19,8 @@ public final class SearchSpecification {
             for (int i = 0; i < terms.length; i++) {
                 String pattern = "%" + terms[i] + "%";
                 Predicate[] fieldPredicates = fields.stream()
-                        .map(field -> criteriaBuilder.like(criteriaBuilder.lower(root.get(field)), pattern))
-                        .toArray(Predicate[]::new);
+                                                    .map(field -> criteriaBuilder.like(criteriaBuilder.lower(root.get(field)), pattern))
+                                                    .toArray(Predicate[]::new);
                 termPredicates[i] = criteriaBuilder.or(fieldPredicates);
             }
 

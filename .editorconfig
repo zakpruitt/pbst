@@ -2,3 +2,4 @@ root = true
 
 [*.java]
 ij_java_align_multiline_chained_methods = true
+ij_java_method_call_chain_wrap = normal

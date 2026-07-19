@@ -1,7 +1,6 @@
 package com.zakpruitt.collectingwithzak.controller;
 
-import com.zakpruitt.collectingwithzak.dto.render.DashboardData;
-import com.zakpruitt.collectingwithzak.service.render.DashboardRenderService;
+import com.zakpruitt.collectingwithzak.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,12 +10,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardRenderService dashboardRenderService;
+    private final DashboardService dashboardService;
 
     @GetMapping("/")
     public String renderDashboard(Model model) {
-        DashboardData data = dashboardRenderService.getDashboardData();
-        model.addAttribute("data", data);
+        model.addAttribute("data", dashboardService.getDashboardData());
         return "dashboard";
     }
 }

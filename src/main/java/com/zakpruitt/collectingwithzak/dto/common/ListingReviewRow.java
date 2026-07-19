@@ -5,7 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** One card on the review page: the candidate plus its comp research and suggested price. */
+/**
+ * One card on the review page: the candidate plus its comp research and suggested price.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

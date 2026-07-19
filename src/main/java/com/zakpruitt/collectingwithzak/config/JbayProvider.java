@@ -1,12 +1,14 @@
 package com.zakpruitt.collectingwithzak.config;
 
+import com.zakpruitt.collectingwithzak.exception.EbayNotConfiguredException;
 import com.zakpruitt.jbay.Jbay;
 import org.springframework.stereotype.Component;
 
 /**
  * The one place the jbay client is constructed. eBay credentials are optional
- * (the app runs fine without them), so consumers must check {@link #isConfigured()}
- * before calling {@link #client()}.
+ * (the app runs fine without them); {@link #client()} throws
+ * {@link EbayNotConfiguredException} when they are missing, which the
+ * GlobalExceptionHandler turns into a friendly error page.
  */
 @Component
 public class JbayProvider {
@@ -16,9 +18,9 @@ public class JbayProvider {
     public JbayProvider(EbayProperties properties) {
         this.jbay = properties.isConfigured()
                 ? Jbay.builder()
-                        .credentials(properties.clientId(), properties.clientSecret())
-                        .refreshToken(properties.refreshToken())
-                        .build()
+                .credentials(properties.clientId(), properties.clientSecret())
+                .refreshToken(properties.refreshToken())
+                .build()
                 : null;
     }
 
@@ -28,7 +30,7 @@ public class JbayProvider {
 
     public Jbay client() {
         if (jbay == null) {
-            throw new IllegalStateException("eBay credentials are not configured");
+            throw new EbayNotConfiguredException();
         }
         return jbay;
     }

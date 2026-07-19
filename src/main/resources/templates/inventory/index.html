@@ -83,7 +83,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="item : ${items}" th:with="mkt=${item.marketValueAtPurchase != 0 ? item.marketValueAtPurchase : (item.pokemonCard != null and item.pokemonCard.marketPrice != 0 ? item.pokemonCard.marketPrice : 0)}">
+        <tr th:each="item : ${items}" th:with="mkt=${item.effectiveMarketValue}">
             <td>
                 <div th:replace="~{fragments/items :: item-cell-detailed(item=${item})}"></div>
             </td>

@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content" th:with="status=${submission.status.name()}">
 
 <a th:replace="~{fragments/items :: back-link(url='/grading', label='Grading')}"></a>
 
@@ -33,7 +33,7 @@
         <div class="row text-center">
             <div th:replace="~{fragments/items :: stat-col(label='Item Total', value=${submission.items != null ? submission.items.size() : 0}, valueClass='')}"></div>
             <div th:replace="~{fragments/items :: stat-col(label='Sub. Cost', value='$' + ${#numbers.formatDecimal(submission.submissionCost, 1, 2)}, valueClass='')}"></div>
-            <th:block th:if="${submission.status == 'RETURNED'}">
+            <th:block th:if="${status == 'RETURNED'}">
                 <div th:replace="~{fragments/items :: stat-col(label='Upcharges', value='$' + ${#numbers.formatDecimal(submission.upchargeTotal, 1, 2)}, valueClass='')}"></div>
                 <div th:replace="~{fragments/items :: stat-col(label='Grand Total', value='$' + ${#numbers.formatDecimal(submission.grandTotal, 1, 2)}, valueClass='')}"></div>
             </th:block>
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Record Grades form (IN_GRADING) -->
-<div th:if="${submission.status == 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
+<div th:if="${status == 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
         <span th:replace="~{fragments/items :: section-pill(label='Record Grades')}"></span>
         <table class="table table-sm table-hover bg-white mb-0">
@@ -71,7 +71,7 @@
 </div>
 
 <!-- Items table (not IN_GRADING) -->
-<div th:if="${submission.status != 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
+<div th:if="${status != 'IN_GRADING' and submission.items != null and !submission.items.isEmpty()}">
     <div class="mb-4">
         <span th:replace="~{fragments/items :: section-pill(label='Items')}"></span>
         <table class="table table-sm table-hover bg-white mb-0">
@@ -85,7 +85,7 @@
                     <th:block th:replace="~{fragments/items :: type-badge(item=${item})}"></th:block>
                 </td>
                 <td class="text-center align-middle text-nowrap ps-4" th:text="'$' + ${#numbers.formatDecimal(item.costBasis, 1, 2)}"></td>
-                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradingUpcharge, 1, 2) : '—'}"></td>
+                <td class="text-center align-middle text-nowrap ps-4 text-muted" th:text="${item.gradedDetails != null and item.gradedDetails.gradingUpcharge != 0 ? '$' + #numbers.formatDecimal(item.gradedDetails.gradingUpcharge, 1, 2) : '—'}"></td>
                 <td class="text-center align-middle text-nowrap ps-4 fw-medium" th:text="'$' + ${#numbers.formatDecimal(item.totalCostBasis, 1, 2)}"></td>
             </tr>
             </tbody>
@@ -94,14 +94,14 @@
 </div>
 <p th:if="${submission.items == null or submission.items.isEmpty()}" class="text-muted small">No items attached.</p>
 
-<div th:if="${submission.status == 'PREPPING' and submission.items != null and !submission.items.isEmpty()}" class="d-flex justify-content-end">
+<div th:if="${status == 'PREPPING' and submission.items != null and !submission.items.isEmpty()}" class="d-flex justify-content-end">
     <form method="POST" th:action="'/grading/' + ${submission.id} + '/status'">
         <input type="hidden" name="action" value="SEND">
         <button type="submit" class="btn btn-warning btn-sm">&#9993; Mark Sent</button>
     </form>
 </div>
 
-<th:block th:if="${submission.status == 'IN_GRADING'}">
+<th:block th:if="${status == 'IN_GRADING'}">
 <script src="/static/js/grading-return.js"></script>
 <script th:inline="javascript">
 var submissionId = /*[[${submission.id}]]*/ 0;

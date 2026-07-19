@@ -9,7 +9,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-/** Created/updated audit columns, shared by every table regardless of key type. */
+/**
+ * Created/updated audit columns, shared by every table regardless of key type.
+ */
 @MappedSuperclass
 @Getter
 @Setter

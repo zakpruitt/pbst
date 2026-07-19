@@ -1,13 +1,4 @@
 package com.zakpruitt.collectingwithzak.dto.common;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class VincePaymentTotals {
-    private double paidOut;
-    private double vinceOwes;
+public record VincePaymentTotals(double paidOut, double vinceOwes) {
 }

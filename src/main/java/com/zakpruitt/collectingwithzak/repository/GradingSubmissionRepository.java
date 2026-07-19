@@ -14,7 +14,8 @@ public interface GradingSubmissionRepository extends JpaRepository<GradingSubmis
     @EntityGraph(attributePaths = {"items"})
     List<GradingSubmission> findAllByOrderByCreatedAtDesc();
 
-    @EntityGraph(attributePaths = {"items"})
+    // open-in-view is off: fetch everything the detail template renders per item.
+    @EntityGraph(attributePaths = {"items", "items.pokemonCard", "items.sealedProduct"})
     Optional<GradingSubmission> findWithItemsById(Long id);
 
     long countByCompany(String company);

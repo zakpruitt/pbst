@@ -18,7 +18,8 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     Optional<Sale> findByEbayOrderId(String ebayOrderId);
 
-    @EntityGraph(attributePaths = {"items"})
+    // open-in-view is off: fetch everything the sale detail template renders per item.
+    @EntityGraph(attributePaths = {"items", "items.pokemonCard", "items.sealedProduct"})
     Optional<Sale> findWithItemsById(Long id);
 
     List<Sale> findByStatusOrderBySaleDateDesc(SaleStatus status);

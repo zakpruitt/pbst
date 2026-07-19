@@ -4,34 +4,37 @@ import com.zakpruitt.collectingwithzak.config.JbayProvider;
 import com.zakpruitt.collectingwithzak.config.ListingProperties;
 import com.zakpruitt.collectingwithzak.dto.common.ListingCandidate;
 import com.zakpruitt.collectingwithzak.dto.common.ListingReviewRow;
+import com.zakpruitt.collectingwithzak.dto.render.ListingIndexData;
+import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.dto.request.StageListingRow;
 import com.zakpruitt.collectingwithzak.dto.request.StageListingsRequest;
 import com.zakpruitt.collectingwithzak.entity.EbayListing;
+import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.ListingStatus;
-import com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException;
+import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
 import com.zakpruitt.collectingwithzak.repository.EbayListingRepository;
 import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository;
-import com.zakpruitt.collectingwithzak.service.render.ListingRenderService;
 import com.zakpruitt.jbay.Amount;
 import com.zakpruitt.jbay.JbayException;
 import com.zakpruitt.jbay.account.SellingPolicy;
 import com.zakpruitt.jbay.browse.ItemSummary;
-import com.zakpruitt.jbay.inventory.InventoryItem;
-import com.zakpruitt.jbay.inventory.InventoryLocation;
-import com.zakpruitt.jbay.inventory.OfferCreated;
-import com.zakpruitt.jbay.inventory.OfferPublished;
-import com.zakpruitt.jbay.inventory.OfferRequest;
+import com.zakpruitt.jbay.inventory.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException.notFound;
 
 @Service
 @Slf4j
@@ -48,70 +51,179 @@ public class ListingService {
 
     private final JbayProvider jbayProvider;
     private final ListingProperties properties;
-    private final ListingRenderService listingRenderService;
     private final EbayListingRepository listingRepo;
     private final LotPurchaseRepository lotRepo;
 
-    public record StageResult(int created, List<String> failures) {
+    // Account-level eBay setup only changes when the seller edits Seller Hub,
+    // so it is resolved once and cached until restart.
+    private volatile StagingDefaults stagingDefaults;
+
+    static double suggestPrice(Double compPrice, double marketPrice, double undercutPercent, double floorPercent) {
+        double suggested = compPrice == null
+                ? marketPrice
+                : Math.max(compPrice * (1 - undercutPercent / 100), marketPrice * floorPercent / 100);
+        return BigDecimal.valueOf(suggested).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    /** Comp research for the selected candidates: lowest delivered price and a suggested undercut. */
-    public List<ListingReviewRow> buildReview(List<String> selectedKeys) {
-        List<ListingReviewRow> rows = new ArrayList<>();
+    static String defaultTitle(String name, String cardNumber, String setName) {
+        String title = joinNonBlank(name, cardNumber, setName, "Pokemon TCG");
+        return title.length() <= TITLE_MAX_LENGTH ? title : title.substring(0, TITLE_MAX_LENGTH).trim();
+    }
 
-        for (ListingCandidate candidate : listingRenderService.findCandidatesByKeys(selectedKeys)) {
-            List<ItemSummary> comps = searchComps(candidate);
-            ItemSummary cheapest = comps.stream()
-                    .min(Comparator.comparingDouble(ItemSummary::deliveredPrice))
-                    .orElse(null);
-            Double compPrice = cheapest == null ? null : cheapest.deliveredPrice();
+    private static String joinNonBlank(String... parts) {
+        return Stream.of(parts)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(" "));
+    }
 
-            rows.add(ListingReviewRow.builder()
-                    .candidate(candidate)
-                    .compPrice(compPrice)
-                    .compTitle(cheapest == null ? "" : cheapest.title())
-                    .compUrl(cheapest == null ? "" : cheapest.itemWebUrl())
-                    .compCount(comps.size())
-                    .suggestedPrice(suggestPrice(compPrice, candidate.getMarketPrice(),
-                            properties.undercutPercent(), properties.floorPercent()))
-                    .title(defaultTitle(candidate.getName(), candidate.getCardNumber(), candidate.getSetName()))
-                    .build());
+    private static SellingPolicy firstPolicy(List<SellingPolicy> policies, String kind) {
+        if (policies.isEmpty()) {
+            throw new IllegalStateException("no " + kind
+                    + " policy found — set up business policies in eBay Seller Hub");
+        }
+        return policies.getFirst();
+    }
+
+    private static String shortMessage(JbayException e) {
+        String body = e.responseBody();
+        return !StringUtils.hasText(body) ? e.getMessage()
+                : body.length() > 300 ? body.substring(0, 300) : body;
+    }
+
+    public ListingIndexData getIndexData() {
+        List<EbayListing> listings = listingRepo.findAllByOrderByCreatedAtDesc();
+        Set<String> listedKeys = listings.stream()
+                .map(listing -> ListingCandidate.key(listing.getLotPurchase().getId(), listing.getSnapshotIndex()))
+                .collect(Collectors.toSet());
+
+        return new ListingIndexData(findCandidates(listedKeys), listings, jbayProvider.isConfigured());
+    }
+
+    /**
+     * The selected candidates, re-derived server-side so stale or forged keys are dropped.
+     */
+    public List<ListingCandidate> findCandidatesByKeys(List<String> keys) {
+        Set<String> wanted = Set.copyOf(keys);
+        return findCandidates(Set.of()).stream()
+                .filter(candidate -> wanted.contains(candidate.getKey()))
+                .toList();
+    }
+
+    /**
+     * Untracked raw cards from accepted lots — the quick-flip pile — minus already-listed keys.
+     */
+    private List<ListingCandidate> findCandidates(Set<String> excludedKeys) {
+        List<ListingCandidate> candidates = new ArrayList<>();
+
+        for (LotPurchase lot : lotRepo.findByStatusOrderByPurchaseDateDesc(LotStatus.ACCEPTED)) {
+            List<SnapshotItem> snapshot = lot.parseSnapshot();
+            for (int index = 0; index < snapshot.size(); index++) {
+                SnapshotItem item = snapshot.get(index);
+                if (item.isTracked() || !"RAW_CARD".equals(item.getItemType())) {
+                    continue;
+                }
+                if (excludedKeys.contains(ListingCandidate.key(lot.getId(), index))) {
+                    continue;
+                }
+                candidates.add(ListingCandidate.builder()
+                        .lotPurchaseId(lot.getId())
+                        .snapshotIndex(index)
+                        .lotSellerName(lot.getSellerName())
+                        .name(item.getName())
+                        .setName(item.getSetName())
+                        .cardNumber(item.getCardNumber())
+                        .rarity(item.getRarity())
+                        .qty(item.getQty())
+                        .marketPrice(item.getMarketPrice())
+                        .imageUrl(item.getImageUrl())
+                        .build());
+            }
         }
 
-        return rows;
+        return candidates;
     }
 
-    /** Stages one inventory item + unpublished offer per row; failures skip the row, not the batch. */
+    /**
+     * Comp research for the selected candidates: lowest delivered price and a suggested undercut.
+     */
+    public List<ListingReviewRow> buildReview(List<String> selectedKeys) {
+        List<ListingCandidate> candidates = findCandidatesByKeys(selectedKeys);
+
+        // Each comp search is an independent eBay round-trip; run them concurrently.
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            return candidates.stream()
+                    .map(candidate -> CompletableFuture.supplyAsync(() -> reviewRow(candidate), executor))
+                    .toList()
+                    .stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+        }
+    }
+
+    private ListingReviewRow reviewRow(ListingCandidate candidate) {
+        List<ItemSummary> comps = searchComps(candidate);
+        ItemSummary cheapest = comps.stream()
+                .min(Comparator.comparingDouble(ItemSummary::deliveredPrice))
+                .orElse(null);
+        Double compPrice = cheapest == null ? null : cheapest.deliveredPrice();
+
+        return ListingReviewRow.builder()
+                .candidate(candidate)
+                .compPrice(compPrice)
+                .compTitle(cheapest == null ? "" : cheapest.title())
+                .compUrl(cheapest == null ? "" : cheapest.itemWebUrl())
+                .compCount(comps.size())
+                .suggestedPrice(suggestPrice(compPrice, candidate.getMarketPrice(),
+                        properties.undercutPercent(), properties.floorPercent()))
+                .title(defaultTitle(candidate.getName(), candidate.getCardNumber(), candidate.getSetName()))
+                .build();
+    }
+
+    /**
+     * Stages one inventory item + unpublished offer per row; failures skip the row, not the batch.
+     */
     public StageResult stageListings(StageListingsRequest request) {
-        OfferRequest.ListingPolicies policies;
-        String merchantLocationKey;
+        StagingDefaults defaults;
         try {
-            policies = resolvePolicies();
-            merchantLocationKey = resolveMerchantLocationKey();
+            defaults = resolveStagingDefaults();
         } catch (JbayException | IllegalStateException e) {
             return new StageResult(0, List.of("eBay account setup problem: " + e.getMessage()));
         }
+
+        Map<String, ListingCandidate> candidatesByKey = findCandidatesByKeys(
+                request.getRows().stream().map(StageListingRow::getKey).toList())
+                .stream()
+                .collect(Collectors.toMap(ListingCandidate::getKey, Function.identity()));
 
         int created = 0;
         List<String> failures = new ArrayList<>();
 
         for (StageListingRow row : request.getRows()) {
-            if (listingRepo.existsByLotPurchaseIdAndSnapshotIndex(row.getLotPurchaseId(), row.getSnapshotIndex())) {
-                failures.add(row.getName() + ": already staged");
+            ListingCandidate candidate = candidatesByKey.get(row.getKey());
+            if (candidate == null) {
+                failures.add(row.getTitle() + ": no longer a listing candidate");
+                continue;
+            }
+            if (listingRepo.existsByLotPurchaseIdAndSnapshotIndex(
+                    candidate.getLotPurchaseId(), candidate.getSnapshotIndex())) {
+                failures.add(candidate.getName() + ": already staged");
                 continue;
             }
             try {
-                created += stageOne(row, policies, merchantLocationKey);
+                stageOne(candidate, row, defaults);
+                created++;
             } catch (JbayException e) {
-                log.warn("Staging '{}' failed: {}", row.getName(), e.getMessage());
-                failures.add(row.getName() + ": " + shortMessage(e));
+                log.warn("Staging '{}' failed: {}", candidate.getName(), e.getMessage());
+                failures.add(candidate.getName() + ": " + shortMessage(e));
             }
         }
 
         return new StageResult(created, failures);
     }
 
-    /** Publishes a staged offer — the listing goes live on eBay. */
+    /**
+     * Publishes a staged offer — the listing goes live on eBay.
+     */
     public void publish(Long id) {
         EbayListing listing = findById(id);
         if (listing.getStatus() != ListingStatus.STAGED) {
@@ -123,7 +235,9 @@ public class ListingService {
         listingRepo.save(listing);
     }
 
-    /** Withdraws a staged listing from eBay and re-exposes the card as a candidate. */
+    /**
+     * Withdraws a staged listing from eBay and re-exposes the card as a candidate.
+     */
     public void delete(Long id) {
         EbayListing listing = findById(id);
         if (listing.getStatus() == ListingStatus.PUBLISHED) {
@@ -138,81 +252,56 @@ public class ListingService {
         listingRepo.delete(listing);
     }
 
-    static double suggestPrice(Double compPrice, double marketPrice, double undercutPercent, double floorPercent) {
-        double suggested = compPrice == null
-                ? marketPrice
-                : Math.max(compPrice * (1 - undercutPercent / 100), marketPrice * floorPercent / 100);
-        return BigDecimal.valueOf(suggested).setScale(2, RoundingMode.HALF_UP).doubleValue();
-    }
-
-    static String defaultTitle(String name, String cardNumber, String setName) {
-        String title = String.join(" ", List.of(
-                        name == null ? "" : name,
-                        cardNumber == null ? "" : cardNumber,
-                        setName == null ? "" : setName,
-                        "Pokemon TCG"))
-                .replaceAll("\\s+", " ")
-                .trim();
-        return title.length() <= TITLE_MAX_LENGTH ? title : title.substring(0, TITLE_MAX_LENGTH).trim();
-    }
-
-    private int stageOne(StageListingRow row, OfferRequest.ListingPolicies policies, String merchantLocationKey) {
-        String sku = "PBST-" + row.getLotPurchaseId() + "-" + row.getSnapshotIndex();
+    private void stageOne(ListingCandidate candidate, StageListingRow row, StagingDefaults defaults) {
+        String sku = "PBST-" + candidate.getLotPurchaseId() + "-" + candidate.getSnapshotIndex();
 
         jbayProvider.client().inventory().createOrReplaceInventoryItem(sku, new InventoryItem(
                 new InventoryItem.Product(
                         row.getTitle(),
                         row.getTitle() + " — from the Collecting with Zak inventory.",
-                        row.getImageUrl() == null || row.getImageUrl().isBlank() ? null : List.of(row.getImageUrl()),
-                        aspects(row)),
+                        StringUtils.hasText(candidate.getImageUrl()) ? List.of(candidate.getImageUrl()) : null,
+                        aspects(candidate)),
                 UNGRADED_CONDITION,
                 List.of(new InventoryItem.ConditionDescriptor(
                         CARD_CONDITION_DESCRIPTOR, List.of(CARD_CONDITION_NEAR_MINT_OR_BETTER))),
-                InventoryItem.Availability.quantity(row.getQty())));
+                InventoryItem.Availability.quantity(candidate.getQty())));
 
         OfferCreated offer = jbayProvider.client().inventory().createOffer(new OfferRequest(
                 sku,
                 properties.marketplace(),
                 "FIXED_PRICE",
-                row.getQty(),
+                candidate.getQty(),
                 properties.categoryId(),
                 row.getTitle(),
                 new OfferRequest.PricingSummary(new Amount(String.format(Locale.US, "%.2f", row.getPrice()), "USD")),
-                policies,
-                merchantLocationKey));
+                defaults.policies(),
+                defaults.merchantLocationKey()));
 
         listingRepo.save(EbayListing.builder()
-                .lotPurchase(lotRepo.getReferenceById(row.getLotPurchaseId()))
-                .snapshotIndex(row.getSnapshotIndex())
-                .cardName(row.getName())
-                .setName(row.getSetName() == null ? "" : row.getSetName())
-                .cardNumber(row.getCardNumber() == null ? "" : row.getCardNumber())
-                .imageUrl(row.getImageUrl() == null ? "" : row.getImageUrl())
-                .qty(row.getQty())
-                .marketPrice(row.getMarketPrice())
+                .lotPurchase(lotRepo.getReferenceById(candidate.getLotPurchaseId()))
+                .snapshotIndex(candidate.getSnapshotIndex())
+                .cardName(candidate.getName())
+                .setName(Objects.requireNonNullElse(candidate.getSetName(), ""))
+                .cardNumber(Objects.requireNonNullElse(candidate.getCardNumber(), ""))
+                .imageUrl(Objects.requireNonNullElse(candidate.getImageUrl(), ""))
+                .qty(candidate.getQty())
+                .marketPrice(candidate.getMarketPrice())
                 .compPrice(row.getCompPrice())
                 .listedPrice(row.getPrice())
                 .sku(sku)
                 .offerId(offer.offerId())
                 .build());
-
-        return 1;
     }
 
     private List<ItemSummary> searchComps(ListingCandidate candidate) {
-        String query = String.join(" ", List.of(
-                        "pokemon",
-                        candidate.getName() == null ? "" : candidate.getName(),
-                        candidate.getSetName() == null ? "" : candidate.getSetName(),
-                        candidate.getCardNumber() == null ? "" : candidate.getCardNumber()))
-                .replaceAll("\\s+", " ")
-                .trim();
+        String query = joinNonBlank("pokemon",
+                candidate.getName(), candidate.getSetName(), candidate.getCardNumber());
         String excludeSeller = properties.excludeSeller();
         try {
             return jbayProvider.client().browse()
                     .searchFixedPrice(query, properties.categoryId(), properties.compLimit())
                     .stream()
-                    .filter(item -> excludeSeller == null || excludeSeller.isBlank()
+                    .filter(item -> !StringUtils.hasText(excludeSeller)
                             || !item.sellerUsername().equalsIgnoreCase(excludeSeller))
                     .toList();
         } catch (JbayException e) {
@@ -221,21 +310,30 @@ public class ListingService {
         }
     }
 
-    private Map<String, List<String>> aspects(StageListingRow row) {
-        Map<String, List<String>> aspects = new java.util.LinkedHashMap<>();
+    private Map<String, List<String>> aspects(ListingCandidate candidate) {
+        Map<String, List<String>> aspects = new LinkedHashMap<>();
         aspects.put("Game", List.of("Pokémon TCG"));
         aspects.put("Language", List.of("English"));
         aspects.put("Graded", List.of("No"));
-        if (row.getName() != null && !row.getName().isBlank()) {
-            aspects.put("Card Name", List.of(row.getName()));
+        if (StringUtils.hasText(candidate.getName())) {
+            aspects.put("Card Name", List.of(candidate.getName()));
         }
-        if (row.getSetName() != null && !row.getSetName().isBlank()) {
-            aspects.put("Set", List.of(row.getSetName()));
+        if (StringUtils.hasText(candidate.getSetName())) {
+            aspects.put("Set", List.of(candidate.getSetName()));
         }
-        if (row.getCardNumber() != null && !row.getCardNumber().isBlank()) {
-            aspects.put("Card Number", List.of(row.getCardNumber()));
+        if (StringUtils.hasText(candidate.getCardNumber())) {
+            aspects.put("Card Number", List.of(candidate.getCardNumber()));
         }
         return aspects;
+    }
+
+    private StagingDefaults resolveStagingDefaults() {
+        StagingDefaults defaults = stagingDefaults;
+        if (defaults == null) {
+            defaults = new StagingDefaults(resolvePolicies(), resolveMerchantLocationKey());
+            stagingDefaults = defaults;
+        }
+        return defaults;
     }
 
     private OfferRequest.ListingPolicies resolvePolicies() {
@@ -244,14 +342,6 @@ public class ListingService {
         SellingPolicy returns = firstPolicy(jbayProvider.client().account().returnPolicies(marketplace), "return");
         SellingPolicy fulfillment = firstPolicy(jbayProvider.client().account().fulfillmentPolicies(marketplace), "fulfillment");
         return new OfferRequest.ListingPolicies(payment.policyId(), returns.policyId(), fulfillment.policyId());
-    }
-
-    private static SellingPolicy firstPolicy(List<SellingPolicy> policies, String kind) {
-        if (policies.isEmpty()) {
-            throw new IllegalStateException("no " + kind
-                    + " policy found — set up business policies in eBay Seller Hub");
-        }
-        return policies.getFirst();
     }
 
     private String resolveMerchantLocationKey() {
@@ -263,14 +353,13 @@ public class ListingService {
         return locations.getFirst().merchantLocationKey();
     }
 
-    private static String shortMessage(JbayException e) {
-        String body = e.responseBody();
-        return body == null || body.isBlank() ? e.getMessage()
-                : body.length() > 300 ? body.substring(0, 300) : body;
+    private EbayListing findById(Long id) {
+        return listingRepo.findById(id).orElseThrow(notFound("EbayListing", id));
     }
 
-    private EbayListing findById(Long id) {
-        return listingRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("EbayListing", id));
+    private record StagingDefaults(OfferRequest.ListingPolicies policies, String merchantLocationKey) {
+    }
+
+    public record StageResult(int created, List<String> failures) {
     }
 }

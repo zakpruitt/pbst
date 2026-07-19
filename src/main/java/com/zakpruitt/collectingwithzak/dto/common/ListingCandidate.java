@@ -1,9 +1,7 @@
 package com.zakpruitt.collectingwithzak.dto.common;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * An untracked raw card from an accepted lot that could be listed on eBay.
@@ -11,13 +9,10 @@ import lombok.NoArgsConstructor;
  * {@code key} = "{lotPurchaseId}:{snapshotIndex}".
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class ListingCandidate {
     private Long lotPurchaseId;
     private int snapshotIndex;
-    private String key;
     private String lotSellerName;
     private String name;
     private String setName;
@@ -26,4 +21,15 @@ public class ListingCandidate {
     private int qty;
     private double marketPrice;
     private String imageUrl;
+
+    /**
+     * The one spelling of the candidate key — exclusion sets and form round-trips must agree on it.
+     */
+    public static String key(Long lotPurchaseId, int snapshotIndex) {
+        return lotPurchaseId + ":" + snapshotIndex;
+    }
+
+    public String getKey() {
+        return key(lotPurchaseId, snapshotIndex);
+    }
 }

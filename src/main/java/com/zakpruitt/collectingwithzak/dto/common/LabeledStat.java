@@ -1,16 +1,11 @@
 package com.zakpruitt.collectingwithzak.dto.common;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public record LabeledStat(String label, long count) {
 
-@Data
-@NoArgsConstructor
-public class LabeledStat {
-    private String label;
-    private long count;
-
+    /**
+     * JPQL constructor-expression entry point — enums and other label types arrive as Object.
+     */
     public LabeledStat(Object label, long count) {
-        this.label = label.toString();
-        this.count = count;
+        this(label.toString(), count);
     }
 }

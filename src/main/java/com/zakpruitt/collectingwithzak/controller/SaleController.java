@@ -3,12 +3,11 @@ package com.zakpruitt.collectingwithzak.controller;
 import com.zakpruitt.collectingwithzak.dto.common.TrackedItemFilters;
 import com.zakpruitt.collectingwithzak.dto.request.CreateSaleRequest;
 import com.zakpruitt.collectingwithzak.dto.request.CreateVincePaymentRequest;
-import com.zakpruitt.collectingwithzak.dto.response.SaleResponse;
-import com.zakpruitt.collectingwithzak.dto.response.TrackedItemResponse;
+import com.zakpruitt.collectingwithzak.entity.Sale;
+import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleAction;
 import com.zakpruitt.collectingwithzak.service.SaleService;
-import com.zakpruitt.collectingwithzak.service.render.SaleRenderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SaleController {
 
-    private final SaleRenderService saleRenderService;
     private final SaleService saleService;
 
     @GetMapping
@@ -33,7 +31,7 @@ public class SaleController {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
             view = "mine";
         }
-        model.addAttribute("data", saleRenderService.getIndexData(view));
+        model.addAttribute("data", saleService.getIndexData(view));
         return "sales/index";
     }
 
@@ -44,23 +42,22 @@ public class SaleController {
 
     @GetMapping("/staging")
     public String renderStaging(Model model) {
-        model.addAttribute("sales", saleRenderService.getStaged());
+        model.addAttribute("sales", saleService.getStaged());
         return "sales/staging";
     }
 
     @GetMapping("/{id}")
     public String renderDetail(@PathVariable Long id, Model model) {
-        SaleResponse sale = saleRenderService.getByIdWithItems(id);
-        model.addAttribute("sale", sale);
+        model.addAttribute("sale", saleService.getByIdWithItems(id));
         return "sales/detail";
     }
 
     @GetMapping("/{id}/confirm")
     public String renderConfirmForm(@PathVariable Long id, @RequestParam(name = "from", required = false) String from, Model model) {
-        SaleResponse sale = saleRenderService.getByIdWithItems(id);
-        List<TrackedItemResponse> available = saleRenderService.getAvailableItemsForSale(id);
+        Sale sale = saleService.getByIdWithItems(id);
+        List<TrackedItem> available = saleService.getAvailableItemsFor(sale);
         Set<Long> attachedIds = sale.getItems().stream()
-                .map(TrackedItemResponse::getId)
+                .map(TrackedItem::getId)
                 .collect(Collectors.toSet());
 
         model.addAttribute("sale", sale);

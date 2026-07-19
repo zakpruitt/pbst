@@ -3,10 +3,9 @@ package com.zakpruitt.collectingwithzak.controller;
 import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
 import com.zakpruitt.collectingwithzak.dto.request.LotRequest;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
-import com.zakpruitt.collectingwithzak.dto.response.LotResponse;
+import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.LotAction;
 import com.zakpruitt.collectingwithzak.service.LotService;
-import com.zakpruitt.collectingwithzak.service.render.LotRenderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +20,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LotController {
 
-    private final LotRenderService lotRenderService;
     private final LotService lotService;
 
     @GetMapping
     public String renderIndex(Model model) {
-        List<LotResponse> lots = lotRenderService.getAll();
-        model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotResponse::getPurchaseDate, LotResponse::getTotalCost));
+        List<LotPurchase> lots = lotService.getAll();
+        model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotPurchase::getPurchaseDate, LotPurchase::getTotalCost));
         return "lots/index";
     }
 
@@ -44,17 +42,17 @@ public class LotController {
 
     @GetMapping("/{id}")
     public String renderDetail(@PathVariable Long id, Model model) {
-        LotResponse lot = lotRenderService.getById(id);
+        LotPurchase lot = lotService.getByIdWithItems(id);
         model.addAttribute("lot", lot);
-        model.addAttribute("snapshotItems", lot.getSnapshotItems());
+        model.addAttribute("snapshotItems", lot.parseSnapshot());
         return "lots/detail";
     }
 
     @GetMapping("/{id}/edit")
     public String renderEditForm(@PathVariable Long id, Model model) {
-        LotResponse lot = lotRenderService.getById(id);
+        LotPurchase lot = lotService.getById(id);
         model.addAttribute("lot", lot);
-        model.addAttribute("snapshotItems", lot.getSnapshotItems());
+        model.addAttribute("snapshotItems", lot.parseSnapshot());
         return "lots/edit";
     }
 

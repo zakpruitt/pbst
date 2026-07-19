@@ -9,12 +9,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
 
     @EntityGraph(attributePaths = {"trackedItems"})
     @Query("SELECT DISTINCT l FROM LotPurchase l ORDER BY l.purchaseDate DESC")
     List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
+
+    // open-in-view is off: fetch everything the lot detail template renders per item.
+    @EntityGraph(attributePaths = {"trackedItems", "trackedItems.pokemonCard", "trackedItems.sealedProduct"})
+    Optional<LotPurchase> findWithItemsById(Long id);
 
     List<LotPurchase> findByStatusOrderByPurchaseDateDesc(LotStatus status);
 

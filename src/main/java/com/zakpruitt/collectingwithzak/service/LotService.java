@@ -1,25 +1,26 @@
 package com.zakpruitt.collectingwithzak.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zakpruitt.collectingwithzak.dto.request.LotRequest;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.enums.LotAction;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
-import com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException;
 import com.zakpruitt.collectingwithzak.mapper.GradedDetailsMapper;
 import com.zakpruitt.collectingwithzak.mapper.LotMapper;
 import com.zakpruitt.collectingwithzak.mapper.TrackedItemMapper;
 import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository;
 import com.zakpruitt.collectingwithzak.repository.PokemonCardRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException.notFound;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,24 @@ public class LotService {
     private final GradedDetailsMapper gradedDetailsMapper;
     private final ObjectMapper objectMapper;
 
+    @Transactional(readOnly = true)
+    public List<LotPurchase> getAll() {
+        return lotRepo.findAllWithItemsOrderByPurchaseDateDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public LotPurchase getByIdWithItems(Long id) {
+        return lotRepo.findWithItemsById(id).orElseThrow(notFound("Lot", id));
+    }
+
+    /**
+     * Lot fields and snapshot only — enough for the edit form, which renders no tracked items.
+     */
+    @Transactional(readOnly = true)
+    public LotPurchase getById(Long id) {
+        return lotRepo.findById(id).orElseThrow(notFound("Lot", id));
+    }
+
     public Long create(LotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
         lot.setLotContentSnapshot(serializeItems(request.getItems()));
@@ -41,13 +60,13 @@ public class LotService {
     }
 
     public void update(Long id, LotRequest request) {
-        LotPurchase lot = findById(id);
+        LotPurchase lot = getById(id);
         lotMapper.updateEntity(request, lot);
         lot.setLotContentSnapshot(serializeItems(request.getItems()));
     }
 
     public void updateStatus(Long id, LotAction action) {
-        LotPurchase lot = findById(id);
+        LotPurchase lot = getById(id);
         switch (action) {
             case ACCEPT -> accept(lot);
             case REJECT -> lot.setStatus(LotStatus.REJECTED);
@@ -88,10 +107,5 @@ public class LotService {
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to serialize snapshot items", e);
         }
-    }
-
-    private LotPurchase findById(Long id) {
-        return lotRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lot", id));
     }
 }

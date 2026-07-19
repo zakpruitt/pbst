@@ -2,22 +2,14 @@ package com.zakpruitt.collectingwithzak.mapper;
 
 import com.zakpruitt.collectingwithzak.dto.ebay.EbayOrderData;
 import com.zakpruitt.collectingwithzak.dto.request.CreateSaleRequest;
-import com.zakpruitt.collectingwithzak.dto.response.SaleResponse;
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 
-import java.util.List;
-
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {TrackedItemMapper.class})
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface SaleMapper {
-
-    SaleResponse toResponse(Sale entity);
-
-    List<SaleResponse> toResponseList(List<Sale> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "netAmount", expression = "java(request.getGrossAmount() - request.getEbayFees() - request.getShippingCost())")

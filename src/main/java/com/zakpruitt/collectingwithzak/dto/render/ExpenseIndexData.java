@@ -1,23 +1,15 @@
 package com.zakpruitt.collectingwithzak.dto.render;
 
 import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
-import com.zakpruitt.collectingwithzak.dto.response.ExpenseResponse;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.zakpruitt.collectingwithzak.entity.Expense;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ExpenseIndexData {
-    private List<MonthGroup<ExpenseResponse>> groups;
-    private double total;
-    private double avg;
-    private double total30;
-    private double totalMonth;
-    private int count;
+public record ExpenseIndexData(
+        List<MonthGroup<Expense>> groups,
+        double total,
+        double avg,
+        double total30,
+        double totalMonth,
+        int count) {
 }

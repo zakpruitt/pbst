@@ -122,8 +122,8 @@
                         <tr th:each="p : ${group.items}">
                             <td class="align-middle text-nowrap pe-4"><span th:replace="~{fragments/items :: date-color(date=${p.paymentDate})}"></span></td>
                             <td class="text-center align-middle text-nowrap px-4">
-                                <span class="badge" th:classappend="${p.type == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
-                                      th:text="${p.type == 'PAYOUT' ? 'Payout' : 'He Owes Me'}"></span>
+                                <span class="badge" th:classappend="${p.type.name() == 'PAYOUT' ? 'bg-danger' : 'bg-warning text-dark'}"
+                                      th:text="${p.type.label}"></span>
                             </td>
                             <td class="align-middle text-muted small ps-4" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
                                 th:title="${p.description}" th:text="${p.description != null and !p.description.isEmpty() ? p.description : '—'}"></td>

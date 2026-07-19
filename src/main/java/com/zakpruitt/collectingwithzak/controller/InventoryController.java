@@ -3,9 +3,7 @@ package com.zakpruitt.collectingwithzak.controller;
 import com.zakpruitt.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.zakpruitt.collectingwithzak.dto.request.InventoryItemRow;
 import com.zakpruitt.collectingwithzak.dto.request.UpdateInventoryRequest;
-import com.zakpruitt.collectingwithzak.dto.response.TrackedItemResponse;
 import com.zakpruitt.collectingwithzak.service.InventoryService;
-import com.zakpruitt.collectingwithzak.service.render.InventoryRenderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +16,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class InventoryController {
 
-    private final InventoryRenderService inventoryRenderService;
     private final InventoryService inventoryService;
 
     @GetMapping
     public String renderIndex(@RequestParam(defaultValue = "INVENTORY") String purpose,
                               @RequestHeader(value = "HX-Request", required = false) String hx,
                               Model model) {
-        model.addAttribute("data", inventoryRenderService.getIndexData(purpose));
+        model.addAttribute("data", inventoryService.getIndexData(purpose));
         if (hx != null) {
             return "inventory/index :: inventory-page";
         }
@@ -45,8 +42,7 @@ public class InventoryController {
 
     @GetMapping("/{id}/edit")
     public String renderEditForm(@PathVariable Long id, Model model) {
-        TrackedItemResponse item = inventoryRenderService.getById(id);
-        model.addAttribute("item", item);
+        model.addAttribute("item", inventoryService.getById(id));
         return "inventory/edit";
     }
 

@@ -103,7 +103,7 @@
     </table>
 </div>
 
-<div th:if="${lot.status == 'PENDING'}" class="d-flex justify-content-end gap-2 mt-3">
+<div th:if="${lot.status.name() == 'PENDING'}" class="d-flex justify-content-end gap-2 mt-3">
     <form method="POST" th:action="'/lots/' + ${lot.id} + '/status'" class="d-inline">
         <input type="hidden" name="action" value="REJECT">
         <button type="submit" class="btn btn-outline-danger btn-sm">&#10005; Reject</button>

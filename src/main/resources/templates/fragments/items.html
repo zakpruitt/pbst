@@ -49,9 +49,9 @@
             <th:block th:replace="~{fragments/items :: item-set(item=${item})}"></th:block>
             <span th:if="${item.acquisitionDate != null}"> &middot; <span th:replace="~{fragments/items :: date-color(date=${item.acquisitionDate})}"></span></span>
         </div>
-        <div th:if="${item.lotPurchaseId != null or item.gradingSubmissionId != null}" class="text-muted inv-subtext">
-            <span th:if="${item.lotPurchaseId != null}"><a th:href="'/lots/' + ${item.lotPurchaseId}" class="text-muted" th:text="${item.lotPurchaseSellerName}"></a></span>
-            <span th:if="${item.gradingSubmissionId != null}"><span th:if="${item.lotPurchaseId != null}"> &middot; </span><a th:href="'/grading/' + ${item.gradingSubmissionId}" class="text-muted" th:text="${item.gradingSubmissionName}"></a></span>
+        <div th:if="${item.lotPurchase != null or item.gradingSubmission != null}" class="text-muted inv-subtext">
+            <span th:if="${item.lotPurchase != null}"><a th:href="'/lots/' + ${item.lotPurchase.id}" class="text-muted" th:text="${item.lotPurchase.sellerName}"></a></span>
+            <span th:if="${item.gradingSubmission != null}"><span th:if="${item.lotPurchase != null}"> &middot; </span><a th:href="'/grading/' + ${item.gradingSubmission.id}" class="text-muted" th:text="${item.gradingSubmission.submissionName}"></a></span>
         </div>
     </div>
 </div>
@@ -62,47 +62,48 @@
       th:classappend="${company == 'PSA' ? 'grade-psa' : (company == 'BGS' ? 'grade-bgs' : (company == 'CGC' ? 'grade-cgc' : (company == 'TAG' ? 'grade-tag' : 'bg-secondary')))}"
       th:text="${text != null ? text : company}"></span>
 
-<!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest -->
-<th:block th:fragment="type-badge(item)">
-    <th:block th:if="${item.itemType == 'GRADED_CARD' and item.gradingCompany != null and !item.gradingCompany.isEmpty()}">
-        <span th:replace="~{fragments/items :: company-badge(company=${item.gradingCompany}, text=${item.gradingCompany + ' ' + (item.grade != null ? item.grade : '')})}"></span>
+<!-- Type badge: shows "PSA 10" for graded, "Raw"/"Sealed"/"Other" for rest.
+     Renders both TrackedItem and SnapshotItem — both expose itemType, typeLabel, gradingCompany, grade. -->
+<th:block th:fragment="type-badge(item)"
+          th:with="type=${#strings.toString(item.itemType)},company=${item.gradingCompany}">
+    <th:block th:if="${type == 'GRADED_CARD' and company != null and !company.isEmpty()}">
+        <span th:replace="~{fragments/items :: company-badge(company=${company}, text=${company + ' ' + (item.grade != null ? item.grade : '')})}"></span>
     </th:block>
-    <span th:if="${item.itemType != 'GRADED_CARD' or item.gradingCompany == null or item.gradingCompany.isEmpty()}"
-          class="badge bg-secondary"
-          th:text="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : 'Other'))}"></span>
+    <span th:if="${type != 'GRADED_CARD' or company == null or company.isEmpty()}"
+          class="badge bg-secondary" th:text="${item.typeLabel}"></span>
 </th:block>
 
 <!-- Origin badge: eBay / Facebook / Other -->
-<span th:fragment="origin-badge(origin)"
+<span th:fragment="origin-badge(origin)" th:with="o=${#strings.toString(origin)}"
       class="badge" style="font-size:.65rem"
-      th:classappend="${origin == 'EBAY' ? 'bg-primary' : (origin == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
-      th:text="${origin == 'EBAY' ? 'eBay' : (origin == 'FACEBOOK' ? 'Facebook' : 'Other')}"></span>
+      th:classappend="${o == 'EBAY' ? 'bg-primary' : (o == 'FACEBOOK' ? 'bg-info' : 'bg-secondary')}"
+      th:text="${origin.label}"></span>
 
 <!-- Sale status badge -->
-<th:block th:fragment="sale-status-badge(sale)">
+<th:block th:fragment="sale-status-badge(sale)" th:with="st=${sale.status.name()}">
     <span th:if="${sale.attributedTo == 'vince'}" class="badge bg-info text-dark">Vince</span>
     <span th:unless="${sale.attributedTo == 'vince'}" class="badge"
-          th:classappend="${sale.status == 'CONFIRMED' ? 'bg-success' : (sale.status == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
-          th:text="${sale.status == 'CONFIRMED' ? 'Confirmed' : (sale.status == 'STAGED' ? 'Staged' : 'Ignored')}"></span>
+          th:classappend="${st == 'CONFIRMED' ? 'bg-success' : (st == 'STAGED' ? 'bg-warning text-dark' : 'bg-secondary')}"
+          th:text="${sale.status.label}"></span>
 </th:block>
 
 <!-- Lot status badge -->
-<span th:fragment="lot-status-badge(status)"
+<span th:fragment="lot-status-badge(status)" th:with="s=${#strings.toString(status)}"
       class="badge"
-      th:classappend="${status == 'ACCEPTED' ? 'bg-success' : (status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
-      th:text="${status == 'ACCEPTED' ? 'Accepted' : (status == 'REJECTED' ? 'Rejected' : 'Pending')}"></span>
+      th:classappend="${s == 'ACCEPTED' ? 'bg-success' : (s == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
+      th:text="${status.label}"></span>
 
 <!-- Grading status badge -->
-<span th:fragment="grading-status-badge(status)"
+<span th:fragment="grading-status-badge(status)" th:with="s=${#strings.toString(status)}"
       class="badge"
-      th:classappend="${status == 'RETURNED' ? 'bg-success' : (status == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}"
-      th:text="${status == 'RETURNED' ? 'Returned' : (status == 'IN_GRADING' ? 'In Grading' : (status == 'PREPPING' ? 'Prepping' : status))}"></span>
+      th:classappend="${s == 'RETURNED' ? 'bg-success' : (s == 'IN_GRADING' ? 'bg-primary' : 'bg-warning text-dark')}"
+      th:text="${status.label}"></span>
 
 <!-- Purpose badge -->
 <span th:fragment="purpose-badge(purpose)"
       class="badge"
-      th:classappend="${purpose == 'INVENTORY' ? 'bg-primary' : (purpose == 'IN_GRADING' ? 'bg-warning text-dark' : 'bg-secondary')}"
-      th:text="${purpose == 'INVENTORY' ? 'Inventory' : (purpose == 'IN_GRADING' ? 'In Grading' : (purpose == 'PERSONAL_COLLECTION' ? 'Personal' : (purpose == 'SOLD' ? 'Sold' : purpose)))}"></span>
+      th:classappend="${#strings.toString(purpose) == 'INVENTORY' ? 'bg-primary' : 'bg-secondary'}"
+      th:text="${purpose.label}"></span>
 
 <!-- Item picker table: used by sales/confirm, grading/new, grading/edit -->
 <div th:fragment="item-picker-table(items, label, checkboxName, attachedIds)">
@@ -129,7 +130,7 @@
 
 <!-- Sale row in grouped table -->
 <tr th:fragment="sale-row(s)" class="sale-row"
-    th:classappend="${s.status == 'IGNORED' ? 'sale-row-ignored' : ''}"
+    th:classappend="${s.status.name() == 'IGNORED' ? 'sale-row-ignored' : ''}"
     th:attr="data-title=${s.title},data-buyer=${s.buyerUsername},data-origin=${s.origin}">
     <td>
         <div class="d-flex align-items-start gap-2">
@@ -140,8 +141,8 @@
                     <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
                     <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
                     <span th:if="${s.attributedTo == 'vince'}"> · <span class="text-info">Vince</span></span>
-                    <span th:if="${s.status == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
-                    <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
+                    <span th:if="${s.status.name() == 'IGNORED' and s.attributedTo != 'vince'}"> · <span class="text-secondary">ignored</span></span>
+                    <span th:if="${s.origin.name() == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
                         · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
                     </span>
                 </div>

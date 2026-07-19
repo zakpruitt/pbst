@@ -2,46 +2,36 @@ package com.zakpruitt.collectingwithzak.dto.render;
 
 import com.zakpruitt.collectingwithzak.dto.common.LabeledStat;
 import com.zakpruitt.collectingwithzak.dto.common.RangeTotals;
-import com.zakpruitt.collectingwithzak.dto.response.LotResponse;
-import com.zakpruitt.collectingwithzak.dto.response.SaleResponse;
-import com.zakpruitt.collectingwithzak.dto.response.VinceLedger;
-import lombok.AllArgsConstructor;
+import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
+import com.zakpruitt.collectingwithzak.entity.LotPurchase;
+import com.zakpruitt.collectingwithzak.entity.Sale;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class DashboardData {
-    private double totalSpent;
-    private double totalGross;
-    private double totalNet;
-    private double totalFees;
-    private double margin;
-    private long salesCount;
-    private long gradingCount;
-    private long inventoryCount;
-    private double avgSale;
-    private double inventoryMarket;
-
-    private RangeTotals totals7;
-    private RangeTotals totals30;
-
-    private List<String> monthLabels;
-    private List<Double> monthlySpend;
-    private List<Double> monthlyGross;
-    private List<Double> monthlyNet;
-
-    private List<LabeledStat> originCounts;
-    private List<LabeledStat> itemTypeCounts;
-    private List<LabeledStat> gradingStatuses;
-
-    private List<SaleResponse> topSales;
-    private List<SaleResponse> recentSales;
-    private List<LotResponse> recentLots;
-    private VinceLedger vinceLedger;
+public record DashboardData(
+        double totalSpent,
+        double totalGross,
+        double totalNet,
+        double totalFees,
+        double margin,
+        long salesCount,
+        long gradingCount,
+        long inventoryCount,
+        double avgSale,
+        double inventoryMarket,
+        RangeTotals totals7,
+        RangeTotals totals30,
+        List<String> monthLabels,
+        List<Double> monthlySpend,
+        List<Double> monthlyGross,
+        List<Double> monthlyNet,
+        List<LabeledStat> originCounts,
+        List<LabeledStat> itemTypeCounts,
+        List<LabeledStat> gradingStatuses,
+        List<Sale> topSales,
+        List<Sale> recentSales,
+        List<LotPurchase> recentLots,
+        VinceLedger vinceLedger) {
 }

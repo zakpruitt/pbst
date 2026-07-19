@@ -111,7 +111,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="l : ${data.listings}">
+        <tr th:each="l : ${data.listings}" th:with="lstatus=${l.status.name()}">
             <td>
                 <div class="d-flex align-items-center gap-2">
                     <img th:if="${l.imageUrl != null and !l.imageUrl.isEmpty()}"
@@ -132,20 +132,20 @@
             <td class="text-center align-middle text-nowrap ps-4 fw-medium"
                 th:text="'$' + ${#numbers.formatDecimal(l.listedPrice, 1, 2)}"></td>
             <td class="text-center align-middle text-nowrap ps-4">
-                <span class="badge" th:classappend="${l.status == 'PUBLISHED' ? 'bg-success' : 'bg-warning text-dark'}"
-                      th:text="${l.status == 'PUBLISHED' ? 'Published' : 'Staged'}"></span>
+                <span class="badge" th:classappend="${lstatus == 'PUBLISHED' ? 'bg-success' : 'bg-warning text-dark'}"
+                      th:text="${l.status.label}"></span>
             </td>
             <td class="align-middle ps-4" style="white-space:nowrap;width:1%">
                 <div class="d-flex gap-1">
-                    <form th:if="${l.status == 'STAGED'}" method="POST" th:action="'/listings/' + ${l.id} + '/publish'"
+                    <form th:if="${lstatus == 'STAGED'}" method="POST" th:action="'/listings/' + ${l.id} + '/publish'"
                           class="d-inline" th:data-confirm="'Publish ' + ${l.cardName} + ' to eBay for $' + ${#numbers.formatDecimal(l.listedPrice, 1, 2)} + '? This makes it live.'">
                         <button type="submit" class="btn btn-success btn-sm">Publish</button>
                     </form>
-                    <button th:if="${l.status == 'STAGED'}" type="button" class="btn btn-outline-danger btn-sm"
+                    <button th:if="${lstatus == 'STAGED'}" type="button" class="btn btn-outline-danger btn-sm"
                             th:attr="hx-post='/listings/' + ${l.id} + '/delete'"
                             hx-confirm="Withdraw this staged listing from eBay?"
                             hx-target="closest tr" hx-swap="delete swap:150ms">&#10005;</button>
-                    <a th:if="${l.status == 'PUBLISHED' and l.ebayListingId != null and !l.ebayListingId.isEmpty()}"
+                    <a th:if="${lstatus == 'PUBLISHED' and l.ebayListingId != null and !l.ebayListingId.isEmpty()}"
                        th:href="'https://www.ebay.com/itm/' + ${l.ebayListingId}" target="_blank" rel="noopener"
                        class="btn btn-outline-secondary btn-sm">eBay &#8599;</a>
                 </div>

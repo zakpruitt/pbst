@@ -42,12 +42,23 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
     }
 
+    @ExceptionHandler(EbayNotConfiguredException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ModelAndView handleEbayNotConfigured(EbayNotConfiguredException ex) {
+        log.warn("eBay feature used without credentials: {}", ex.getMessage());
+        return badRequestView(ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelAndView handleBadRequest(IllegalArgumentException ex) {
         log.warn("Bad request: {}", ex.getMessage());
+        return badRequestView(ex.getMessage());
+    }
+
+    private ModelAndView badRequestView(String message) {
         ModelAndView mav = new ModelAndView("error/400");
-        mav.addObject("message", ex.getMessage());
+        mav.addObject("message", message);
         return mav;
     }
 

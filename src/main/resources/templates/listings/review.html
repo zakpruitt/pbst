@@ -19,14 +19,7 @@
 
 <form th:unless="${#lists.isEmpty(rows)}" method="POST" action="/listings/stage">
     <div th:each="row, iter : ${rows}" class="card mb-2">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].lotPurchaseId'" th:value="${row.candidate.lotPurchaseId}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].snapshotIndex'" th:value="${row.candidate.snapshotIndex}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].name'" th:value="${row.candidate.name}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].setName'" th:value="${row.candidate.setName}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].cardNumber'" th:value="${row.candidate.cardNumber}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].imageUrl'" th:value="${row.candidate.imageUrl}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].qty'" th:value="${row.candidate.qty}">
-        <input type="hidden" th:name="'rows[' + ${iter.index} + '].marketPrice'" th:value="${row.candidate.marketPrice}">
+        <input type="hidden" th:name="'rows[' + ${iter.index} + '].key'" th:value="${row.candidate.key}">
         <input type="hidden" th:name="'rows[' + ${iter.index} + '].compPrice'" th:value="${row.compPrice}">
 
         <div class="d-flex gap-3 p-3 align-items-start">

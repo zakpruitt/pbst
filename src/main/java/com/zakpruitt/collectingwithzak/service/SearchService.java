@@ -1,9 +1,7 @@
-package com.zakpruitt.collectingwithzak.service.render;
+package com.zakpruitt.collectingwithzak.service;
 
-import com.zakpruitt.collectingwithzak.dto.response.PokemonCardResponse;
-import com.zakpruitt.collectingwithzak.dto.response.SealedProductResponse;
-import com.zakpruitt.collectingwithzak.mapper.PokemonCardMapper;
-import com.zakpruitt.collectingwithzak.mapper.SealedProductMapper;
+import com.zakpruitt.collectingwithzak.entity.PokemonCard;
+import com.zakpruitt.collectingwithzak.entity.SealedProduct;
 import com.zakpruitt.collectingwithzak.repository.PokemonCardRepository;
 import com.zakpruitt.collectingwithzak.repository.SealedProductRepository;
 import com.zakpruitt.collectingwithzak.repository.SearchSpecification;
@@ -18,7 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SearchRenderService {
+public class SearchService {
 
     private static final List<String> CARD_SEARCH_FIELDS = List.of(
             "name",
@@ -32,18 +30,16 @@ public class SearchRenderService {
 
     private final PokemonCardRepository cardRepo;
     private final SealedProductRepository sealedRepo;
-    private final PokemonCardMapper cardMapper;
-    private final SealedProductMapper sealedMapper;
 
-    public List<PokemonCardResponse> searchCards(String query) {
+    public List<PokemonCard> searchCards(String query) {
         if (!StringUtils.hasText(query)) return List.of();
-        return cardMapper.toResponseList(
-                cardRepo.findAll(SearchSpecification.multiTermLike(query, CARD_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());
+        return cardRepo.findAll(SearchSpecification.multiTermLike(query, CARD_SEARCH_FIELDS),
+                PageRequest.of(0, MAX_RESULTS)).getContent();
     }
 
-    public List<SealedProductResponse> searchSealed(String query) {
+    public List<SealedProduct> searchSealed(String query) {
         if (!StringUtils.hasText(query)) return List.of();
-        return sealedMapper.toResponseList(
-                sealedRepo.findAll(SearchSpecification.multiTermLike(query, SEALED_SEARCH_FIELDS), PageRequest.of(0, MAX_RESULTS)).getContent());
+        return sealedRepo.findAll(SearchSpecification.multiTermLike(query, SEALED_SEARCH_FIELDS),
+                PageRequest.of(0, MAX_RESULTS)).getContent();
     }
 }

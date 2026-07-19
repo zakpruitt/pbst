@@ -1,5 +1,6 @@
 package com.zakpruitt.collectingwithzak.job;
 
+import com.zakpruitt.collectingwithzak.config.JbayProvider;
 import com.zakpruitt.collectingwithzak.service.EbayOrderDataService;
 import com.zakpruitt.collectingwithzak.service.SaleService;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,13 @@ public class EbaySalesSyncJob {
 
     private static final int SYNC_DAYS = 720;
 
+    private final JbayProvider jbayProvider;
     private final EbayOrderDataService ebayOrderDataService;
     private final SaleService saleService;
 
     @Scheduled(fixedRate = 3_600_000)
     public void sync() {
-        if (!ebayOrderDataService.isConfigured()) {
+        if (!jbayProvider.isConfigured()) {
             log.info("eBay sync skipped: credentials not configured");
             return;
         }

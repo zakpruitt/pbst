@@ -1,15 +1,18 @@
 package com.zakpruitt.collectingwithzak.service;
 
+import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
+import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
 import com.zakpruitt.collectingwithzak.dto.ebay.EbayOrderData;
+import com.zakpruitt.collectingwithzak.dto.render.SaleIndexData;
 import com.zakpruitt.collectingwithzak.dto.request.CreateSaleRequest;
 import com.zakpruitt.collectingwithzak.dto.request.CreateVincePaymentRequest;
 import com.zakpruitt.collectingwithzak.entity.Sale;
-import com.zakpruitt.collectingwithzak.entity.enums.ItemStatus;
+import com.zakpruitt.collectingwithzak.entity.TrackedItem;
+import com.zakpruitt.collectingwithzak.entity.VincePayment;
+import com.zakpruitt.collectingwithzak.entity.enums.PaymentType;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleAction;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
-import com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException;
 import com.zakpruitt.collectingwithzak.mapper.SaleMapper;
-import com.zakpruitt.collectingwithzak.mapper.VincePaymentMapper;
 import com.zakpruitt.collectingwithzak.repository.SaleRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import com.zakpruitt.collectingwithzak.repository.VincePaymentRepository;
@@ -20,6 +23,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+
+import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException.notFound;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +37,42 @@ public class SaleService {
     private final TrackedItemRepository itemRepo;
     private final VincePaymentRepository paymentRepo;
     private final SaleMapper saleMapper;
-    private final VincePaymentMapper paymentMapper;
     private final EbaySaleUpsertService ebaySaleUpsertService;
+
+    @Transactional(readOnly = true)
+    public SaleIndexData getIndexData(String view) {
+        List<MonthGroup<Sale>> groups = MonthGroup.groupByMonth(getAll(view),
+                Sale::getSaleDate, Sale::getNetAmount);
+        long stagedCount = saleRepo.countByStatus(SaleStatus.STAGED);
+
+        if (!"vince".equals(view)) {
+            return new SaleIndexData(groups, stagedCount, view, null, null);
+        }
+
+        VinceLedger ledger = VinceLedger.from(saleRepo.getVinceTotals(), paymentRepo.getTotals());
+        List<MonthGroup<VincePayment>> paymentGroups = MonthGroup.groupByMonth(
+                paymentRepo.findAllByOrderByPaymentDateDescIdDesc(),
+                VincePayment::getPaymentDate, VincePayment::getAmount);
+        return new SaleIndexData(groups, stagedCount, view, ledger, paymentGroups);
+    }
+
+    private List<Sale> getAll(String view) {
+        return switch (view) {
+            case "vince" -> saleRepo.findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "vince");
+            case "ignored" -> saleRepo.findIgnored();
+            default -> saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED);
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public List<Sale> getStaged() {
+        return saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TrackedItem> getAvailableItemsFor(Sale sale) {
+        return itemRepo.findAvailablePlus(sale.getItems());
+    }
 
     public void create(CreateSaleRequest request) {
         saleRepo.save(saleMapper.toEntity(request));
@@ -56,60 +96,46 @@ public class SaleService {
     }
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {
-        Sale sale = findWithItemsById(saleId);
-        releaseItems(sale);
-        itemRepo.findAllById(itemIds).forEach(item -> {
-            item.setSale(sale);
-            item.setStatus(ItemStatus.SOLD);
-        });
+        Sale sale = getByIdWithItems(saleId);
+        sale.getItems().forEach(TrackedItem::releaseFromSale);
+        itemRepo.findAllById(itemIds).forEach(item -> item.attachTo(sale));
         sale.setStatus(SaleStatus.CONFIRMED);
     }
 
     public void updateStatus(Long saleId, SaleAction action) {
-        switch (action) {
-            case IGNORE -> changeStatus(saleId, SaleStatus.IGNORED, "");
-            case VINCE -> changeStatus(saleId, SaleStatus.IGNORED, "vince");
-            case UNSTAGE -> changeStatus(saleId, SaleStatus.STAGED, "");
-        }
+        Sale sale = getByIdWithItems(saleId);
+        sale.getItems().forEach(TrackedItem::releaseFromSale);
+        sale.setStatus(action.getTargetStatus());
+        sale.setAttributedTo(action.getAttributedTo());
     }
 
     public void updateAmounts(Long saleId, double grossAmount, double netAmount) {
-        Sale sale = saleRepo.findById(saleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sale", saleId));
+        Sale sale = saleRepo.findById(saleId).orElseThrow(notFound("Sale", saleId));
         sale.setGrossAmount(grossAmount);
         sale.setNetAmount(netAmount);
     }
 
     public void delete(Long saleId) {
-        Sale sale = findWithItemsById(saleId);
-        releaseItems(sale);
+        Sale sale = getByIdWithItems(saleId);
+        sale.getItems().forEach(TrackedItem::releaseFromSale);
         saleRepo.delete(sale);
     }
 
     public void createVincePayment(CreateVincePaymentRequest request) {
-        paymentRepo.save(paymentMapper.toEntity(request));
+        VincePayment payment = new VincePayment();
+        payment.setAmount(request.getAmount());
+        payment.setPaymentDate(request.getPaymentDate());
+        payment.setDescription(Objects.requireNonNullElse(request.getDescription(), ""));
+        payment.setType(PaymentType.valueOf(request.getType()));
+        paymentRepo.save(payment);
     }
 
     public void deleteVincePayment(Long id) {
         paymentRepo.deleteById(id);
     }
 
-    private void changeStatus(Long saleId, SaleStatus status, String attributedTo) {
-        Sale sale = findWithItemsById(saleId);
-        releaseItems(sale);
-        sale.setStatus(status);
-        sale.setAttributedTo(attributedTo);
-    }
-
-    private void releaseItems(Sale sale) {
-        sale.getItems().forEach(item -> {
-            item.setSale(null);
-            item.setStatus(ItemStatus.AVAILABLE);
-        });
-    }
-
-    private Sale findWithItemsById(Long saleId) {
-        return saleRepo.findWithItemsById(saleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sale", saleId));
+    @Transactional(readOnly = true)
+    public Sale getByIdWithItems(Long saleId) {
+        return saleRepo.findWithItemsById(saleId).orElseThrow(notFound("Sale", saleId));
     }
 }

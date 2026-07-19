@@ -8,6 +8,7 @@ import com.zakpruitt.jbay.orders.Order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -21,11 +22,6 @@ import java.util.Map;
 public class EbayOrderDataService {
 
     private final JbayProvider jbayProvider;
-
-    public boolean isConfigured()
-    {
-        return jbayProvider.isConfigured();
-    }
 
     public List<EbayOrderData> fetchOrderData(ZonedDateTime since) {
         List<Order> orders = jbayProvider.client().orders().since(since);
@@ -51,7 +47,7 @@ public class EbayOrderDataService {
 
         for (Transaction txn : transactions) {
             String orderId = txn.orderId();
-            if (orderId == null || orderId.isBlank()) continue;
+            if (!StringUtils.hasText(orderId)) continue;
 
             switch (txn.transactionType()) {
                 case "SALE" -> {

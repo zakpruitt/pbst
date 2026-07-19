@@ -34,12 +34,11 @@
                 </div>
                 <div class="col-sm-4">
                     <label class="form-label small text-muted mb-1">Type</label>
-                    <input class="form-control form-control-sm" disabled
-                           th:value="${item.itemType == 'RAW_CARD' ? 'Raw' : (item.itemType == 'GRADED_CARD' ? 'Graded' : (item.itemType == 'SEALED_PRODUCT' ? 'Sealed' : item.itemType))}">
+                    <input class="form-control form-control-sm" disabled th:value="${item.itemType.label}">
                 </div>
             </div>
 
-            <div th:if="${item.itemType == 'GRADED_CARD'}" class="row g-2 mt-0">
+            <div th:if="${item.itemType.name() == 'GRADED_CARD'}" class="row g-2 mt-0">
                 <div class="col-sm-6">
                     <label class="form-label small text-muted mb-1">Grading Company</label>
                     <select name="gradingCompany" class="form-select form-select-sm">
@@ -74,11 +73,11 @@
             <div class="row g-2 mt-0">
                 <div class="col-sm-6">
                     <label class="form-label small text-muted mb-1">Purpose</label>
-                    <select name="purpose" class="form-select form-select-sm">
-                        <option value="INVENTORY" th:selected="${item.purpose == 'INVENTORY'}">Inventory</option>
-                        <option value="PERSONAL_COLLECTION" th:selected="${item.purpose == 'PERSONAL_COLLECTION'}">Personal Collection</option>
-                        <option th:if="${item.purpose == 'IN_GRADING'}" value="IN_GRADING" selected>In Grading</option>
-                        <option th:if="${item.purpose == 'SOLD'}" value="SOLD" selected>Sold</option>
+                    <select name="purpose" class="form-select form-select-sm" th:with="purpose=${item.purpose.name()}">
+                        <option value="INVENTORY" th:selected="${purpose == 'INVENTORY'}">Inventory</option>
+                        <option value="PERSONAL_COLLECTION" th:selected="${purpose == 'PERSONAL_COLLECTION'}">Personal Collection</option>
+                        <option th:if="${purpose == 'IN_GRADING'}" value="IN_GRADING" selected>In Grading</option>
+                        <option th:if="${purpose == 'SOLD'}" value="SOLD" selected>Sold</option>
                     </select>
                 </div>
             </div>

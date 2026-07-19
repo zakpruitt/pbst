@@ -8,7 +8,7 @@
 <a th:replace="~{fragments/items :: back-link(url=${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}, label=${from == 'staging' ? 'Stager' : 'Sale'})}"></a>
 
 <div class="mb-4">
-    <h4 class="mb-2" th:text="${sale.status == 'CONFIRMED' ? 'Edit Attached Items' : 'Confirm Sale'}"></h4>
+    <h4 class="mb-2" th:text="${sale.status.name() == 'CONFIRMED' ? 'Edit Attached Items' : 'Confirm Sale'}"></h4>
     <div class="d-flex justify-content-between align-items-start gap-3">
         <div class="flex-grow-1 min-w-0">
             <div class="fw-medium" th:text="${sale.title}"></div>
@@ -29,7 +29,7 @@
 
     <div class="d-flex justify-content-between align-items-center">
         <a th:href="${from == 'staging' ? '/sales/staging' : '/sales/' + sale.id}" class="text-muted text-decoration-none small">Cancel</a>
-        <button type="submit" class="btn btn-success" th:text="${sale.status == 'CONFIRMED' ? 'Save Items' : 'Confirm Sale'}"></button>
+        <button type="submit" class="btn btn-success" th:text="${sale.status.name() == 'CONFIRMED' ? 'Save Items' : 'Confirm Sale'}"></button>
     </div>
 </form>
 

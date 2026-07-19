@@ -29,7 +29,7 @@
             <div class="text-muted inv-subtext mt-1">
                 <span th:replace="~{fragments/items :: date-color(date=${s.saleDate})}"></span>
                 <span th:if="${s.buyerUsername != null and !s.buyerUsername.isEmpty()}" th:text="' · ' + ${s.buyerUsername}"></span>
-                <span th:if="${s.origin == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
+                <span th:if="${s.origin.name() == 'EBAY' and s.ebayOrderId != null and !s.ebayOrderId.isEmpty()}">
                     · <a th:href="'https://www.ebay.com/sh/ord/details?orderid=' + ${s.ebayOrderId}" target="_blank" rel="noopener" class="text-muted">eBay ↗</a>
                 </span>
             </div>

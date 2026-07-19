@@ -1,23 +1,14 @@
 package com.zakpruitt.collectingwithzak.mapper;
 
 import com.zakpruitt.collectingwithzak.dto.request.LotRequest;
-import com.zakpruitt.collectingwithzak.dto.response.LotResponse;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 
-import java.util.List;
-
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {TrackedItemMapper.class})
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface LotMapper {
-
-    @Mapping(target = "snapshotItems", expression = "java(entity.parseSnapshot())")
-    LotResponse toResponse(LotPurchase entity);
-
-    List<LotResponse> toResponseList(List<LotPurchase> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", constant = "PENDING")

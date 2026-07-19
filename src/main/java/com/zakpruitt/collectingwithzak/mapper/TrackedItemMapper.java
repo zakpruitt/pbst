@@ -4,30 +4,12 @@ import com.zakpruitt.collectingwithzak.dto.request.CreateInventoryRequest;
 import com.zakpruitt.collectingwithzak.dto.request.InventoryItemRow;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.dto.request.UpdateInventoryRequest;
-import com.zakpruitt.collectingwithzak.dto.response.TrackedItemResponse;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import org.mapstruct.*;
 
-import java.util.List;
-
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {PokemonCardMapper.class, SealedProductMapper.class})
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface TrackedItemMapper {
-
-    @Mapping(target = "gradingFee", expression = "java(entity.getGradingFee())")
-    @Mapping(target = "totalCostBasis", expression = "java(entity.getTotalCostBasis())")
-    @Mapping(source = "gradedDetails.gradingCompany", target = "gradingCompany")
-    @Mapping(source = "gradedDetails.grade", target = "grade")
-    @Mapping(source = "gradedDetails.gradingUpcharge", target = "gradingUpcharge")
-    @Mapping(source = "lotPurchase.id", target = "lotPurchaseId")
-    @Mapping(source = "lotPurchase.sellerName", target = "lotPurchaseSellerName")
-    @Mapping(source = "gradingSubmission.id", target = "gradingSubmissionId")
-    @Mapping(source = "gradingSubmission.submissionName", target = "gradingSubmissionName")
-    @Mapping(source = "gradingSubmission.costPerCard", target = "gradingCostPerCard")
-    TrackedItemResponse toResponse(TrackedItem entity);
-
-    List<TrackedItemResponse> toResponseList(List<TrackedItem> entities);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "name", target = "manualNameOverride")

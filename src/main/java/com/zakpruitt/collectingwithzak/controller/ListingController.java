@@ -2,7 +2,6 @@ package com.zakpruitt.collectingwithzak.controller;
 
 import com.zakpruitt.collectingwithzak.dto.request.StageListingsRequest;
 import com.zakpruitt.collectingwithzak.service.ListingService;
-import com.zakpruitt.collectingwithzak.service.render.ListingRenderService;
 import com.zakpruitt.jbay.JbayException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +17,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ListingController {
 
-    private final ListingRenderService listingRenderService;
     private final ListingService listingService;
 
     @GetMapping
     public String renderIndex(Model model) {
-        model.addAttribute("data", listingRenderService.getIndexData());
+        model.addAttribute("data", listingService.getIndexData());
         model.addAttribute("page", "listings");
         return "listings/index";
     }

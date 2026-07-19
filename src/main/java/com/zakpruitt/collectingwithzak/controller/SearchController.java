@@ -1,8 +1,8 @@
 package com.zakpruitt.collectingwithzak.controller;
 
-import com.zakpruitt.collectingwithzak.dto.response.PokemonCardResponse;
-import com.zakpruitt.collectingwithzak.dto.response.SealedProductResponse;
-import com.zakpruitt.collectingwithzak.service.render.SearchRenderService;
+import com.zakpruitt.collectingwithzak.entity.PokemonCard;
+import com.zakpruitt.collectingwithzak.entity.SealedProduct;
+import com.zakpruitt.collectingwithzak.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,15 +16,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SearchController {
 
-    private final SearchRenderService searchRenderService;
+    private final SearchService searchService;
 
     @GetMapping("/cards/search")
-    public List<PokemonCardResponse> searchCards(@RequestParam(defaultValue = "") String q) {
-        return searchRenderService.searchCards(q);
+    public List<PokemonCard> searchCards(@RequestParam(defaultValue = "") String q) {
+        return searchService.searchCards(q);
     }
 
     @GetMapping("/sealed/search")
-    public List<SealedProductResponse> searchSealed(@RequestParam(defaultValue = "") String q) {
-        return searchRenderService.searchSealed(q);
+    public List<SealedProduct> searchSealed(@RequestParam(defaultValue = "") String q) {
+        return searchService.searchSealed(q);
     }
 }

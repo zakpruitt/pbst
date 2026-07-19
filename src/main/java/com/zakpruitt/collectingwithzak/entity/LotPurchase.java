@@ -1,8 +1,8 @@
 package com.zakpruitt.collectingwithzak.entity;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

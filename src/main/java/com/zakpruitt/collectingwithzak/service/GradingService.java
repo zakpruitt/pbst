@@ -7,8 +7,6 @@ import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.enums.GradingAction;
 import com.zakpruitt.collectingwithzak.entity.enums.GradingStatus;
 import com.zakpruitt.collectingwithzak.entity.enums.ItemStatus;
-import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
-import com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException;
 import com.zakpruitt.collectingwithzak.mapper.GradedDetailsMapper;
 import com.zakpruitt.collectingwithzak.mapper.GradingMapper;
 import com.zakpruitt.collectingwithzak.repository.GradingSubmissionRepository;
@@ -20,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException.notFound;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -30,6 +30,21 @@ public class GradingService {
     private final GradingMapper gradingMapper;
     private final GradedDetailsMapper gradedDetailsMapper;
 
+    @Transactional(readOnly = true)
+    public List<GradingSubmission> getAll() {
+        return gradingRepo.findAllByOrderByCreatedAtDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TrackedItem> getInventoryItems() {
+        return itemRepo.findByStatusAndSaleIsNull(ItemStatus.AVAILABLE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TrackedItem> getAvailableItemsFor(GradingSubmission submission) {
+        return itemRepo.findAvailablePlus(submission.getItems());
+    }
+
     public Long createWithItems(GradingRequest request) {
         long count = gradingRepo.countByCompany(request.getCompany());
 
@@ -37,19 +52,20 @@ public class GradingService {
         submission.setSubmissionName(String.format("%s Submission #%d", request.getCompany(), count + 1));
         gradingRepo.save(submission);
 
-        attachItems(submission, request.getItemIds());
+        itemRepo.findAllById(request.getItemIds()).forEach(item -> item.attachTo(submission));
         return submission.getId();
     }
 
     public void update(Long id, GradingRequest request) {
-        GradingSubmission submission = findWithItemsById(id);
-        releaseItems(submission);
-        attachItems(submission, request.getItemIds());
+        GradingSubmission submission = getByIdWithItems(id);
+        submission.getItems().forEach(TrackedItem::releaseFromGrading);
+        itemRepo.findAllById(request.getItemIds()).forEach(item -> item.attachTo(submission));
         gradingMapper.updateEntity(request, submission);
     }
 
     public void updateStatus(Long id, GradingAction action, List<GradingItemRequest> grades) {
-        GradingSubmission submission = findById(id);
+        GradingSubmission submission = gradingRepo.findById(id)
+                                                  .orElseThrow(notFound("GradingSubmission", id));
         switch (action) {
             case SEND -> {
                 submission.setStatus(GradingStatus.IN_GRADING);
@@ -60,33 +76,17 @@ public class GradingService {
     }
 
     public void delete(Long id) {
-        GradingSubmission submission = findWithItemsById(id);
-        releaseItems(submission);
+        GradingSubmission submission = getByIdWithItems(id);
+        submission.getItems().forEach(TrackedItem::releaseFromGrading);
         gradingRepo.delete(submission);
-    }
-
-    private void attachItems(GradingSubmission submission, List<Long> itemIds) {
-        itemRepo.findAllById(itemIds).forEach(item -> {
-            item.setGradingSubmission(submission);
-            item.setStatus(ItemStatus.IN_GRADING);
-        });
-    }
-
-    private void releaseItems(GradingSubmission submission) {
-        submission.getItems().forEach(item -> {
-            item.setGradingSubmission(null);
-            item.setStatus(ItemStatus.AVAILABLE);
-        });
     }
 
     private void recordReturn(GradingSubmission submission, List<GradingItemRequest> grades) {
         double totalUpcharge = 0;
         for (GradingItemRequest grade : grades) {
             TrackedItem item = itemRepo.findById(grade.getItemId())
-                    .orElseThrow(() -> new ResourceNotFoundException("TrackedItem", grade.getItemId()));
-            item.setGradedDetails(gradedDetailsMapper.fromGradeRequest(grade, submission.getCompany()));
-            item.setStatus(ItemStatus.AVAILABLE);
-            item.setItemType(ItemType.GRADED_CARD);
+                    .orElseThrow(notFound("TrackedItem", grade.getItemId()));
+            item.returnFromGrading(gradedDetailsMapper.fromGradeRequest(grade, submission.getCompany()));
             totalUpcharge += grade.getUpcharge();
         }
 
@@ -95,13 +95,8 @@ public class GradingService {
         submission.setStatus(GradingStatus.RETURNED);
     }
 
-    private GradingSubmission findById(Long id) {
-        return gradingRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));
-    }
-
-    private GradingSubmission findWithItemsById(Long id) {
-        return gradingRepo.findWithItemsById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("GradingSubmission", id));
+    @Transactional(readOnly = true)
+    public GradingSubmission getByIdWithItems(Long id) {
+        return gradingRepo.findWithItemsById(id).orElseThrow(notFound("GradingSubmission", id));
     }
 }

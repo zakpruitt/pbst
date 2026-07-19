@@ -1,24 +1,34 @@
 package com.zakpruitt.collectingwithzak.dto.render;
 
-import com.zakpruitt.collectingwithzak.dto.response.TrackedItemResponse;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.zakpruitt.collectingwithzak.dto.common.TrackedItemFilters;
+import com.zakpruitt.collectingwithzak.entity.TrackedItem;
+import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class InventoryIndexData {
-    private List<TrackedItemResponse> items;
-    private List<TrackedItemResponse> rawItems;
-    private List<TrackedItemResponse> gradedItems;
-    private List<TrackedItemResponse> sealedItems;
-    private List<TrackedItemResponse> otherItems;
-    private String purpose;
-    private double totalCost;
-    private double totalMarket;
+public record InventoryIndexData(List<TrackedItem> items, String purpose) {
+
+    public List<TrackedItem> rawItems() {
+        return TrackedItemFilters.filterByType(items, ItemType.RAW_CARD);
+    }
+
+    public List<TrackedItem> gradedItems() {
+        return TrackedItemFilters.filterByType(items, ItemType.GRADED_CARD);
+    }
+
+    public List<TrackedItem> sealedItems() {
+        return TrackedItemFilters.filterByType(items, ItemType.SEALED_PRODUCT);
+    }
+
+    public List<TrackedItem> otherItems() {
+        return TrackedItemFilters.filterByType(items, ItemType.OTHER);
+    }
+
+    public double totalCost() {
+        return TrackedItemFilters.sumCost(items);
+    }
+
+    public double totalMarket() {
+        return TrackedItemFilters.sumMarket(items);
+    }
 }

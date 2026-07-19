@@ -4,12 +4,11 @@ import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
 import com.zakpruitt.collectingwithzak.dto.common.TrackedItemFilters;
 import com.zakpruitt.collectingwithzak.dto.request.GradingItemRequest;
 import com.zakpruitt.collectingwithzak.dto.request.GradingRequest;
-import com.zakpruitt.collectingwithzak.dto.response.GradingSubmissionResponse;
-import com.zakpruitt.collectingwithzak.dto.response.TrackedItemResponse;
+import com.zakpruitt.collectingwithzak.entity.GradingSubmission;
+import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.enums.GradingAction;
 import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import com.zakpruitt.collectingwithzak.service.GradingService;
-import com.zakpruitt.collectingwithzak.service.render.GradingRenderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,19 +25,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GradingController {
 
-    private final GradingRenderService gradingRenderService;
     private final GradingService gradingService;
 
     @GetMapping
     public String renderIndex(Model model) {
-        List<GradingSubmissionResponse> submissions = gradingRenderService.getAll();
+        List<GradingSubmission> submissions = gradingService.getAll();
         model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
         return "grading/index";
     }
 
     @GetMapping("/new")
     public String renderNewForm(Model model) {
-        List<TrackedItemResponse> items = gradingRenderService.getInventoryItems();
+        List<TrackedItem> items = gradingService.getInventoryItems();
         model.addAttribute("rawItems", TrackedItemFilters.filterByType(items, ItemType.RAW_CARD));
         model.addAttribute("gradedItems", TrackedItemFilters.filterByType(items, ItemType.GRADED_CARD));
         return "grading/new";
@@ -46,17 +44,16 @@ public class GradingController {
 
     @GetMapping("/{id}")
     public String renderDetail(@PathVariable Long id, Model model) {
-        GradingSubmissionResponse submission = gradingRenderService.getByIdWithItems(id);
-        model.addAttribute("submission", submission);
+        model.addAttribute("submission", gradingService.getByIdWithItems(id));
         return "grading/detail";
     }
 
     @GetMapping("/{id}/edit")
     public String renderEditForm(@PathVariable Long id, Model model) {
-        GradingSubmissionResponse submission = gradingRenderService.getByIdWithItems(id);
-        List<TrackedItemResponse> available = gradingRenderService.getAvailableItemsForSubmission(id);
+        GradingSubmission submission = gradingService.getByIdWithItems(id);
+        List<TrackedItem> available = gradingService.getAvailableItemsFor(submission);
         Set<Long> attachedIds = submission.getItems().stream()
-                .map(TrackedItemResponse::getId)
+                .map(TrackedItem::getId)
                 .collect(Collectors.toSet());
 
         model.addAttribute("submission", submission);

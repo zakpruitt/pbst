@@ -18,15 +18,15 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
+    @GetMapping("/new")
+    public String renderNewForm() {
+        return "expenses/new";
+    }
+
     @GetMapping
     public String renderIndex(Model model) {
         model.addAttribute("data", expenseService.getIndexData());
         return "expenses/index";
-    }
-
-    @GetMapping("/new")
-    public String renderNewForm() {
-        return "expenses/new";
     }
 
     @PostMapping

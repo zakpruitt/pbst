@@ -2,14 +2,14 @@ package com.zakpruitt.collectingwithzak.service;
 
 import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
 import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
-import com.zakpruitt.collectingwithzak.dto.ebay.EbayOrderData;
 import com.zakpruitt.collectingwithzak.dto.render.SaleIndexData;
 import com.zakpruitt.collectingwithzak.dto.request.CreateSaleRequest;
 import com.zakpruitt.collectingwithzak.dto.request.CreateVincePaymentRequest;
+import com.zakpruitt.collectingwithzak.ebay.EbayOrderData;
+import com.zakpruitt.collectingwithzak.ebay.EbaySaleUpsertService;
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.VincePayment;
-import com.zakpruitt.collectingwithzak.entity.enums.PaymentType;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleAction;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
 import com.zakpruitt.collectingwithzak.mapper.SaleMapper;
@@ -56,17 +56,14 @@ public class SaleService {
         return new SaleIndexData(groups, stagedCount, view, ledger, paymentGroups);
     }
 
-    private List<Sale> getAll(String view) {
-        return switch (view) {
-            case "vince" -> saleRepo.findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "vince");
-            case "ignored" -> saleRepo.findIgnored();
-            default -> saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED);
-        };
-    }
-
     @Transactional(readOnly = true)
     public List<Sale> getStaged() {
         return saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.STAGED);
+    }
+
+    @Transactional(readOnly = true)
+    public Sale getByIdWithItems(Long saleId) {
+        return saleRepo.findWithItemsById(saleId).orElseThrow(notFound("Sale", saleId));
     }
 
     @Transactional(readOnly = true)
@@ -78,9 +75,15 @@ public class SaleService {
         saleRepo.save(saleMapper.toEntity(request));
     }
 
-    // Suspends the class-level transaction: every order commits in its own
-    // REQUIRES_NEW transaction inside the upsert service, so a wrapper transaction
-    // would only pin a second connection for the whole loop.
+    public void createVincePayment(CreateVincePaymentRequest request) {
+        VincePayment payment = new VincePayment();
+        payment.setAmount(request.getAmount());
+        payment.setPaymentDate(request.getPaymentDate());
+        payment.setDescription(Objects.requireNonNullElse(request.getDescription(), ""));
+        payment.setType(request.getType());
+        paymentRepo.save(payment);
+    }
+
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void syncFromEbay(List<EbayOrderData> orders) {
         int upserted = 0;
@@ -100,6 +103,7 @@ public class SaleService {
         sale.getItems().forEach(TrackedItem::releaseFromSale);
         itemRepo.findAllById(itemIds).forEach(item -> item.attachTo(sale));
         sale.setStatus(SaleStatus.CONFIRMED);
+        sale.setAttributedTo("");
     }
 
     public void updateStatus(Long saleId, SaleAction action) {
@@ -121,21 +125,15 @@ public class SaleService {
         saleRepo.delete(sale);
     }
 
-    public void createVincePayment(CreateVincePaymentRequest request) {
-        VincePayment payment = new VincePayment();
-        payment.setAmount(request.getAmount());
-        payment.setPaymentDate(request.getPaymentDate());
-        payment.setDescription(Objects.requireNonNullElse(request.getDescription(), ""));
-        payment.setType(PaymentType.valueOf(request.getType()));
-        paymentRepo.save(payment);
-    }
-
     public void deleteVincePayment(Long id) {
         paymentRepo.deleteById(id);
     }
 
-    @Transactional(readOnly = true)
-    public Sale getByIdWithItems(Long saleId) {
-        return saleRepo.findWithItemsById(saleId).orElseThrow(notFound("Sale", saleId));
+    private List<Sale> getAll(String view) {
+        return switch (view) {
+            case "vince" -> saleRepo.findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "vince");
+            case "ignored" -> saleRepo.findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus.IGNORED, "");
+            default -> saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED);
+        };
     }
 }

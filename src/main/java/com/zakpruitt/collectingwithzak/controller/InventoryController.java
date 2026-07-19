@@ -11,23 +11,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @Controller
 @RequestMapping("/inventory")
 @RequiredArgsConstructor
 public class InventoryController {
 
     private final InventoryService inventoryService;
-
-    @GetMapping
-    public String renderIndex(@RequestParam(defaultValue = "INVENTORY") String purpose,
-                              @RequestHeader(value = "HX-Request", required = false) String hx,
-                              Model model) {
-        model.addAttribute("data", inventoryService.getIndexData(purpose));
-        if (hx != null) {
-            return "inventory/index :: inventory-page";
-        }
-        return "inventory/index";
-    }
 
     @GetMapping("/new")
     public String renderNewForm() {
@@ -38,6 +29,20 @@ public class InventoryController {
     public String rowPartial(InventoryItemRow preset, Model model) {
         model.addAttribute("preset", preset);
         return "inventory/partials/row :: inventory-row";
+    }
+
+    @GetMapping
+    public String renderIndex(@RequestParam(defaultValue = "INVENTORY") String purpose,
+                              @RequestHeader(value = "HX-Request", required = false) String hx,
+                              Model model) {
+        if (!Set.of("INVENTORY", "IN_GRADING", "PERSONAL_COLLECTION").contains(purpose)) {
+            purpose = "INVENTORY";
+        }
+        model.addAttribute("data", inventoryService.getIndexData(purpose));
+        if (hx != null) {
+            return "inventory/index :: inventory-page";
+        }
+        return "inventory/index";
     }
 
     @GetMapping("/{id}/edit")

@@ -27,19 +27,19 @@ public class GradingController {
 
     private final GradingService gradingService;
 
-    @GetMapping
-    public String renderIndex(Model model) {
-        List<GradingSubmission> submissions = gradingService.getAll();
-        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
-        return "grading/index";
-    }
-
     @GetMapping("/new")
     public String renderNewForm(Model model) {
         List<TrackedItem> items = gradingService.getInventoryItems();
         model.addAttribute("rawItems", TrackedItemFilters.filterByType(items, ItemType.RAW_CARD));
         model.addAttribute("gradedItems", TrackedItemFilters.filterByType(items, ItemType.GRADED_CARD));
         return "grading/new";
+    }
+
+    @GetMapping
+    public String renderIndex(Model model) {
+        List<GradingSubmission> submissions = gradingService.getAll();
+        model.addAttribute("groups", MonthGroup.groupByMonth(submissions, s -> s.getCreatedAt().toLocalDate()));
+        return "grading/index";
     }
 
     @GetMapping("/{id}")
@@ -53,8 +53,8 @@ public class GradingController {
         GradingSubmission submission = gradingService.getByIdWithItems(id);
         List<TrackedItem> available = gradingService.getAvailableItemsFor(submission);
         Set<Long> attachedIds = submission.getItems().stream()
-                .map(TrackedItem::getId)
-                .collect(Collectors.toSet());
+                                          .map(TrackedItem::getId)
+                                          .collect(Collectors.toSet());
 
         model.addAttribute("submission", submission);
         model.addAttribute("rawItems", TrackedItemFilters.filterByType(available, ItemType.RAW_CARD));

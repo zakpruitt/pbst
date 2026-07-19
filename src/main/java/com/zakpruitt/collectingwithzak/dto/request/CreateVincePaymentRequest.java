@@ -15,5 +15,5 @@ public class CreateVincePaymentRequest {
     private LocalDate paymentDate = LocalDate.now();
     private String description;
     @NotNull
-    private String type = PaymentType.PAYOUT.name();
+    private PaymentType type = PaymentType.PAYOUT;
 }

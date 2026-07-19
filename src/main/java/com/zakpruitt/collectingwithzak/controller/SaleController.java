@@ -26,6 +26,11 @@ public class SaleController {
 
     private final SaleService saleService;
 
+    @GetMapping("/new")
+    public String renderNewForm() {
+        return "sales/new";
+    }
+
     @GetMapping
     public String renderIndex(@RequestParam(defaultValue = "mine") String view, Model model) {
         if (!Set.of("mine", "ignored", "vince").contains(view)) {
@@ -33,11 +38,6 @@ public class SaleController {
         }
         model.addAttribute("data", saleService.getIndexData(view));
         return "sales/index";
-    }
-
-    @GetMapping("/new")
-    public String renderNewForm() {
-        return "sales/new";
     }
 
     @GetMapping("/staging")
@@ -57,8 +57,8 @@ public class SaleController {
         Sale sale = saleService.getByIdWithItems(id);
         List<TrackedItem> available = saleService.getAvailableItemsFor(sale);
         Set<Long> attachedIds = sale.getItems().stream()
-                .map(TrackedItem::getId)
-                .collect(Collectors.toSet());
+                                    .map(TrackedItem::getId)
+                                    .collect(Collectors.toSet());
 
         model.addAttribute("sale", sale);
         model.addAttribute("rawItems", TrackedItemFilters.filterByType(available, ItemType.RAW_CARD));
@@ -126,5 +126,4 @@ public class SaleController {
         saleService.deleteVincePayment(id);
         return "redirect:/sales?view=vince";
     }
-
 }

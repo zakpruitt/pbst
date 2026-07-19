@@ -22,13 +22,6 @@ public class LotController {
 
     private final LotService lotService;
 
-    @GetMapping
-    public String renderIndex(Model model) {
-        List<LotPurchase> lots = lotService.getAll();
-        model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotPurchase::getPurchaseDate, LotPurchase::getTotalCost));
-        return "lots/index";
-    }
-
     @GetMapping("/new")
     public String renderNewForm() {
         return "lots/new";
@@ -38,6 +31,13 @@ public class LotController {
     public String rowPartial(SnapshotItem item, Model model) {
         model.addAttribute("item", item);
         return "lots/partials/row :: lot-row";
+    }
+
+    @GetMapping
+    public String renderIndex(Model model) {
+        List<LotPurchase> lots = lotService.getAll();
+        model.addAttribute("groups", MonthGroup.groupByMonth(lots, LotPurchase::getPurchaseDate, LotPurchase::getTotalCost));
+        return "lots/index";
     }
 
     @GetMapping("/{id}")

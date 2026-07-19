@@ -36,8 +36,13 @@ public class GradingService {
     }
 
     @Transactional(readOnly = true)
+    public GradingSubmission getByIdWithItems(Long id) {
+        return gradingRepo.findWithItemsById(id).orElseThrow(notFound("GradingSubmission", id));
+    }
+
+    @Transactional(readOnly = true)
     public List<TrackedItem> getInventoryItems() {
-        return itemRepo.findByStatusAndSaleIsNull(ItemStatus.AVAILABLE);
+        return itemRepo.findByStatus(ItemStatus.AVAILABLE);
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +90,7 @@ public class GradingService {
         double totalUpcharge = 0;
         for (GradingItemRequest grade : grades) {
             TrackedItem item = itemRepo.findById(grade.getItemId())
-                    .orElseThrow(notFound("TrackedItem", grade.getItemId()));
+                                       .orElseThrow(notFound("TrackedItem", grade.getItemId()));
             item.returnFromGrading(gradedDetailsMapper.fromGradeRequest(grade, submission.getCompany()));
             totalUpcharge += grade.getUpcharge();
         }
@@ -93,10 +98,5 @@ public class GradingService {
         submission.setUpchargeTotal(totalUpcharge);
         submission.setReturnDate(LocalDate.now());
         submission.setStatus(GradingStatus.RETURNED);
-    }
-
-    @Transactional(readOnly = true)
-    public GradingSubmission getByIdWithItems(Long id) {
-        return gradingRepo.findWithItemsById(id).orElseThrow(notFound("GradingSubmission", id));
     }
 }

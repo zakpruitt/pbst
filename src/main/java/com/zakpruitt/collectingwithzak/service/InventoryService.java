@@ -17,6 +17,7 @@ import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -80,13 +81,13 @@ public class InventoryService {
     }
 
     private void linkAssociations(TrackedItem item, InventoryItemRow row) {
-        if (row.getPokemonCardId() != null && !row.getPokemonCardId().isEmpty()) {
+        if (StringUtils.hasText(row.getPokemonCardId())) {
             cardRepo.findById(row.getPokemonCardId())
                     .ifPresent(item::setPokemonCard);
         }
-        if (row.getSealedProductId() != null && !row.getSealedProductId().isEmpty()) {
+        if (StringUtils.hasText(row.getSealedProductId())) {
             sealedRepo.findById(row.getSealedProductId())
-                    .ifPresent(item::setSealedProduct);
+                      .ifPresent(item::setSealedProduct);
         }
     }
 }

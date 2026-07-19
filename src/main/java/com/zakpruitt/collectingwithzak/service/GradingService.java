@@ -12,6 +12,7 @@ import com.zakpruitt.collectingwithzak.mapper.GradingMapper;
 import com.zakpruitt.collectingwithzak.repository.GradingSubmissionRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundExceptio
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class GradingService {
 
     private final GradingSubmissionRepository gradingRepo;
@@ -58,6 +60,8 @@ public class GradingService {
         gradingRepo.save(submission);
 
         itemRepo.findAllById(request.getItemIds()).forEach(item -> item.attachTo(submission));
+        log.info("Grading submission {} created: {} items for {}",
+                submission.getId(), request.getItemIds().size(), request.getCompany());
         return submission.getId();
     }
 
@@ -75,6 +79,7 @@ public class GradingService {
             case SEND -> {
                 submission.setStatus(GradingStatus.IN_GRADING);
                 submission.setSendDate(LocalDate.now());
+                log.info("Grading submission {} sent to {}", id, submission.getCompany());
             }
             case RETURN -> recordReturn(submission, grades);
         }
@@ -84,6 +89,7 @@ public class GradingService {
         GradingSubmission submission = getByIdWithItems(id);
         submission.getItems().forEach(TrackedItem::releaseFromGrading);
         gradingRepo.delete(submission);
+        log.info("Grading submission {} deleted", id);
     }
 
     private void recordReturn(GradingSubmission submission, List<GradingItemRequest> grades) {
@@ -98,5 +104,7 @@ public class GradingService {
         submission.setUpchargeTotal(totalUpcharge);
         submission.setReturnDate(LocalDate.now());
         submission.setStatus(GradingStatus.RETURNED);
+        log.info("Grading submission {} returned: {} cards graded, ${} upcharge",
+                submission.getId(), grades.size(), totalUpcharge);
     }
 }

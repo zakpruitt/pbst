@@ -14,6 +14,7 @@ import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository;
 import com.zakpruitt.collectingwithzak.repository.PokemonCardRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +26,7 @@ import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundExceptio
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class LotService {
 
     private final LotPurchaseRepository lotRepo;
@@ -51,8 +53,12 @@ public class LotService {
 
     public Long create(LotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
+
         lot.updateSnapshot(request.getItems());
-        return lotRepo.save(lot).getId();
+        lotRepo.save(lot);
+        log.info("Lot {} created: {} snapshot items, ${}", lot.getId(), request.getItems().size(), lot.getTotalCost());
+
+        return lot.getId();
     }
 
     public void update(Long id, LotRequest request) {
@@ -65,35 +71,40 @@ public class LotService {
         LotPurchase lot = getById(id);
         switch (action) {
             case ACCEPT -> accept(lot);
-            case REJECT -> lot.setStatus(LotStatus.REJECTED);
+            case REJECT -> {
+                lot.setStatus(LotStatus.REJECTED);
+                log.info("Lot {} rejected", id);
+            }
         }
     }
 
     public void delete(Long id) {
         itemRepo.deleteByLotPurchaseId(id);
         lotRepo.deleteById(id);
+        log.info("Lot {} deleted with its tracked items", id);
     }
 
     private void accept(LotPurchase lot) {
         List<SnapshotItem> snapshot = lot.parseSnapshot();
+        int created = 0;
 
         for (SnapshotItem item : snapshot) {
             if (!item.isTracked()) continue;
 
             TrackedItem trackedItem = trackedItemMapper.fromSnapshotItem(item, lot);
-
             if (StringUtils.hasText(item.getPokemonCardId())) {
                 cardRepo.findById(item.getPokemonCardId())
                         .ifPresent(trackedItem::setPokemonCard);
             }
-
             if (item.isType(ItemType.GRADED_CARD)) {
                 trackedItem.setGradedDetails(gradedDetailsMapper.fromSnapshotItem(item));
             }
 
             itemRepo.save(trackedItem);
+            created++;
         }
 
         lot.setStatus(LotStatus.ACCEPTED);
+        log.info("Lot {} accepted: {} of {} snapshot items tracked", lot.getId(), created, snapshot.size());
     }
 }

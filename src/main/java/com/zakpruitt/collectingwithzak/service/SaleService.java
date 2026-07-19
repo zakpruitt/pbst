@@ -82,6 +82,7 @@ public class SaleService {
         payment.setDescription(Objects.requireNonNullElse(request.getDescription(), ""));
         payment.setType(request.getType());
         paymentRepo.save(payment);
+        log.info("Vince payment recorded: {} ${}", request.getType(), request.getAmount());
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -104,6 +105,7 @@ public class SaleService {
         itemRepo.findAllById(itemIds).forEach(item -> item.attachTo(sale));
         sale.setStatus(SaleStatus.CONFIRMED);
         sale.setAttributedTo("");
+        log.info("Sale {} confirmed with {} items", saleId, itemIds.size());
     }
 
     public void updateStatus(Long saleId, SaleAction action) {
@@ -111,22 +113,26 @@ public class SaleService {
         sale.getItems().forEach(TrackedItem::releaseFromSale);
         sale.setStatus(action.getTargetStatus());
         sale.setAttributedTo(action.getAttributedTo());
+        log.info("Sale {} triaged: {}", saleId, action);
     }
 
     public void updateAmounts(Long saleId, double grossAmount, double netAmount) {
         Sale sale = saleRepo.findById(saleId).orElseThrow(notFound("Sale", saleId));
         sale.setGrossAmount(grossAmount);
         sale.setNetAmount(netAmount);
+        log.info("Sale {} amounts set: gross=${} net=${}", saleId, grossAmount, netAmount);
     }
 
     public void delete(Long saleId) {
         Sale sale = getByIdWithItems(saleId);
         sale.getItems().forEach(TrackedItem::releaseFromSale);
         saleRepo.delete(sale);
+        log.info("Sale {} deleted", saleId);
     }
 
     public void deleteVincePayment(Long id) {
         paymentRepo.deleteById(id);
+        log.info("Vince payment {} deleted", id);
     }
 
     private List<Sale> getAll(String view) {

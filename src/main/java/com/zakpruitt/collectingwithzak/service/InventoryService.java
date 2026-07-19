@@ -15,6 +15,7 @@ import com.zakpruitt.collectingwithzak.repository.PokemonCardRepository;
 import com.zakpruitt.collectingwithzak.repository.SealedProductRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -26,6 +27,7 @@ import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundExceptio
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class InventoryService {
 
     private final TrackedItemRepository itemRepo;
@@ -53,6 +55,7 @@ public class InventoryService {
             linkAssociations(item, row);
             itemRepo.save(item);
         }
+        log.info("{} inventory items created ({})", request.getItems().size(), request.getPurpose());
     }
 
     public String update(Long id, UpdateInventoryRequest request) {
@@ -73,6 +76,7 @@ public class InventoryService {
         TrackedItem item = findById(id);
         String purpose = item.getPurpose().name();
         itemRepo.delete(item);
+        log.info("Tracked item {} deleted", id);
         return purpose;
     }
 

@@ -226,6 +226,7 @@ public class ListingService {
         listing.setEbayListingId(published.listingId());
         listing.setStatus(ListingStatus.PUBLISHED);
         listingRepo.save(listing);
+        log.info("Listing {} published to eBay as {} at ${}", id, published.listingId(), listing.getListedPrice());
     }
 
     /**

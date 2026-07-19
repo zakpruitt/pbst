@@ -1,5 +1,6 @@
 package com.zakpruitt.collectingwithzak.entity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
@@ -20,7 +21,7 @@ public class LotPurchase extends BaseEntity {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Column(name = "seller_name")
-    private String sellerName;
+    private String sellerName = "";
 
     private String description;
 
@@ -50,6 +51,14 @@ public class LotPurchase extends BaseEntity {
             return List.of(MAPPER.readValue(lotContentSnapshot, SnapshotItem[].class));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to parse lot snapshot for lot " + getId(), e);
+        }
+    }
+
+    public void updateSnapshot(List<SnapshotItem> items) {
+        try {
+            this.lotContentSnapshot = MAPPER.writeValueAsString(items);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to serialize snapshot items", e);
         }
     }
 }

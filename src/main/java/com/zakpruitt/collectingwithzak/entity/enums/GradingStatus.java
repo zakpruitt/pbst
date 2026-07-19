@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum GradingStatus {
     PREPPING("Prepping"),
     IN_GRADING("In Grading"),
-    ACCEPTED("Accepted"),
-    RETURNED("Returned"),
-    REJECTED("Rejected"),
-    PENDING("Pending");
+    RETURNED("Returned");
 
     private final String label;
 }

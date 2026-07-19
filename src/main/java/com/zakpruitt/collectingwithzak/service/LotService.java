@@ -1,11 +1,10 @@
 package com.zakpruitt.collectingwithzak.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zakpruitt.collectingwithzak.dto.request.LotRequest;
 import com.zakpruitt.collectingwithzak.dto.request.SnapshotItem;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.TrackedItem;
+import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import com.zakpruitt.collectingwithzak.entity.enums.LotAction;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
 import com.zakpruitt.collectingwithzak.mapper.GradedDetailsMapper;
@@ -17,6 +16,7 @@ import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -33,11 +33,10 @@ public class LotService {
     private final LotMapper lotMapper;
     private final TrackedItemMapper trackedItemMapper;
     private final GradedDetailsMapper gradedDetailsMapper;
-    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<LotPurchase> getAll() {
-        return lotRepo.findAllWithItemsOrderByPurchaseDateDesc();
+        return lotRepo.findAllByOrderByPurchaseDateDesc();
     }
 
     @Transactional(readOnly = true)
@@ -45,9 +44,6 @@ public class LotService {
         return lotRepo.findWithItemsById(id).orElseThrow(notFound("Lot", id));
     }
 
-    /**
-     * Lot fields and snapshot only — enough for the edit form, which renders no tracked items.
-     */
     @Transactional(readOnly = true)
     public LotPurchase getById(Long id) {
         return lotRepo.findById(id).orElseThrow(notFound("Lot", id));
@@ -55,14 +51,14 @@ public class LotService {
 
     public Long create(LotRequest request) {
         LotPurchase lot = lotMapper.toEntity(request);
-        lot.setLotContentSnapshot(serializeItems(request.getItems()));
+        lot.updateSnapshot(request.getItems());
         return lotRepo.save(lot).getId();
     }
 
     public void update(Long id, LotRequest request) {
         LotPurchase lot = getById(id);
         lotMapper.updateEntity(request, lot);
-        lot.setLotContentSnapshot(serializeItems(request.getItems()));
+        lot.updateSnapshot(request.getItems());
     }
 
     public void updateStatus(Long id, LotAction action) {
@@ -86,12 +82,12 @@ public class LotService {
 
             TrackedItem trackedItem = trackedItemMapper.fromSnapshotItem(item, lot);
 
-            if (item.getPokemonCardId() != null && !item.getPokemonCardId().isEmpty()) {
+            if (StringUtils.hasText(item.getPokemonCardId())) {
                 cardRepo.findById(item.getPokemonCardId())
                         .ifPresent(trackedItem::setPokemonCard);
             }
 
-            if ("GRADED_CARD".equals(item.getItemType())) {
+            if (item.isType(ItemType.GRADED_CARD)) {
                 trackedItem.setGradedDetails(gradedDetailsMapper.fromSnapshotItem(item));
             }
 
@@ -99,13 +95,5 @@ public class LotService {
         }
 
         lot.setStatus(LotStatus.ACCEPTED);
-    }
-
-    private String serializeItems(List<SnapshotItem> items) {
-        try {
-            return objectMapper.writeValueAsString(items);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Failed to serialize snapshot items", e);
-        }
     }
 }

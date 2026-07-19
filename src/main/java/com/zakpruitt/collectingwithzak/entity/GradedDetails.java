@@ -2,14 +2,12 @@ package com.zakpruitt.collectingwithzak.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Embeddable
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class GradedDetails {
 
     @Column(name = "grading_company")

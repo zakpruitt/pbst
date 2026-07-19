@@ -18,16 +18,16 @@ public class SealedProduct extends TimestampedEntity {
     @Id
     private String id;
 
-    private String name;
+    private String name = "";
 
     @Column(name = "set_code")
-    private String setCode;
+    private String setCode = "";
 
     @Column(name = "set_name")
-    private String setName;
+    private String setName = "";
 
     @Column(name = "image_url")
-    private String imageUrl;
+    private String imageUrl = "";
 
     @Column(name = "market_price", columnDefinition = "numeric(10,2)")
     private double marketPrice;

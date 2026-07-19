@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Setter
 public class Expense extends BaseEntity {
 
-    private String name;
+    private String name = "";
 
     @Column(name = "expense_date")
     private LocalDate expenseDate;

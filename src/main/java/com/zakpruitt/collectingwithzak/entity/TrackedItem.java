@@ -4,7 +4,8 @@ import com.zakpruitt.collectingwithzak.entity.enums.ItemStatus;
 import com.zakpruitt.collectingwithzak.entity.enums.ItemType;
 import com.zakpruitt.collectingwithzak.entity.enums.Purpose;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -12,9 +13,6 @@ import java.time.LocalDate;
 @Table(name = "tracked_items")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class TrackedItem extends BaseEntity {
 
     @Column(name = "acquisition_date")
@@ -31,15 +29,12 @@ public class TrackedItem extends BaseEntity {
 
     private String notes;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     private Purpose purpose = Purpose.INVENTORY;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     private ItemStatus status = ItemStatus.AVAILABLE;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "item_type")
     private ItemType itemType = ItemType.RAW_CARD;

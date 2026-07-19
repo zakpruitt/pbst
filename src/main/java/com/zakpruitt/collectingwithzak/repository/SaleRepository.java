@@ -1,8 +1,5 @@
 package com.zakpruitt.collectingwithzak.repository;
 
-import com.zakpruitt.collectingwithzak.dto.common.LabeledStat;
-import com.zakpruitt.collectingwithzak.dto.common.MonthlyRevenueRow;
-import com.zakpruitt.collectingwithzak.dto.common.RangeTotals;
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
 import org.springframework.data.domain.Pageable;
@@ -30,27 +27,22 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     List<Sale> findByStatusAndAttributedToOrderBySaleDateDesc(SaleStatus status, String attributedTo);
 
-    @Query("SELECT s FROM Sale s WHERE s.status = 'IGNORED' " +
-            "AND (s.attributedTo IS NULL OR s.attributedTo = '') ORDER BY s.saleDate DESC")
-    List<Sale> findIgnored();
-
     long countByStatus(SaleStatus status);
 
-    @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.RangeTotals(" +
-            "COUNT(s), COALESCE(SUM(s.grossAmount), 0.0), COALESCE(SUM(s.netAmount), 0.0), " +
-            "COALESCE(SUM(s.ebayFees) + SUM(s.shippingCost), 0.0)) " +
-            "FROM Sale s WHERE s.status = 'CONFIRMED'")
-    RangeTotals getConfirmedTotals();
+    @Query("SELECT new com.zakpruitt.collectingwithzak.repository.LabeledStat(s.origin, COUNT(s)) " +
+            "FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
+    List<LabeledStat> countByOrigin();
 
-    @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.RangeTotals(" +
+    @Query("SELECT new com.zakpruitt.collectingwithzak.repository.RangeTotals(" +
+            "COUNT(s), COALESCE(SUM(s.grossAmount), 0.0), COALESCE(SUM(s.netAmount), 0.0), " +
+            "COALESCE(SUM(s.ebayFees + s.shippingCost), 0.0)) " +
+            "FROM Sale s WHERE s.status = 'CONFIRMED' AND (:since IS NULL OR s.saleDate >= :since)")
+    RangeTotals getConfirmedTotals(LocalDate since);
+
+    @Query("SELECT new com.zakpruitt.collectingwithzak.repository.RangeTotals(" +
             "COUNT(s), COALESCE(SUM(s.grossAmount), 0.0), COALESCE(SUM(s.netAmount), 0.0), 0.0) " +
             "FROM Sale s WHERE s.attributedTo = 'vince'")
     RangeTotals getVinceTotals();
-
-    @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.RangeTotals(" +
-            "COUNT(s), COALESCE(SUM(s.grossAmount), 0.0), COALESCE(SUM(s.netAmount), 0.0), 0.0) " +
-            "FROM Sale s WHERE s.status = 'CONFIRMED' AND s.saleDate >= :since")
-    RangeTotals getTotalsSince(LocalDate since);
 
     @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', sale_date), 'YYYY-MM') AS month, " +
             "COALESCE(SUM(gross_amount), 0) AS gross, COALESCE(SUM(net_amount), 0) AS net " +
@@ -59,8 +51,12 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             "GROUP BY month ORDER BY month", nativeQuery = true)
     List<MonthlyRevenueRow> getMonthlyRevenue(int months);
 
-    @Query("SELECT new com.zakpruitt.collectingwithzak.dto.common.LabeledStat(s.origin, COUNT(s)) " +
-            "FROM Sale s WHERE s.status = 'CONFIRMED' GROUP BY s.origin")
-    List<LabeledStat> countByOrigin();
+    interface MonthlyRevenueRow {
 
+        String getMonth();
+
+        double getGross();
+
+        double getNet();
+    }
 }

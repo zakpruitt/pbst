@@ -1,10 +1,10 @@
 package com.zakpruitt.collectingwithzak.dto.render;
 
-import com.zakpruitt.collectingwithzak.dto.common.LabeledStat;
-import com.zakpruitt.collectingwithzak.dto.common.RangeTotals;
 import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.Sale;
+import com.zakpruitt.collectingwithzak.repository.LabeledStat;
+import com.zakpruitt.collectingwithzak.repository.RangeTotals;
 import lombok.Builder;
 
 import java.util.List;

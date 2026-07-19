@@ -1,10 +1,13 @@
 package com.zakpruitt.collectingwithzak.service;
 
-import com.zakpruitt.collectingwithzak.dto.common.*;
+import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
 import com.zakpruitt.collectingwithzak.dto.render.DashboardData;
 import com.zakpruitt.collectingwithzak.entity.enums.ItemStatus;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
 import com.zakpruitt.collectingwithzak.repository.*;
+import com.zakpruitt.collectingwithzak.repository.LotPurchaseRepository.MonthlySpendRow;
+import com.zakpruitt.collectingwithzak.repository.SaleRepository.MonthlyRevenueRow;
+import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository.InventoryTotals;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -34,44 +37,44 @@ public class DashboardService {
     private final VincePaymentRepository paymentRepo;
 
     public DashboardData getDashboardData() {
-        RangeTotals confirmed = saleRepo.getConfirmedTotals();
+        RangeTotals confirmed = saleRepo.getConfirmedTotals(null);
         double totalSpent = lotRepo.getTotalCostNonRejected();
         InventoryTotals invTotals = itemRepo.getInventoryTotals();
 
         List<String> monthLabels = buildMonthLabels();
         List<MonthlyRevenueRow> revenue = saleRepo.getMonthlyRevenue(TIMELINE_MONTHS);
         Map<String, Double> grossByMonth = revenue.stream()
-                .collect(Collectors.toMap(MonthlyRevenueRow::getMonth, MonthlyRevenueRow::getGross));
+                                                  .collect(Collectors.toMap(MonthlyRevenueRow::getMonth, MonthlyRevenueRow::getGross));
         Map<String, Double> netByMonth = revenue.stream()
-                .collect(Collectors.toMap(MonthlyRevenueRow::getMonth, MonthlyRevenueRow::getNet));
+                                                .collect(Collectors.toMap(MonthlyRevenueRow::getMonth, MonthlyRevenueRow::getNet));
         Map<String, Double> spendByMonth = lotRepo.getMonthlySpend(TIMELINE_MONTHS).stream()
-                .collect(Collectors.toMap(MonthlySpendRow::getMonth, MonthlySpendRow::getSpend));
+                                                  .collect(Collectors.toMap(MonthlySpendRow::getMonth, MonthlySpendRow::getSpend));
 
         return DashboardData.builder()
-                .totalSpent(totalSpent)
-                .totalGross(confirmed.gross())
-                .totalNet(confirmed.net())
-                .totalFees(confirmed.fees())
-                .margin(confirmed.net() - totalSpent)
-                .salesCount(confirmed.count())
-                .avgSale(confirmed.count() > 0 ? confirmed.net() / confirmed.count() : 0)
-                .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING))
-                .inventoryCount(itemRepo.countByStatus(ItemStatus.AVAILABLE))
-                .inventoryMarket(invTotals.market())
-                .totals7(saleRepo.getTotalsSince(LocalDate.now().minusDays(7)))
-                .totals30(saleRepo.getTotalsSince(LocalDate.now().minusDays(30)))
-                .monthLabels(monthLabels)
-                .monthlySpend(fillSeries(monthLabels, spendByMonth))
-                .monthlyGross(fillSeries(monthLabels, grossByMonth))
-                .monthlyNet(fillSeries(monthLabels, netByMonth))
-                .originCounts(saleRepo.countByOrigin())
-                .itemTypeCounts(itemRepo.countByItemType())
-                .gradingStatuses(gradingRepo.countByStatus())
-                .topSales(saleRepo.findByStatusOrderByNetAmountDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N)))
-                .recentSales(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N)))
-                .recentLots(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, TOP_N)))
-                .vinceLedger(VinceLedger.from(saleRepo.getVinceTotals(), paymentRepo.getTotals()))
-                .build();
+                            .totalSpent(totalSpent)
+                            .totalGross(confirmed.gross())
+                            .totalNet(confirmed.net())
+                            .totalFees(confirmed.fees())
+                            .margin(confirmed.net() - totalSpent)
+                            .salesCount(confirmed.count())
+                            .avgSale(confirmed.count() > 0 ? confirmed.net() / confirmed.count() : 0)
+                            .gradingCount(itemRepo.countByStatus(ItemStatus.IN_GRADING))
+                            .inventoryCount(invTotals.count())
+                            .inventoryMarket(invTotals.market())
+                            .totals7(saleRepo.getConfirmedTotals(LocalDate.now().minusDays(7)))
+                            .totals30(saleRepo.getConfirmedTotals(LocalDate.now().minusDays(30)))
+                            .monthLabels(monthLabels)
+                            .monthlySpend(fillSeries(monthLabels, spendByMonth))
+                            .monthlyGross(fillSeries(monthLabels, grossByMonth))
+                            .monthlyNet(fillSeries(monthLabels, netByMonth))
+                            .originCounts(saleRepo.countByOrigin())
+                            .itemTypeCounts(itemRepo.countByItemType())
+                            .gradingStatuses(gradingRepo.countByStatus())
+                            .topSales(saleRepo.findByStatusOrderByNetAmountDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N)))
+                            .recentSales(saleRepo.findByStatusOrderBySaleDateDesc(SaleStatus.CONFIRMED, PageRequest.of(0, TOP_N)))
+                            .recentLots(lotRepo.findByOrderByPurchaseDateDesc(PageRequest.of(0, TOP_N)))
+                            .vinceLedger(VinceLedger.from(saleRepo.getVinceTotals(), paymentRepo.getTotals()))
+                            .build();
     }
 
     private List<String> buildMonthLabels() {
@@ -85,7 +88,7 @@ public class DashboardService {
 
     private List<Double> fillSeries(List<String> labels, Map<String, Double> data) {
         return labels.stream()
-                .map(label -> data.getOrDefault(label, 0.0))
-                .toList();
+                     .map(label -> data.getOrDefault(label, 0.0))
+                     .toList();
     }
 }

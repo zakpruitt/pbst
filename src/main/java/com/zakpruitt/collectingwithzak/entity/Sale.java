@@ -52,7 +52,7 @@ public class Sale extends BaseEntity {
     private SaleStatus status = SaleStatus.STAGED;
 
     @Column(name = "attributed_to")
-    private String attributedTo;
+    private String attributedTo = "";
 
     private String notes;
 

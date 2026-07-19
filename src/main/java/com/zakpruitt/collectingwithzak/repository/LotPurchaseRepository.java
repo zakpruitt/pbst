@@ -1,6 +1,5 @@
 package com.zakpruitt.collectingwithzak.repository;
 
-import com.zakpruitt.collectingwithzak.dto.common.MonthlySpendRow;
 import com.zakpruitt.collectingwithzak.entity.LotPurchase;
 import com.zakpruitt.collectingwithzak.entity.enums.LotStatus;
 import org.springframework.data.domain.Pageable;
@@ -13,13 +12,12 @@ import java.util.Optional;
 
 public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> {
 
-    @EntityGraph(attributePaths = {"trackedItems"})
-    @Query("SELECT DISTINCT l FROM LotPurchase l ORDER BY l.purchaseDate DESC")
-    List<LotPurchase> findAllWithItemsOrderByPurchaseDateDesc();
-
     // open-in-view is off: fetch everything the lot detail template renders per item.
     @EntityGraph(attributePaths = {"trackedItems", "trackedItems.pokemonCard", "trackedItems.sealedProduct"})
     Optional<LotPurchase> findWithItemsById(Long id);
+
+    @EntityGraph(attributePaths = {"trackedItems"})
+    List<LotPurchase> findAllByOrderByPurchaseDateDesc();
 
     List<LotPurchase> findByStatusOrderByPurchaseDateDesc(LotStatus status);
 
@@ -35,4 +33,10 @@ public interface LotPurchaseRepository extends JpaRepository<LotPurchase, Long> 
             "GROUP BY month ORDER BY month", nativeQuery = true)
     List<MonthlySpendRow> getMonthlySpend(int months);
 
+    interface MonthlySpendRow {
+
+        String getMonth();
+
+        double getSpend();
+    }
 }

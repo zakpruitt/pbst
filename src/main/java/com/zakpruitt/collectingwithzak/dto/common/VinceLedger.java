@@ -1,5 +1,8 @@
 package com.zakpruitt.collectingwithzak.dto.common;
 
+import com.zakpruitt.collectingwithzak.repository.RangeTotals;
+import com.zakpruitt.collectingwithzak.repository.VincePaymentRepository.VincePaymentTotals;
+
 public record VinceLedger(long salesCount, double salesGross, double salesNet,
                           double totalPaidOut, double totalVinceOwes, double balance) {
 

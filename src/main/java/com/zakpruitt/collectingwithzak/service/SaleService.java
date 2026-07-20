@@ -5,25 +5,22 @@ import com.zakpruitt.collectingwithzak.dto.common.VinceLedger;
 import com.zakpruitt.collectingwithzak.dto.render.SaleIndexData;
 import com.zakpruitt.collectingwithzak.dto.request.CreateSaleRequest;
 import com.zakpruitt.collectingwithzak.dto.request.CreateVincePaymentRequest;
-import com.zakpruitt.collectingwithzak.ebay.EbayOrderData;
-import com.zakpruitt.collectingwithzak.ebay.EbaySaleUpsertService;
 import com.zakpruitt.collectingwithzak.entity.Sale;
 import com.zakpruitt.collectingwithzak.entity.TrackedItem;
 import com.zakpruitt.collectingwithzak.entity.VincePayment;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleAction;
 import com.zakpruitt.collectingwithzak.entity.enums.SaleStatus;
 import com.zakpruitt.collectingwithzak.mapper.SaleMapper;
+import com.zakpruitt.collectingwithzak.mapper.VincePaymentMapper;
 import com.zakpruitt.collectingwithzak.repository.SaleRepository;
 import com.zakpruitt.collectingwithzak.repository.TrackedItemRepository;
 import com.zakpruitt.collectingwithzak.repository.VincePaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.zakpruitt.collectingwithzak.exception.ResourceNotFoundException.notFound;
 
@@ -37,7 +34,7 @@ public class SaleService {
     private final TrackedItemRepository itemRepo;
     private final VincePaymentRepository paymentRepo;
     private final SaleMapper saleMapper;
-    private final EbaySaleUpsertService ebaySaleUpsertService;
+    private final VincePaymentMapper vincePaymentMapper;
 
     @Transactional(readOnly = true)
     public SaleIndexData getIndexData(String view) {
@@ -76,27 +73,9 @@ public class SaleService {
     }
 
     public void createVincePayment(CreateVincePaymentRequest request) {
-        VincePayment payment = new VincePayment();
-        payment.setAmount(request.getAmount());
-        payment.setPaymentDate(request.getPaymentDate());
-        payment.setDescription(Objects.requireNonNullElse(request.getDescription(), ""));
-        payment.setType(request.getType());
+        VincePayment payment = vincePaymentMapper.toEntity(request);
         paymentRepo.save(payment);
         log.info("Vince payment recorded: {} ${}", request.getType(), request.getAmount());
-    }
-
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void syncFromEbay(List<EbayOrderData> orders) {
-        int upserted = 0;
-        for (EbayOrderData order : orders) {
-            try {
-                ebaySaleUpsertService.upsertFromEbay(saleMapper.fromEbayOrder(order));
-                upserted++;
-            } catch (Exception e) {
-                log.warn("Skipping order {}: {}", order.getEbayOrderId(), e.getMessage());
-            }
-        }
-        log.info("eBay sync: {} orders, {} upserted", orders.size(), upserted);
     }
 
     public void confirmWithItems(Long saleId, List<Long> itemIds) {

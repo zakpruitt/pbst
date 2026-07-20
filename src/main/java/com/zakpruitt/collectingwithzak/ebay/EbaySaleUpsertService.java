@@ -17,7 +17,8 @@ public class EbaySaleUpsertService {
     private final SaleMapper saleMapper;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void upsertFromEbay(Sale sale) {
+    public void upsertFromEbay(EbayOrderData order) {
+        Sale sale = saleMapper.fromEbayOrder(order);
         saleRepo.findByEbayOrderId(sale.getEbayOrderId()).ifPresentOrElse(
                 existing -> saleMapper.updateFromEbay(sale, existing),
                 () -> {

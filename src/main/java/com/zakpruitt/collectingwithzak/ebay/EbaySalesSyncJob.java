@@ -1,6 +1,5 @@
 package com.zakpruitt.collectingwithzak.ebay;
 
-import com.zakpruitt.collectingwithzak.service.SaleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,7 +17,7 @@ public class EbaySalesSyncJob {
 
     private final JbayProvider jbayProvider;
     private final EbayOrderDataService ebayOrderDataService;
-    private final SaleService saleService;
+    private final EbaySyncOrchestrator ebaySyncOrchestrator;
 
     @Scheduled(fixedRate = 3_600_000)
     public void sync() {
@@ -28,7 +27,7 @@ public class EbaySalesSyncJob {
         }
         try {
             ZonedDateTime since = ZonedDateTime.now(ZoneOffset.UTC).minusDays(SYNC_DAYS);
-            saleService.syncFromEbay(ebayOrderDataService.fetchOrderData(since));
+            ebaySyncOrchestrator.sync(ebayOrderDataService.fetchOrderData(since));
         } catch (Exception e) {
             log.error("eBay sync failed", e);
         }

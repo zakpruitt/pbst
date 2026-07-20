@@ -1,0 +1,16 @@
+package com.zakpruitt.collectingwithzak.mapper;
+
+import com.zakpruitt.collectingwithzak.dto.request.CreateExpenseRequest;
+import com.zakpruitt.collectingwithzak.entity.Expense;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
+
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface ExpenseMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Expense toEntity(CreateExpenseRequest request);
+}

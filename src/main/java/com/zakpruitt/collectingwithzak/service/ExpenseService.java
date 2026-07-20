@@ -4,6 +4,7 @@ import com.zakpruitt.collectingwithzak.dto.common.MonthGroup;
 import com.zakpruitt.collectingwithzak.dto.render.ExpenseIndexData;
 import com.zakpruitt.collectingwithzak.dto.request.CreateExpenseRequest;
 import com.zakpruitt.collectingwithzak.entity.Expense;
+import com.zakpruitt.collectingwithzak.mapper.ExpenseMapper;
 import com.zakpruitt.collectingwithzak.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.List;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepo;
+    private final ExpenseMapper expenseMapper;
 
     @Transactional(readOnly = true)
     public ExpenseIndexData getIndexData() {
@@ -35,11 +37,7 @@ public class ExpenseService {
     }
 
     public void create(CreateExpenseRequest request) {
-        Expense expense = new Expense();
-        expense.setName(request.getName());
-        expense.setExpenseDate(request.getExpenseDate());
-        expense.setCost(request.getCost());
-        expenseRepo.save(expense);
+        expenseRepo.save(expenseMapper.toEntity(request));
     }
 
     public void delete(Long id) {

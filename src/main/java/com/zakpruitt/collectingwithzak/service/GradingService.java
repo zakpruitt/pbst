@@ -33,6 +33,11 @@ public class GradingService {
     private final GradedDetailsMapper gradedDetailsMapper;
 
     @Transactional(readOnly = true)
+    public List<TrackedItem> getInventoryItems() {
+        return itemRepo.findByStatus(ItemStatus.AVAILABLE);
+    }
+
+    @Transactional(readOnly = true)
     public List<GradingSubmission> getAll() {
         return gradingRepo.findAllByOrderByCreatedAtDesc();
     }
@@ -40,11 +45,6 @@ public class GradingService {
     @Transactional(readOnly = true)
     public GradingSubmission getByIdWithItems(Long id) {
         return gradingRepo.findWithItemsById(id).orElseThrow(notFound("GradingSubmission", id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<TrackedItem> getInventoryItems() {
-        return itemRepo.findByStatus(ItemStatus.AVAILABLE);
     }
 
     @Transactional(readOnly = true)

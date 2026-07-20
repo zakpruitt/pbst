@@ -72,28 +72,10 @@ public class TrackedItem extends BaseEntity {
         this.status = ItemStatus.AVAILABLE;
     }
 
-    /**
-     * The item comes back from the grader: it keeps its submission link (for the grading fee)
-     * but is a graded card, available again, with the recorded grade attached.
-     */
     public void returnFromGrading(GradedDetails details) {
         this.gradedDetails = details;
         this.itemType = ItemType.GRADED_CARD;
         this.status = ItemStatus.AVAILABLE;
-    }
-
-    public void attachTo(Sale sale) {
-        this.sale = sale;
-        this.status = ItemStatus.SOLD;
-    }
-
-    public void releaseFromSale() {
-        this.sale = null;
-        this.status = ItemStatus.AVAILABLE;
-    }
-
-    public String getTypeLabel() {
-        return itemType.getLabel();
     }
 
     public String getGradingCompany() {
@@ -111,6 +93,20 @@ public class TrackedItem extends BaseEntity {
         return gradingSubmission.getCostPerCard();
     }
 
+    public void attachTo(Sale sale) {
+        this.sale = sale;
+        this.status = ItemStatus.SOLD;
+    }
+
+    public void releaseFromSale() {
+        this.sale = null;
+        this.status = ItemStatus.AVAILABLE;
+    }
+
+    public String getTypeLabel() {
+        return itemType.getLabel();
+    }
+
     public double getTotalCostBasis() {
         double total = costBasis + getGradingFee();
         if (gradedDetails != null) {
@@ -119,9 +115,6 @@ public class TrackedItem extends BaseEntity {
         return total;
     }
 
-    /**
-     * Purchase-time market value, else the card's current market price — the value inventory displays and sums.
-     */
     public double getEffectiveMarketValue() {
         if (marketValueAtPurchase != 0) {
             return marketValueAtPurchase;
